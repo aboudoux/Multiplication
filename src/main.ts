@@ -1,6 +1,7 @@
 import "./style.css";
 import { DEFEAT_DURATION_MS, VICTORY_DURATION_MS, Game } from "./game";
-import type { Duration } from "./game";
+import { modes, usesTables, questionCount, symbols, expression, spokenExpression } from "./calculations";
+import type { Duration, Mode, Length, GameSettings } from "./calculations";
 import {
   defaults,
   formatTime,
@@ -85,31 +86,35 @@ const disappointedMascot = `<svg class="defeat-mascot" viewBox="0 0 360 320" fil
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="page-wrap">
     <div class="outside-note"><span class="little-star">✦</span> APPRENDRE, C’EST AUSSI JOUER.</div>
-    <main class="wood-frame" aria-label="Multipli’Party">
+    <main class="wood-frame" aria-label="Calcul’Party">
       <div class="board" id="board">
         <header class="board-header">
-          <a class="brand" href="#" aria-label="Multipli’Party, accueil"><span class="brand-mark">×</span><span>Multipli’Party<span class="brand-dot">.</span></span></a>
-          <div class="header-right"><span class="arcade-label"><span></span> LE CLUB DES TABLES</span><button class="voice-button" id="voice" type="button" aria-label="Couper la voix" aria-pressed="true">${icons.voice}<span>Voix</span></button><button class="icon-button" id="sound" type="button" aria-label="Couper le son" aria-pressed="false">${icons.sound}</button></div>
+          <a class="brand" href="#" aria-label="Calcul’Party, accueil"><span class="brand-mark">×</span><span>Calcul’Party<span class="brand-dot">.</span></span></a>
+          <div class="header-right"><span class="arcade-label"><span></span> LE CLUB DU CALCUL</span><button class="voice-button" id="voice" type="button" aria-label="Couper la voix" aria-pressed="true">${icons.voice}<span>Voix</span></button><button class="icon-button" id="sound" type="button" aria-label="Couper le son" aria-pressed="false">${icons.sound}</button></div>
         </header>
         <p class="voice-notice" id="voice-unavailable" role="status" hidden>La voix n’a pas pu se charger. Tu peux réessayer avec « Réécouter ».</p>
 
         <section id="home" class="home-screen" aria-label="Accueil">
           <div class="home-hero">
             <div class="hero-copy">
-              <span class="eyebrow"><span class="tiny-line"></span> À TES MARQUES. PRÊT·E ? MULTIPLIE !</span>
-              <h1>Les tables font<br><span class="title-highlight">leur show !<svg viewBox="0 0 450 18" aria-hidden="true"><path d="M5 11Q188-1 440 6M40 17Q243 4 412 12"/></svg></span></h1>
-              <p class="hero-description">Un peu de vitesse, beaucoup de malice.<br>Fais chauffer tes tables et remplis le tableau !</p>
+              <span class="eyebrow"><span class="tiny-line"></span> À TES MARQUES. PRÊT·E ? CALCULE !</span>
+              <h1>Les calculs font<br><span class="title-highlight">leur show !<svg viewBox="0 0 450 18" aria-hidden="true"><path d="M5 11Q188-1 440 6M40 17Q243 4 412 12"/></svg></span></h1>
+              <p class="hero-description">Un peu de vitesse, beaucoup de malice.<br>Fais chauffer tes neurones et remplis le tableau !</p>
               <div class="hero-badges"><span>${icons.star} <span id="home-challenges">100 défis</span></span><span>${icons.heart} <span id="home-lives">3 vies</span></span><span>${icons.trophy} Ton record</span></div>
             </div>
             <div class="hero-art"><div class="art-scribble">6 × 7 = <span>42</span><svg viewBox="0 0 95 30" aria-hidden="true"><path d="M4 8Q45 28 84 8m-14-3 16 2-6 13"/></svg></div>${mascot}<span class="mascot-caption">Chaque réponse, une petite victoire !</span><div class="art-chalk-star">✧</div></div>
           </div>
+          <fieldset class="mode-picker"><legend>Choisis ton terrain de jeu</legend><div class="mode-options">
+            ${Object.entries(modes).map(([id, mode], i) => `<button type="button" class="mode-option" data-mode="${id}" aria-pressed="false"><span class="mode-symbol">${mode.symbol}</span><span class="mode-number">MODE ${i + 1}</span><strong>${mode.name}</strong><small>${mode.description}</small></button>`).join("")}
+          </div></fieldset>
           <div class="how-to" aria-label="Comment jouer">
-            <div><span class="step-number">1</span><p><strong>Observe le calcul.</strong><span>Les tables de 1 à 10, dans le désordre.</span></p></div>
+            <div><span class="step-number">1</span><p><strong>Observe le calcul.</strong><span><span id="mode-rule">Des additions jusqu’à 20.</span></span></p></div>
             <div><span class="step-number">2</span><p><strong>Tape ta réponse.</strong><span>Elle se valide toute seule. Magique !</span></p></div>
             <div><span class="step-number">3</span><p><strong id="home-goal">Vise les 100 !</strong><span>Une erreur ? −1 vie, puis réessaie plus tard.</span></p></div>
           </div>
           <div class="launch-panel">
-            <label class="setup-field" for="tables-select"><span>${icons.star} Nombre de tables</span><select id="tables-select">${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1} table${i ? "s" : ""}</option>`).join("")}</select><small id="tables-summary">Tables de 1 à 10 · jusqu’à ×10</small></label>
+            <label class="setup-field" for="length-select"><span>Nombre de calculs</span><select id="length-select"></select><small id="length-summary">20 calculs à réussir</small></label>
+            <label class="setup-field" id="tables-field" for="tables-select"><span>${icons.star} Nombre de tables</span><select id="tables-select">${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1} table${i ? "s" : ""}</option>`).join("")}</select><small id="tables-summary">Tables de 1 à 10 · jusqu’à ×10</small></label>
             <fieldset class="difficulty"><legend>${icons.clock} Ton temps par réponse</legend><div class="difficulty-options">${([5, 10, 15, 30] as const).map((d) => `<button class="duration-option" data-duration="${d}" type="button" aria-pressed="${d === 10}"><strong>${d}<small> s</small></strong><span>${d === 5 ? "Turbo" : d === 10 ? "Tempo" : d === 15 ? "Tranquille" : "Détente"}</span></button>`).join("")}</div></fieldset>
             <label class="setup-field" for="lives-select"><span>${icons.heart} Nombre de vies</span><select id="lives-select">${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1} vie${i ? "s" : ""}</option>`).join("")}</select><small>De 1 à 10 vies · 3 par défaut</small></label>
             <div class="start-area"><button class="play-button" data-action="start" type="button">C’est parti ! ${icons.arrow}</button><span class="play-note" id="play-note">100 multiplications. À toi de briller.</span></div>
@@ -128,14 +133,14 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               <div class="question-time" id="time-box"><div><span>${icons.clock} À toi de jouer</span><button class="repeat-question" id="repeat-question" type="button" aria-label="Réécouter le calcul">${icons.voice}<span>Réécouter</span></button><strong id="time-left">10 s</strong></div><div class="time-track" role="progressbar" aria-label="Temps restant" aria-valuemin="0" aria-valuemax="10" id="time-progress"><span id="time-fill"></span></div></div>
               <div class="question-area" id="question-area">
                 <span class="board-doodle doodle-one">✧</span><span class="board-doodle doodle-two">×</span>
-                <div class="question-content" id="question-content"><div class="question-caption" id="question-caption">À toi de trouver !</div><div class="equation" id="equation" aria-label="Multiplication"></div><div id="answer" class="answer-slots" aria-label="Ta réponse"></div></div>
+                <div class="question-content" id="question-content"><div class="question-caption" id="question-caption">À toi de trouver !</div><div class="equation" id="equation" aria-label="Calcul"></div><div id="answer" class="answer-slots" aria-label="Ta réponse"></div></div>
                 <div class="correction-card" id="correction-card" role="alert" hidden><span class="correction-kicker">OUPS !</span><span class="correction-phrase">Désolé, mais c’était</span><strong id="correct-result"></strong><span class="correction-sparkle" aria-hidden="true">✦</span></div>
                 <div class="game-reaction" id="reaction" aria-hidden="true"></div>
               </div>
               <div class="feedback-line" id="feedback" role="status" aria-live="polite">Respire, tu sais le faire !</div>
             </div>
             <div class="keypad-panel"><div class="keypad-label">LE BOUT DES DOIGTS, LE PLEIN D’IDÉES.</div><div class="keypad" aria-label="Pavé numérique">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-digit="${n}" aria-label="${n}">${n}</button>`).join("")}<span class="pad-star" aria-hidden="true">✦</span><button type="button" data-digit="0" aria-label="0">0</button><button type="button" id="erase" class="erase" aria-label="Effacer le dernier chiffre">${icons.erase}</button></div><p class="keypad-tip">Pas besoin d’Entrée.<br><strong>La réponse se valide toute seule !</strong></p></div>
-            <aside class="progress-panel" aria-label="Progression"><div class="progress-title">OBJECTIF<br><strong id="progress-goal">100</strong></div><div class="thermometer" role="progressbar" id="progress" aria-label="Multiplications réussies" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="thermo-track"><div id="progress-fill"></div><span class="thermo-tick tick-75"></span><span class="thermo-tick tick-50"></span><span class="thermo-tick tick-25"></span></div><div class="thermo-bulb">${icons.star}</div></div><strong id="progress-percent">0 %</strong><span class="progress-caption" id="progress-caption">0 / 100</span></aside>
+            <aside class="progress-panel" aria-label="Progression"><div class="progress-title">OBJECTIF<br><strong id="progress-goal">100</strong></div><div class="thermometer" role="progressbar" id="progress" aria-label="Calculs réussis" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="thermo-track"><div id="progress-fill"></div><span class="thermo-tick tick-75"></span><span class="thermo-tick tick-50"></span><span class="thermo-tick tick-25"></span></div><div class="thermo-bulb">${icons.star}</div></div><strong id="progress-percent">0 %</strong><span class="progress-caption" id="progress-caption">0 / 100</span></aside>
           </div>
           <div class="game-footer"><span id="difficulty-label">TEMPO · 10 S PAR RÉPONSE</span><span>Un calcul réussi ne revient plus. Promis.</span></div>
         </section>
@@ -160,10 +165,10 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <section id="results" class="results-screen" aria-label="Bilan de la partie" hidden>
           <div class="result-star" aria-hidden="true">${icons.star}</div><span class="eyebrow" id="result-eyebrow">CHAQUE ESSAI TE FAIT GRANDIR</span><h2 id="result-title">Bien joué !</h2><p id="result-description"></p><p class="last-correction" id="last-correction" hidden></p>
           <div class="result-stats"><div><strong id="result-solved">0</strong><span id="result-total">sur 100 réussies</span></div><div><strong id="result-time">0:00</strong><span>de réflexion</span></div><div><strong id="result-mistakes">0</strong><span>erreurs</span></div><div><strong id="result-streak">0</strong><span>à la suite</span></div></div>
-          <div class="result-record" id="result-record"></div><div class="result-actions"><button class="play-button" data-action="start" type="button">On rejoue ! ${icons.arrow}</button><button class="secondary-button" data-action="home" type="button">Changer le tempo</button></div>
+          <div class="result-record" id="result-record"></div><div class="result-actions"><button class="play-button" data-action="start" type="button">On rejoue ! ${icons.arrow}</button><button class="secondary-button" data-action="home" type="button">Changer les réglages</button></div>
         </section>
 
-        <div class="game-overlay" id="overlay" hidden><div id="countdown-panel"><span class="eyebrow" id="countdown-caption">LES TABLES N’ONT QU’À BIEN SE TENIR</span><div class="countdown-number" id="countdown" role="status" aria-live="assertive">3</div><span class="countdown-note">Tes doigts sont prêts ?</span></div><div class="pause-panel" id="pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>${icons.pause}<h2 id="pause-title">Petite pause.</h2><p>Ton temps et tes vies t’attendent.</p><button class="play-button" id="resume" type="button">On continue ! ${icons.arrow}</button></div></div>
+        <div class="game-overlay" id="overlay" hidden><div id="countdown-panel"><span class="eyebrow" id="countdown-caption">LES CALCULS N’ONT QU’À BIEN SE TENIR</span><div class="countdown-number" id="countdown" role="status" aria-live="assertive">3</div><span class="countdown-note">Tes doigts sont prêts ?</span></div><div class="pause-panel" id="pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>${icons.pause}<h2 id="pause-title">Petite pause.</h2><p>Ton temps et tes vies t’attendent.</p><button class="play-button" id="resume" type="button">On continue ! ${icons.arrow}</button></div></div>
         <canvas id="confetti" aria-hidden="true"></canvas>
         <div class="board-ledge" aria-hidden="true"><span class="chalk chalk-white"></span><span class="chalk chalk-yellow"></span><span class="eraser-prop"></span></div>
         <p class="sr-only" id="question-announcement" aria-live="polite"></p>
@@ -184,7 +189,7 @@ try {
 const audio = new GameAudio();
 audio.muted = saved.muted;
 const particles = new Particles(get<HTMLCanvasElement>("confetti"));
-let game = new Game(saved.duration, Math.random, saved.tables, saved.lives);
+let game = new Game(saved);
 let previousPhase = game.phase;
 let previousQuestion = -1;
 let previousFeedback: typeof game.feedback = null;
@@ -233,21 +238,34 @@ function persist(): boolean {
     return false;
   }
 }
+function settingsLabel(settings: GameSettings): string {
+  return `${modes[settings.mode].name} · ${questionCount(settings)} calculs${usesTables(settings.mode) ? ` · ${settings.tables} table${settings.tables > 1 ? "s" : ""}` : ""} · ${difficultyNames[settings.duration]} · ${settings.lives} vie${settings.lives > 1 ? "s" : ""}`;
+}
+function normalizeLength(): void {
+  if (saved.mode !== "multiply" && saved.length === "all") saved.length = 20;
+  if (saved.mode === "multiply" && questionCount(saved) > saved.tables * 10) saved.length = "all";
+}
 function renderPreferences(): void {
+  document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === saved.mode)));
+  get("tables-field").hidden = !usesTables(saved.mode);
+  get("mode-rule").textContent = modes[saved.mode].description + ".";
+  get<HTMLSelectElement>("length-select").innerHTML = [20, 50, 100].map(n => `<option value="${n}" ${saved.mode === "multiply" && n > saved.tables * 10 ? "disabled" : ""}>${n} calculs</option>`).join("") + (saved.mode === "multiply" ? `<option value="all">Toute la série · ${saved.tables * 10} calculs</option>` : "");
+  get<HTMLSelectElement>("length-select").value = String(saved.length);
+  get("length-summary").textContent = `${questionCount(saved)} calculs distincts à réussir`;
   get<HTMLSelectElement>("tables-select").value = String(saved.tables);
   get<HTMLSelectElement>("lives-select").value = String(saved.lives);
   get("tables-summary").textContent =
     `Tables de 1 à ${saved.tables} · jusqu’à ×10`;
-  get("home-challenges").textContent = `${saved.tables * 10} défis`;
+  get("home-challenges").textContent = `${questionCount(saved)} défis`;
   get("home-lives").textContent =
     `${saved.lives} vie${saved.lives > 1 ? "s" : ""}`;
-  get("home-goal").textContent = `Vise les ${saved.tables * 10} !`;
+  get("home-goal").textContent = `Vise les ${questionCount(saved)} !`;
   get("play-note").textContent =
-    `${saved.tables * 10} multiplications. À toi de briller.`;
+    `${questionCount(saved)} calculs. À toi de briller.`;
   get("victory-goal").textContent =
-    `${saved.tables * 10} SUR ${saved.tables * 10} · MISSION ACCOMPLIE`;
+    `${questionCount(saved)} SUR ${questionCount(saved)} · MISSION ACCOMPLIE`;
   get("victory-description").textContent =
-    `${saved.tables * 10} calculs réussis. Danse de la victoire !`;
+    `${questionCount(saved)} calculs réussis. Danse de la victoire !`;
   document
     .querySelectorAll<HTMLButtonElement>("[data-duration]")
     .forEach((button) => {
@@ -272,7 +290,7 @@ function renderPreferences(): void {
     : "Lecture automatique des calculs désactivée";
   const record = saved.records[recordKey(saved)];
   get("home-record").textContent = record
-    ? `Ton record ${difficultyNames[saved.duration]} · ${saved.tables} table${saved.tables > 1 ? "s" : ""} · ${saved.lives} vie${saved.lives > 1 ? "s" : ""} : ${formatTime(record.timeMs)}`
+    ? `Ton record ${settingsLabel(saved)} : ${formatTime(record.timeMs)}`
     : "Ton premier record t’attend !";
 }
 
@@ -280,7 +298,7 @@ function start(): void {
   previewVictory = false;
   audio.stopSpeech();
   void audio.unlock();
-  game = new Game(saved.duration, Math.random, saved.tables, saved.lives);
+  game = new Game(saved);
   game.start(performance.now());
   get("hearts").innerHTML = Array.from(
     { length: game.startingLives },
@@ -293,7 +311,7 @@ function start(): void {
   lastWarning = -1;
   recordProcessed = false;
   get("difficulty-label").textContent =
-    `${game.tables} table${game.tables > 1 ? "s" : ""} · ${difficultyNames[game.duration]} · ${game.duration} s · ${game.startingLives} vie${game.startingLives > 1 ? "s" : ""}`;
+    `${settingsLabel(game.settings)} · ${game.duration} s`;
   get("time-progress").setAttribute("aria-valuemax", String(saved.duration));
   get("progress").setAttribute("aria-valuemax", String(game.totalQuestions));
   get("progress-goal").textContent = String(game.totalQuestions);
@@ -309,11 +327,25 @@ document
       renderPreferences();
     }),
   );
+document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach(button => button.addEventListener("click", () => {
+  saved.mode = button.dataset.mode as Mode;
+  normalizeLength();
+  persist();
+  renderPreferences();
+}));
+get<HTMLSelectElement>("length-select").addEventListener("change", event => {
+  const value = (event.target as HTMLSelectElement).value;
+  saved.length = value === "all" ? "all" : Number(value) as Length;
+  normalizeLength();
+  persist();
+  renderPreferences();
+});
 for (const setting of ["tables", "lives"] as const) {
   get<HTMLSelectElement>(`${setting}-select`).addEventListener("change", (event) => {
     const value = Number((event.target as HTMLSelectElement).value);
     if (!Number.isInteger(value) || value < 1 || value > 10) return;
     saved[setting] = value;
+    normalizeLength();
     persist();
     renderPreferences();
   });
@@ -337,7 +369,7 @@ function goHome(): void {
     pause();
     return;
   }
-  game = new Game(saved.duration, Math.random, saved.tables, saved.lives);
+  game = new Game(saved);
   previousPhase = "finished";
   renderPreferences();
   render(performance.now());
@@ -361,7 +393,7 @@ function speakCurrentQuestion(): void {
     saved.voiceEnabled &&
     !saved.muted
   ) {
-    audio.speakQuestion(game.current.a, game.current.b);
+    audio.speakQuestion(game.current);
   }
 }
 get("voice").addEventListener("click", () => {
@@ -462,11 +494,7 @@ window.addEventListener("pagehide", () => {
 
 function renderResults(now: number): void {
   const won = game.solved === game.totalQuestions;
-  const settings = {
-    duration: game.duration,
-    tables: game.tables,
-    lives: game.startingLives,
-  };
+  const settings = game.settings;
   let newRecord = false;
   let stored = true;
   if (!recordProcessed) {
@@ -488,7 +516,7 @@ function renderResults(now: number): void {
       ? `${game.totalQuestions} fois bravo !`
       : "On ne lâche rien !";
     get("result-description").textContent = won
-      ? "Toutes tes tables sont réussies. Quelle étoile !"
+      ? "Tous tes calculs sont réussis. Quelle étoile !"
       : "Plus de vies pour cette partie. Tes petites victoires, elles, restent dans ta tête.";
     get("result-solved").textContent = String(game.solved);
     get("result-total").textContent = `sur ${game.totalQuestions} réussies`;
@@ -499,11 +527,11 @@ function renderResults(now: number): void {
     if (!won && game.feedback) {
       const pair = game.feedback.pair;
       get("last-correction").textContent =
-        `${game.feedback.timeout ? "Le temps était écoulé." : "À retenir :"} ${pair.a} × ${pair.b} = ${pair.result}`;
+        `${game.feedback.timeout ? "Le temps était écoulé." : "À retenir :"} ${expression(pair)} = ${pair.result}`;
     }
     const best = saved.records[recordKey(settings)];
     get("result-record").textContent = won
-      ? `${newRecord ? "✦ Nouveau record !" : "Ton record :"} ${formatTime(best!.timeMs)} · ${game.tables} table${game.tables > 1 ? "s" : ""} · ${difficultyNames[game.duration]} · ${game.startingLives} vie${game.startingLives > 1 ? "s" : ""}${stored ? "" : " · Conservé pour cette visite seulement"}`
+      ? `${newRecord ? "✦ Nouveau record !" : "Ton record :"} ${formatTime(best!.timeMs)} · ${settingsLabel(settings)}${stored ? "" : " · Conservé pour cette visite seulement"}`
       : `${game.solved} petites victoires aujourd’hui. Encore plus la prochaine fois ?`;
     renderPreferences();
     get("results")
@@ -540,7 +568,7 @@ function render(now: number): void {
         ? "Danse de victoire en cours"
         : isPlaying
           ? "Mettre la partie en pause"
-          : "Multipli’Party, accueil",
+          : "Calcul’Party, accueil",
     );
   if (phase !== previousPhase) {
     if (phase !== "question") audio.stopSpeech();
@@ -638,13 +666,13 @@ function render(now: number): void {
       .filter((i) => i !== lastPosition);
     lastPosition = candidates[Math.floor(Math.random() * candidates.length)];
     get("equation").innerHTML =
-      `<span>${game.current.a}</span><span class="multiply-sign">×</span><span>${game.current.b}</span>`;
+      `<span>${game.current.a}</span><span class="multiply-sign">${symbols[game.current.operation]}</span><span>${game.current.b}</span>`;
     get("equation").setAttribute(
       "aria-label",
-      `${game.current.a} fois ${game.current.b}`,
+      spokenExpression(game.current),
     );
     get("question-announcement").textContent =
-      `${game.current.a} fois ${game.current.b}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
+      `${spokenExpression(game.current)}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
     get("answer").innerHTML = [...String(game.current.result)]
       .map((_, i) => `<span class="answer-slot" data-slot="${i}"></span>`)
       .join("");
@@ -702,7 +730,7 @@ function render(now: number): void {
       );
     } else {
       get("feedback").textContent =
-        `${timeout ? "Temps écoulé !" : "Oups !"} ${pair.a} × ${pair.b} = ${pair.result} · On le reverra.`;
+        `${timeout ? "Temps écoulé !" : "Oups !"} ${expression(pair)} = ${pair.result} · On le reverra.`;
       get("correct-result").textContent = `${pair.result} !`;
       get("correction-card").setAttribute(
         "aria-label",

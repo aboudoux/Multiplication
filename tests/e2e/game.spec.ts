@@ -6,6 +6,8 @@ async function load(page: Page) {
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
   await page.clock.pauseAt(new Date("2026-09-27T12:00:10Z"));
+  await page.locator('[data-mode="multiply"]').click();
+  await page.locator("#length-select").selectOption("all");
 }
 async function start(page: Page) {
   await page.getByRole("button", { name: /C’est parti/ }).click();
@@ -114,6 +116,7 @@ test("desktop: preferences, countdown, keyboard, mouse and pause", async ({
 
 test("secret victory shortcut plays from home without saving a record", async ({ page }) => {
   await load(page);
+  const before = await page.evaluate(() => localStorage.getItem("multipli-party:v1"));
   await expect(page.getByRole("button", { name: "Voir la danse de victoire" })).toHaveCount(0);
   await page.keyboard.press("Control+Alt+v");
   await expect(page.locator("#victory")).toBeVisible();
@@ -124,7 +127,7 @@ test("secret victory shortcut plays from home without saving a record", async ({
   await expect(page.locator("#home")).toBeVisible();
   await expect(page.locator("#victory")).toBeHidden();
   await expect(page.locator("#home-record")).toHaveText("Ton premier record t’attend !");
-  expect(await page.evaluate(() => localStorage.getItem("multipli-party:v1"))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem("multipli-party:v1"))).toBe(before);
   await start(page);
   await expect(page.locator("#progress")).toHaveAttribute("aria-valuenow", "0");
   await page.keyboard.press("Control+Alt+v");
@@ -277,7 +280,7 @@ test("complete game: 100 distinct pairs, three digits, victory and durable recor
     fullPage: true,
   });
   await page.reload();
-  await expect(page.locator("#home-record")).toContainText("Ton record Tempo");
+  await expect(page.locator("#home-record")).toContainText("La ronde des tables");
   await page.locator('[data-duration="5"]').click();
   await expect(page.locator("#home-record")).toHaveText(
     "Ton premier record t’attend !",
@@ -321,8 +324,8 @@ test("custom tables, 30-second answers and lives persist with their own record",
   await page.clock.runFor(6100);
   await expect(page.locator("#result-title")).toHaveText("20 fois bravo !");
   await expect(page.locator("#result-total")).toHaveText("sur 20 réussies");
-  expect(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("multipli-party:v1")!).records))).toEqual(["2-30-4"]);
-  await page.getByRole("button", { name: "Changer le tempo" }).click();
+  expect(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("multipli-party:v1")!).records))).toEqual(["multiply-2-20-30-4"]);
+  await page.getByRole("button", { name: "Changer les réglages" }).click();
   await expect(page.locator("#home-record")).toContainText("2 tables");
   await page.locator("#lives-select").selectOption("3");
   await expect(page.locator("#home-record")).toHaveText("Ton premier record t’attend !");

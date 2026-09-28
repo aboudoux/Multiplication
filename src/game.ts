@@ -1,4 +1,7 @@
-export type Duration = 5 | 10 | 15 | 30;
+import { selectQuestions, questionCount, validateSettings } from "./calculations";
+import type { Calculation, GameSettings } from "./calculations";
+export type { Duration } from "./calculations";
+export { createDeck, shuffle } from "./calculations";
 export type Phase =
   | "welcome"
   | "countdown"
@@ -11,38 +14,14 @@ export type Phase =
 export const DEFEAT_DURATION_MS = 6000;
 export const VICTORY_DURATION_MS = 6000;
 export const ERROR_FEEDBACK_MS = 2000;
-export interface Pair {
-  a: number;
-  b: number;
-  id: string;
-  result: number;
-}
+
 export interface Feedback {
   correct: boolean;
   timeout: boolean;
-  pair: Pair;
+  pair: Calculation;
   submitted: string;
 }
 type CountdownAction = "next" | "resume-question" | "resume-feedback";
-
-export function createDeck(tables = 10): Pair[] {
-  if (!Number.isInteger(tables) || tables < 1 || tables > 10)
-    throw new RangeError("The number of tables must be between 1 and 10.");
-  return Array.from({ length: tables * 10 }, (_, i) => {
-    const a = Math.floor(i / 10) + 1;
-    const b = (i % 10) + 1;
-    return { a, b, id: `${a}x${b}`, result: a * b };
-  });
-}
-
-export function shuffle<T>(items: T[], random = Math.random): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
 
 /** Pure clock-driven state machine. Only active answering time counts toward records. */
 export class Game {
@@ -53,38 +32,30 @@ export class Game {
   streak = 0;
   bestStreak = 0;
   questionNumber = 0;
-  current: Pair | null = null;
+  current: Calculation | null = null;
   answer = "";
   feedback: Feedback | null = null;
-  private queue: Pair[] = [];
+  private queue: Calculation[] = [];
   private deadline = 0;
   private questionStarted = 0;
   private activeMs = 0;
   private remainingMs = 0;
   private countdownAction: CountdownAction = "next";
 
-  constructor(
-    readonly duration: Duration = 10,
-    private readonly random = Math.random,
-    readonly tables = 10,
-    readonly startingLives = 3,
-  ) {
-    if (![5, 10, 15, 30].includes(duration))
-      throw new RangeError("Unsupported answer time.");
-    if (!Number.isInteger(tables) || tables < 1 || tables > 10)
-      throw new RangeError("The number of tables must be between 1 and 10.");
-    if (!Number.isInteger(startingLives) || startingLives < 1 || startingLives > 10)
-      throw new RangeError("The number of lives must be between 1 and 10.");
-    this.lives = startingLives;
+  readonly settings: Readonly<GameSettings>;
+  constructor(settings: GameSettings, private readonly random = Math.random) {
+    validateSettings(settings);
+    this.settings = Object.freeze({ ...settings });
+    this.lives = settings.lives;
   }
-
-  get totalQuestions(): number {
-    return this.tables * 10;
-  }
+  get duration() { return this.settings.duration; }
+  get tables() { return this.settings.tables; }
+  get startingLives() { return this.settings.lives; }
+  get totalQuestions(): number { return questionCount(this.settings); }
 
   start(now: number): void {
     if (this.phase !== "welcome") return;
-    this.queue = shuffle(createDeck(this.tables), this.random);
+    this.queue = selectQuestions(this.settings, this.random);
     this.phase = "countdown";
     this.deadline = now + 4000;
   }

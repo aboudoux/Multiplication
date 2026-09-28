@@ -1,3 +1,5 @@
+import { createPool } from "../../src/calculations";
+const q = (a: number, b: number) => createPool("multiply").find(q => q.a === a && q.b === b)!;
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QuestionVoice } from "../../src/voice";
 
@@ -32,7 +34,7 @@ describe("French question narration", () => {
   it("plays a delayed disappointment without keeping the previous question queued", async () => {
     const { voice, source, gain, context, fetchMock } = setup();
     Object.assign(context, { currentTime: 20 });
-    await voice.speak(2, 3);
+    await voice.speak(q(2, 3));
     await voice.sigh();
     expect(source.stop).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenLastCalledWith("/sounds/crowd-disappointed.wav");
@@ -41,14 +43,14 @@ describe("French question narration", () => {
   });
   it("plays the ordered pair and reuses the decoded clip for a replay", async () => {
     const { voice, source, fetchMock, buffer } = setup();
-    await voice.speak(6, 7);
+    await voice.speak(q(6, 7));
     expect(fetchMock).toHaveBeenCalledWith("/voice/fr/6-7.wav");
     expect(source.buffer).toBe(buffer);
     expect(source.start).toHaveBeenCalledOnce();
     expect(voice.status).toBe("speaking");
     source.onended!();
     expect(voice.status).toBe("idle");
-    await voice.speak(6, 7);
+    await voice.speak(q(6, 7));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(source.start).toHaveBeenCalledTimes(2);
   });
@@ -63,7 +65,7 @@ describe("French question narration", () => {
           };
         }),
     );
-    const pending = voice.speak(2, 3);
+    const pending = voice.speak(q(2, 3));
     expect(voice.status).toBe("loading");
     voice.stop();
     finish();
@@ -82,8 +84,8 @@ describe("French question narration", () => {
           };
         }),
     );
-    const first = voice.speak(2, 3);
-    await voice.speak(3, 2);
+    const first = voice.speak(q(2, 3));
+    await voice.speak(q(3, 2));
     finish();
     await first;
     expect(source.start).toHaveBeenCalledTimes(1);
@@ -92,7 +94,7 @@ describe("French question narration", () => {
   });
   it("stops active playback and releases the audio nodes immediately", async () => {
     const { voice, source } = setup();
-    await voice.speak(10, 10);
+    await voice.speak(q(10, 10));
     voice.stop();
     expect(source.stop).toHaveBeenCalledOnce();
     expect(source.disconnect).toHaveBeenCalledOnce();
@@ -102,9 +104,9 @@ describe("French question narration", () => {
   it("allows a retry after a missing or unavailable recording", async () => {
     const { voice, fetchMock } = setup();
     fetchMock.mockRejectedValueOnce(new Error("Offline"));
-    await voice.speak(4, 5);
+    await voice.speak(q(4, 5));
     expect(voice.status).toBe("unavailable");
-    await voice.speak(4, 5);
+    await voice.speak(q(4, 5));
     expect(voice.status).toBe("speaking");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

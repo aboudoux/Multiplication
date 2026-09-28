@@ -1,3 +1,5 @@
+import { voicePath } from "./calculations";
+import type { Calculation } from "./calculations";
 export type VoiceStatus = "idle" | "loading" | "speaking" | "unavailable";
 
 /** Bundled French prompts work without a device-specific speech service. */
@@ -13,10 +15,9 @@ export class QuestionVoice {
     private output: AudioNode,
   ) {}
 
-  async speak(a: number, b: number): Promise<void> {
+  async speak(question: Calculation): Promise<void> {
     this.stop();
-    if (![a, b].every((n) => Number.isInteger(n) && n >= 1 && n <= 10)) return;
-    await this.play(`/voice/fr/${a}-${b}.wav`);
+    await this.play(voicePath(question));
   }
 
   async sigh(): Promise<void> {

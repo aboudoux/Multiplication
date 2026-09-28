@@ -26,6 +26,8 @@ async function prepare(page: Page) {
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
   await page.clock.pauseAt(new Date("2026-09-27T12:00:10Z"));
+  await page.locator('[data-mode="multiply"]').click();
+  await page.locator("#length-select").selectOption("all");
 }
 async function begin(page: Page) {
   await page.getByRole("button", { name: /C’est parti/ }).click();

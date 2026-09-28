@@ -4,7 +4,7 @@ import type { Duration } from "../../src/game";
 
 // An injectable random source keeps the production deck in its original order.
 function started(duration: Duration = 10, tables = 10, lives = 3) {
-  const game = new Game(duration, () => 0.999999, tables, lives);
+  const game = new Game({ mode: "multiply", length: "all", duration, tables, lives }, () => 0.999999);
   game.start(0);
   game.tick(4000);
   return game;
@@ -81,11 +81,11 @@ describe("the game rules", () => {
     expect(game.lives).toBe(0);
     game.tick(4100 + ERROR_FEEDBACK_MS);
     expect(game.phase).toBe("defeat");
-    expect(() => new Game(10, Math.random, 0, 3)).toThrow(RangeError);
-    expect(() => new Game(10, Math.random, 10, 11)).toThrow(RangeError);
+    expect(() => new Game({ mode: "multiply", length: "all", duration: 10, tables: 0, lives: 3 })).toThrow(RangeError);
+    expect(() => new Game({ mode: "multiply", length: "all", duration: 10, tables: 10, lives: 11 })).toThrow(RangeError);
   });
   it("shows all four countdown values and ignores input before play", () => {
-    const game = new Game();
+    const game = new Game({ mode: "multiply", length: "all", tables: 10, duration: 10, lives: 3 });
     game.start(0);
     expect([0, 1000, 2000, 3000].map((now) => game.countdown(now))).toEqual([
       3, 2, 1, 0,
@@ -277,7 +277,7 @@ describe("timers and interruption", () => {
     expect(game.feedback?.correct).toBe(true);
   });
   it("pauses an initial countdown without creating an unseen question", () => {
-    const game = new Game();
+    const game = new Game({ mode: "multiply", length: "all", tables: 10, duration: 10, lives: 3 });
     game.start(0);
     game.pause(2500);
     expect(game.current).toBe(null);

@@ -10,7 +10,7 @@ import {
 } from "../../src/storage";
 
 const score = { timeMs: 60000, mistakes: 1, date: "2026-09-27T10:00:00Z" };
-const standard = { tables: 10, duration: 5 as const, lives: 3 };
+const standard = { mode: "multiply" as const, length: "all" as const, tables: 10, duration: 5 as const, lives: 3 };
 describe("local preferences and records", () => {
   it("migrates old records to 10 tables and 3 lives without losing voice preferences", () => {
     const legacy = JSON.stringify({
@@ -59,7 +59,7 @@ describe("local preferences and records", () => {
     expect(saved.tables).toBe(5);
     expect(saved.lives).toBe(4);
     expect(saved.muted).toBe(true);
-    expect(saved.records).toEqual({ "10-5-3": score, "5-30-4": score });
+    expect(saved.records).toEqual({ "multiply-10-100-5-3": score, "multiply-5-50-30-4": score });
   });
   it("keeps independent records for tables, time and lives", () => {
     const saved = defaults();

@@ -1,3 +1,4 @@
+import type { Calculation } from "./calculations";
 import { QuestionVoice } from "./voice";
 
 /** Original synthesized arcade sounds and bundled French voice prompts. */
@@ -15,8 +16,8 @@ export class GameAudio {
     return this.voice?.status ?? "idle";
   }
 
-  speakQuestion(a: number, b: number): void {
-    if (!this.muted) void this.voice?.speak(a, b);
+  speakQuestion(question: Calculation): void {
+    if (!this.muted) void this.voice?.speak(question);
   }
 
   stopSpeech(): void {

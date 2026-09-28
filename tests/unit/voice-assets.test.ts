@@ -1,6 +1,7 @@
+import { createPool, voicePath } from "../../src/calculations";
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { createDeck, DEFEAT_DURATION_MS } from "../../src/game";
+import { DEFEAT_DURATION_MS } from "../../src/game";
 
 it("includes the complete crowd reaction with enough time after the buzzer", () => {
   const wav = readFileSync(
@@ -17,10 +18,10 @@ it("includes the complete crowd reaction with enough time after the buzzer", () 
   expect(seconds + 0.55).toBeLessThan(DEFEAT_DURATION_MS / 1000);
 });
 
-it("ships 100 non-silent French WAV prompts usable within the shortest time limit", () => {
-  for (const { a, b } of createDeck()) {
+it("ships 562 non-silent French WAV prompts usable within the shortest time limit", () => {
+  for (const q of [...createPool("add"), ...createPool("subtract"), ...createPool("multiply")]) {
     const wav = readFileSync(
-      new URL(`../../public/voice/fr/${a}-${b}.wav`, import.meta.url),
+      new URL(`../../public${voicePath(q)}`, import.meta.url),
     );
     expect(wav.toString("ascii", 0, 4)).toBe("RIFF");
     expect(wav.toString("ascii", 8, 12)).toBe("WAVE");

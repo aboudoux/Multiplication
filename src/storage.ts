@@ -1,15 +1,13 @@
-import type { Duration } from "./game";
+import { modes, questionCount, usesTables } from "./calculations";
+import type { Duration, GameSettings, Mode } from "./calculations";
+export type { GameSettings } from "./calculations";
 
 export interface RecordScore {
   timeMs: number;
   mistakes: number;
   date: string;
 }
-export interface GameSettings {
-  duration: Duration;
-  tables: number;
-  lives: number;
-}
+
 export interface SavedData extends GameSettings {
   muted: boolean;
   voiceEnabled: boolean;
@@ -17,6 +15,8 @@ export interface SavedData extends GameSettings {
 }
 export const STORAGE_KEY = "multipli-party:v1";
 export const defaults = (): SavedData => ({
+  mode: "add",
+  length: 20,
   duration: 10,
   tables: 10,
   lives: 3,
@@ -35,15 +35,30 @@ export function readSaved(storage: Pick<Storage, "getItem">): SavedData {
       saved.tables = data.tables;
     if (Number.isInteger(data.lives) && data.lives >= 1 && data.lives <= 10)
       saved.lives = data.lives;
+    if (Object.hasOwn(modes, data.mode)) saved.mode = data.mode;
+    else if (data.mode === undefined && ([5, 10, 15, 30].includes(data.duration) || Number.isInteger(data.tables))) {
+      saved.mode = "multiply";
+      saved.length = "all";
+    }
+    if ([20, 50, 100].includes(data.length)) saved.length = data.length;
+    else if (data.length === "all" && saved.mode === "multiply") saved.length = "all";
+    if (saved.mode === "multiply" && questionCount(saved) > saved.tables * 10) saved.length = "all";
     if (typeof data.muted === "boolean") saved.muted = data.muted;
     if (typeof data.voiceEnabled === "boolean")
       saved.voiceEnabled = data.voiceEnabled;
     for (const [key, record] of Object.entries(data.records ?? {})) {
       // Earlier versions stored records only by duration (10 tables, 3 lives).
-      const normalized = /^[0-9]+$/.test(key) && [5, 10, 15].includes(Number(key))
-        ? recordKey({ tables: 10, duration: Number(key) as Duration, lives: 3 })
+      let normalized = /^[0-9]+$/.test(key) && [5, 10, 15].includes(Number(key))
+        ? recordKey({ mode: "multiply", length: "all", tables: 10, duration: Number(key) as Duration, lives: 3 })
         : key;
-      const match = /^([1-9]|10)-(5|10|15|30)-([1-9]|10)$/.exec(normalized);
+      const legacy = /^([1-9]|10)-(5|10|15|30)-([1-9]|10)$/.exec(normalized);
+      if (legacy) normalized = recordKey({ mode: "multiply", length: "all", tables: Number(legacy[1]), duration: Number(legacy[2]) as Duration, lives: Number(legacy[3]) });
+      const match = /^(add|subtract|duo|multiply|mix)-(0|[1-9]|10)-(10|20|30|40|50|60|70|80|90|100)-(5|10|15|30)-([1-9]|10)$/.exec(normalized);
+      if (match) {
+        const [, mode, tables, count] = match;
+        if (usesTables(mode as Mode) !== (Number(tables) > 0)
+          || (mode === "multiply" ? Number(count) > Number(tables) * 10 : ![20, 50, 100].includes(Number(count)))) continue;
+      }
       if (!match || !record || typeof record !== "object") continue;
       const candidate = record as Record<string, unknown>;
       if (
@@ -53,7 +68,7 @@ export function readSaved(storage: Pick<Storage, "getItem">): SavedData {
         typeof candidate.mistakes === "number" &&
         Number.isInteger(candidate.mistakes) &&
         candidate.mistakes >= 0 &&
-        candidate.mistakes < Number(match[3]) &&
+        candidate.mistakes < Number(match[5]) &&
         typeof candidate.date === "string" &&
         Number.isFinite(Date.parse(candidate.date))
       ) {
@@ -95,7 +110,7 @@ export function saveRecord(
 }
 
 export function recordKey(settings: GameSettings): string {
-  return `${settings.tables}-${settings.duration}-${settings.lives}`;
+  return `${settings.mode}-${usesTables(settings.mode) ? settings.tables : 0}-${questionCount(settings)}-${settings.duration}-${settings.lives}`;
 }
 
 export function formatTime(ms: number): string {
