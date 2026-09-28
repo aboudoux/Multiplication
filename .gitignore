@@ -1,0 +1,10 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+artifacts/
+.site-checkout/
+.sites-checkout/
+.sites-runtime/
+.vite/
+*.log
