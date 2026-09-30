@@ -30,6 +30,15 @@ export class GameAudio {
 
   async unlock(): Promise<void> {
     try {
+      // On iOS, request media playback rather than the default ambient channel.
+      // Unsupported/blocked Audio Session APIs must not prevent Web Audio.
+      try {
+        const session=(navigator as Navigator & {audioSession?: {type:string}}).audioSession;
+        if (session && !this.muted) session.type='playback';
+      } catch { /* Optional browser capability. */ }
+      if (this.context?.state === 'closed') {
+        this.stopSpeech();this.context=null;this.master=null;this.voice=null;
+      }
       this.context ??= new AudioContext();
       if (!this.master) {
         this.master = this.context.createGain();
@@ -37,7 +46,8 @@ export class GameAudio {
         this.master.connect(this.context.destination);
         this.voice = new QuestionVoice(this.context, this.master);
       }
-      if (this.context.state === "suspended") await this.context.resume();
+      // Safari also interrupts audio after backgrounding or an audio-session change.
+      if (this.context.state !== "running") await this.context.resume();
     } catch {
       /* The visual game remains fully usable without audio support. */
     }
@@ -60,6 +70,8 @@ export class GameAudio {
     await this.unlock();
     [523.25, 659.25, 783.99].forEach((note, i) => this.tone(note, i * .085, .14, .1, 'triangle'));
   }
+
+  get ready(): boolean { return this.context?.state==='running'; }
 
   private homePlaying = false;
   private menuSources = new Set<OscillatorNode>();

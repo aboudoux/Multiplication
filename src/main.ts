@@ -64,6 +64,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <a class="brand" href="#" aria-label="Calcul’Party, accueil"><span class="brand-mark">×</span><span>Calcul’Party<span class="brand-dot">.</span></span></a>
           <div class="header-right"><span class="arcade-label"><span></span> LE CLUB DU CALCUL</span><button class="voice-button" id="voice" type="button" aria-label="Couper la voix" aria-pressed="true">${icons.voice}<span>Voix</span></button><button class="icon-button" id="sound" type="button" aria-label="Couper le son" aria-pressed="false">${icons.sound}</button></div>
         </header>
+        <button id="menu-audio-enable" type="button" class="menu-audio-notice" hidden>♫ Activer musique et sons</button>
         <p class="voice-notice" id="voice-unavailable" role="status" hidden>La voix n’a pas pu se charger. Tu peux réessayer avec « Réécouter ».</p>
 
         <section id="home" class="home-screen" aria-label="Accueil">
@@ -162,8 +163,10 @@ const missionReward = new MissionRewardScene(get('mission-reward'));
 audio.muted = saved.muted;
 // Mobile browsers require a gesture before music can begin.
 const unlockMenuAudio=()=>{ if (!audio.muted) void audio.unlock(); };
-document.addEventListener('pointerdown',unlockMenuAudio,{once:true});
-document.addEventListener('keydown',unlockMenuAudio,{once:true});
+document.addEventListener('pointerdown',unlockMenuAudio,{passive:true});
+document.addEventListener('touchend',unlockMenuAudio,{passive:true});
+document.addEventListener('click',unlockMenuAudio,{capture:true});
+document.addEventListener('keydown',unlockMenuAudio);
 unlockMenuAudio(); // Start immediately when the browser permits audible autoplay.
 // Capture the target before menu rendering replaces it. The melody starts
 // after the click handlers have switched worlds, so setTheme cannot cut it off.
@@ -176,6 +179,9 @@ document.addEventListener('click', event => {
 const particles = new Particles(get<HTMLCanvasElement>("confetti"));
 const surprises = new ThemeSurprises(get("theme-surprise"));
 const themedKeypad = new ThemedKeypad(document.querySelector<HTMLElement>('.keypad')!);
+get('menu-audio-enable').addEventListener('click',()=>{
+  saved.muted=false;audio.setMuted(false);void audio.navigation();persist();renderPreferences();
+});
 function persistTraining(): boolean {
   try { trainingStored=saveTraining(localStorage,trainingData); } catch { trainingStored=false; }
   return trainingStored;
@@ -880,8 +886,10 @@ function render(now: number): void {
 renderPreferences();
 render(performance.now());
 function frame(now: number): void {
-  audio.homeMusic(!document.hidden && !previewVictory && !trainingActive && !activeStage
-    && game.phase==='welcome' && (campOpen || mapOpen || !get('home').hidden));
+  const inMenus=!previewVictory && !trainingActive && !activeStage
+    && game.phase==='welcome' && (campOpen || mapOpen || !get('home').hidden);
+  get('menu-audio-enable').hidden=!inMenus || (!saved.muted && audio.ready);
+  audio.homeMusic(!document.hidden && inMenus);
   if (!document.hidden) {
     if (previewVictory && now >= previewEndsAt) {
       previewVictory = false;
