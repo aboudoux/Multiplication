@@ -168,8 +168,8 @@ document.addEventListener('touchend',unlockMenuAudio,{passive:true});
 document.addEventListener('click',unlockMenuAudio,{capture:true});
 document.addEventListener('keydown',unlockMenuAudio);
 unlockMenuAudio(); // Start immediately when the browser permits audible autoplay.
-// Capture the target before menu rendering replaces it. The melody starts
-// after the click handlers have switched worlds, so setTheme cannot cut it off.
+// Capture the target before menu rendering replaces it. Unlock during the click;
+// navigation() plays after the destination has finished changing the world.
 document.addEventListener('click', event => {
   const target=(event.target as Element).closest<HTMLButtonElement|HTMLAnchorElement>(
     '.brand, #open-adventure, #open-training, #leave-adventure, [data-tab], [data-preset], #camp-home, #camp-exit, #camp-results-exit, #camp-colony-ready, #adventure-exit, [data-action="home"], [data-stage], #camp-start, [data-action="start"]',

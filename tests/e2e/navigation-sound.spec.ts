@@ -4,7 +4,7 @@ import {defaults,STORAGE_KEY} from '../../src/storage';
 async function prepare(page:Page,muted=false) {
  await page.addInitScript(({key,saved})=>{
   localStorage.setItem(key,JSON.stringify(saved));
-  const probe:{frequency:number;type:string;delay:number}[]=[];
+  const probe:{frequency:number;type:string;delay:number;cancelled:boolean}[]=[];
   Object.assign(window,{navigationProbe:probe});
   const create=AudioContext.prototype.createOscillator;
   AudioContext.prototype.createOscillator=function(){
@@ -12,7 +12,10 @@ async function prepare(page:Page,muted=false) {
    const set=node.frequency.setValueAtTime.bind(node.frequency);
    node.frequency.setValueAtTime=(value,at)=>{frequency=value;return set(value,at);};
    const start=node.start.bind(node);const context=this;
-   node.start=(at=0)=>{probe.push({frequency,type:node.type,delay:at-context.currentTime});start(at);};
+   let played:typeof probe[number]|undefined;
+   node.start=(at=0)=>{played={frequency,type:node.type,delay:at-context.currentTime,cancelled:false};probe.push(played);start(at);};
+   const stop=node.stop.bind(node);
+   node.stop=(at?:number)=>{if(played && at===undefined)played.cancelled=true;stop(at);};
    return node;
   };
  },{key:STORAGE_KEY,saved:{...defaults(),muted,voiceEnabled:false}});
@@ -25,6 +28,7 @@ async function chime(page:Page,selector:string) {
  const notes=await page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='triangle'&&[523.25,659.25,783.99].includes(note.frequency)).slice(-3));
  expect(notes.map((note:any)=>note.frequency)).toEqual([523.25,659.25,783.99]);
  expect(notes.every((note:any)=>note.type==='triangle')).toBe(true);
+ expect(notes.every((note:any)=>!note.cancelled)).toBe(true);
  expect(notes[2].delay-notes[0].delay).toBeGreaterThan(.1);
  expect(notes[2].delay-notes[0].delay).toBeLessThan(.24);
 }
@@ -36,6 +40,15 @@ test('first click, camp menus, adventure and return each play one short chime',a
  await chime(page,'#open-adventure');await chime(page,'#leave-adventure');
  await page.locator('#open-training').focus();const before=await count(page);await page.keyboard.press('Enter');
  await expect.poll(()=>count(page)).toBe(before+3);
+});
+
+test('the ants button keeps all three notes when music is already running',async({page})=>{
+ await prepare(page);await page.locator('h1').click();
+ await expect.poll(()=>page.evaluate(()=>(window as any).navigationProbe.some((note:any)=>note.type==='sine'))).toBe(true);
+ await chime(page,'#open-training');
+ await expect(page.locator('html')).toHaveAttribute('data-theme','ant');
+ await page.waitForTimeout(350);
+ expect(await page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='triangle'&&[523.25,659.25,783.99].includes(note.frequency)).every((note:any)=>!note.cancelled))).toBe(true);
 });
 
 test('muting silences menus and unmuting restores the chime',async({page})=>{

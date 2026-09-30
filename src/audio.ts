@@ -68,7 +68,10 @@ export class GameAudio {
   async navigation(): Promise<void> {
     if (this.muted) return;
     await this.unlock();
-    [523.25, 659.25, 783.99].forEach((note, i) => this.tone(note, i * .085, .14, .1, 'triangle'));
+    // Event listeners can yield to promises before the destination handler runs.
+    // Unlock during the gesture, then play once the whole click has finished.
+    await new Promise<void>(resolve=>setTimeout(resolve,0));
+    [523.25, 659.25, 783.99].forEach((note, i) => this.tone(note, i * .085, .16, .18, 'triangle'));
   }
 
   get ready(): boolean { return this.context?.state==='running'; }
