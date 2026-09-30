@@ -74,6 +74,18 @@
 .camp-launch p { margin:6px 0; font-size:14px; }.camp-launch .play-button { background:#f3c55e; flex-shrink:0; font-size:17px; padding:17px; }.camp-launch .play-button:disabled { opacity:.45; }
 .camp-examples { font-family:Kalam,cursive; font-size:19px!important; }.camp-error { color:#973c31; font-weight:bold; }
 .camp-save,.camp-help { font-size:13px; color:#d1e2cf; }.camp-save { margin-top:24px; text-align:center; }
+.camp-records { width:100%; table-layout:fixed; border-collapse:separate; border-spacing:0; font-size:14px; line-height:1.5; margin:12px 0; background:#163c3266; border:1px solid #a8c4a96b; border-radius:12px; overflow:hidden; }
+.camp-records caption { text-align:left; padding:0 0 10px; color:#d1e2cf; font-size:13px; }
+.camp-records th,.camp-records td { padding:12px 10px; border-bottom:1px solid #a8c4a933; vertical-align:middle; overflow-wrap:anywhere; }
+.camp-records thead th { color:#f5d891; background:#142f2966; text-align:center; }
+.camp-records thead th:first-child { width:60%; text-align:left; }
+.camp-records thead th:not(:first-child) { padding-left:4px; padding-right:4px; font-size:12px; white-space:nowrap; }
+.camp-records tbody th { text-align:left; font-weight:normal; }
+.camp-records tbody th strong { display:block; font-size:15px; }
+.camp-records tbody th span { display:block; color:#d1e2cf; font-size:12px; margin-top:3px; }
+.camp-records td { text-align:center; font-weight:bold; font-variant-numeric:tabular-nums; }
+.camp-records tbody tr:nth-child(even) { background:#ffffff05; }
+.camp-records tbody tr:last-child>* { border-bottom:0; }
 .camp-play-setting { margin:0; padding:14px; min-width:0; border:1px solid #a8c4a96b; border-radius:18px; background:#193e352c; }
 .camp-play-setting legend { padding:0 7px; }
 .camp-clock-button { width:100%; display:flex; align-items:center; gap:14px; padding:12px; text-align:left; background:#f7f0dd; color:#2a493b; border:2px solid #bdc8aa; border-radius:14px; }

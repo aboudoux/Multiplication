@@ -169,7 +169,11 @@ function persistTraining(): boolean {
 }
 const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); audio.voiceStyle=trainingData.settings.voice; return stored; },()=>{ trainingActive=true; start(); },()=>showLanding(),()=>{
   const entries=Object.entries(saved.records);
-  return entries.length ? '<ul>'+entries.map(([key,r])=>`<li>${legacyRecordLabel(key)} : ${formatTime(r.timeMs)} · ${r.mistakes} erreurs</li>`).join('')+'</ul>' : '<p>Aucun ancien record enregistré.</p>';
+  return entries.length ? `<table class="camp-records"><caption>Meilleurs résultats par réglage</caption><thead><tr><th scope="col">Séance</th><th scope="col">Temps</th><th scope="col">Erreurs</th></tr></thead><tbody>${entries.map(([key,r])=>{
+    const [mode,tables,count,duration,lives]=key.split('-');
+    const tableCount=Number(tables), lifeCount=Number(lives);
+    return `<tr><th scope="row"><strong>${modes[mode as Mode]?.name??'Ancienne partie'}</strong><span>${Number(count)} calculs${tableCount?` · ${tableCount} table${tableCount===1?'':'s'}`:''}</span><span>Chrono ${Number(duration)} s · ${lifeCount} vie${lifeCount===1?'':'s'}</span></th><td>${formatTime(r.timeMs)}</td><td>${r.mistakes}</td></tr>`;
+  }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
 });
 get('home').before(camp.root);
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
@@ -177,10 +181,6 @@ get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory"
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
 get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="camp-results-exit" class="secondary-button" type="button" hidden>Retour au camp</button>');
 get('camp-results-exit').insertAdjacentHTML('afterend','<button id="camp-colony-ready" class="play-button" type="button" hidden>Un chantier est prêt ! Aller construire →</button>');
-function legacyRecordLabel(key: string): string {
-  const [mode,tables,count,duration,lives]=key.split('-');
-  return `${modes[mode as Mode]?.name??'Ancienne partie'} · ${Number(count)} calculs · ${Number(tables)} tables · ${Number(duration)} s · ${Number(lives)} vies`;
-}
 function openCamp(tab: 'missions'|'workshop'|'colony' = 'missions'): void {
   trainingActive=false; activeStage=null; mapOpen=false; campOpen=true; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
