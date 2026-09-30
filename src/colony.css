@@ -1,0 +1,32 @@
+.colony-heading { display:flex; align-items:center; justify-content:space-between; gap:15px; margin:24px 0 18px; }
+.colony-heading h2 { margin-top:8px; }.colony-heading .eyebrow { color:#d6e6bc; font-size:9px; letter-spacing:1.8px; }
+.colony-count { text-align:center; flex-shrink:0; font:700 26px Kalam,cursive; color:#f5d891; border:1px solid #e4d8ad55; padding:10px 15px; border-radius:18px; }
+.colony-count small { font:11px 'Trebuchet MS',sans-serif; color:#d6e3ce; }
+.colony-site { position:relative; overflow:hidden; border:6px solid #e5d7ac; border-radius:27px; background:#ddc6a2; box-shadow:0 9px 0 #152e2966,0 15px 32px #12282033; }
+.colony-site .camp-landscape { display:block; border-radius:18px 18px 0 0; }
+.colony-scene-caption { display:block; text-align:center; color:#624d37; font:700 14px Kalam,cursive; padding:8px; background:#f3e5c7; }
+.colony-construction.is-planned { opacity:.35; filter:grayscale(.5); }.colony-construction.is-planned .room-wall { fill:#92694e; stroke:#d8ba8c; stroke-dasharray:8 7; }
+.colony-construction.is-planned > :not(.room-wall) { opacity:.2; }
+.colony-site[data-building="1"].is-building .construction-1,
+.colony-site[data-building="2"].is-building .construction-2,
+.colony-site[data-building="3"].is-building .construction-3,
+.colony-site[data-building="4"].is-building .construction-4,
+.colony-site[data-building="5"].is-building .construction-5,
+.colony-site[data-building="6"].is-building .construction-6 { animation:colony-reveal 2.4s ease-out both; }
+.colony-crew { position:absolute; top:5%; left:30%; width:25%; height:30%; pointer-events:none; animation:colony-builder 2.4s ease-in-out both; }
+.colony-crew .ant-character { width:100%; height:100%; animation:none; filter:drop-shadow(0 3px 1px #694c3933); }
+.colony-hammer { position:absolute; right:-5%; top:40%; font-size:clamp(20px,4vw,45px); transform-origin:10% 80%; animation:colony-hammer .3s ease-in-out 7 alternate; color:#fff1b5; text-shadow:0 2px 0 #63432d; }
+.colony-crew i { position:absolute; width:10px; height:10px; border-radius:50%; right:0; top:65%; background:#f7db99; animation:colony-dust .6s ease-out 3; }.colony-crew i:nth-of-type(2) { animation-delay:.15s; right:8%; }.colony-crew i:nth-of-type(3) { animation-delay:.3s; right:-8%; }
+.colony-stock { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:22px 0; }
+.colony-stock>div { padding:16px; background:#1c4138; border:1px solid #a9c3a84d; border-radius:18px; }.colony-stock span { display:block; font-size:9px; letter-spacing:1px; color:#c9dcc5; }.colony-stock strong { display:block; margin-top:5px; color:#f8d47c; font:700 30px Kalam,cursive; }.colony-stock strong small { display:inline; font:12px 'Trebuchet MS',sans-serif; }
+.colony-next { background:#f6eccf; color:#314b3c; padding:24px; border-radius:22px; box-shadow:0 7px 0 #122b2944; }
+.colony-next .eyebrow { color:#697952; font-size:9px; letter-spacing:1.4px; }.colony-next h3 { font:700 30px Kalam,cursive; margin:10px 0; }.colony-budget { display:flex; justify-content:space-between; flex-wrap:wrap; gap:7px; font-size:13px; margin:14px 0 7px; }
+.colony-next progress { display:block; appearance:none; border:0; border-radius:8px; height:12px; background:#ddd4b8; overflow:hidden; }.colony-next progress::-webkit-progress-bar { background:#ddd4b8; }.colony-next progress::-webkit-progress-value { background:linear-gradient(90deg,#84aa82,#dcb94e); border-radius:8px; }
+.colony-next .play-button { margin-top:18px; width:100%; font-size:17px; padding:15px; }.colony-next .play-button:disabled { opacity:.55; box-shadow:none; }.colony-next p { margin:12px 0 0; font-size:12px; }#colony-status { font-weight:bold; min-height:2.5em; }
+.camp-buildings { margin-top:26px; }.camp-buildings strong { display:block; font-size:15px; }.camp-buildings small { margin-top:7px; font-size:12px; }.camp-buildings .next-building { border:1px solid #f2d17d; background:#e4c27012; }.camp-buildings em { display:block; margin-top:12px; font-style:normal; color:#f5d891; font-size:10px; }.colony-stars { text-align:center; color:#f8d47c; }
+@keyframes colony-reveal { 0%,15% { opacity:.15; clip-path:inset(100% 0 0 0); } 75% { opacity:1; clip-path:inset(0); filter:brightness(1.2); } 100% { opacity:1; clip-path:inset(0); filter:none; } }
+@keyframes colony-builder { 0% { opacity:0; transform:translateX(-30%); } 15%,80% { opacity:1; transform:translateX(0); } 100% { opacity:0; transform:translateX(20%); } }
+@keyframes colony-hammer { to { transform:rotate(-30deg); } }
+@keyframes colony-dust { from { opacity:1; transform:translate(0,0) scale(.5); } to { opacity:0; transform:translate(20px,-25px) scale(1.5); } }
+@media(max-width:700px) { .colony-heading h2 { font-size:25px; }.colony-count { padding:8px; font-size:22px; }.colony-count small { font-size:9px; }.colony-site { border-width:4px; border-radius:22px; }.colony-scene-caption { font-size:11px; }.colony-stock>div { padding:12px; }.colony-stock strong { font-size:25px; }.colony-next { padding:18px; }.colony-next h3 { font-size:27px; }.camp-buildings li { padding:14px; } }
+@media(prefers-reduced-motion:reduce) { .colony-site.is-building .colony-construction,.colony-crew,.colony-hammer,.colony-crew i { animation:none!important; }.colony-crew { display:none; } }

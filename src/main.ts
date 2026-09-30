@@ -1,20 +1,36 @@
+import { ant, campScene } from './ants';
+import { TrainingUI } from './training-ui';
+import { readTraining, saveTraining, awardMaterials, colonyStatus, trainingQuestions, trainingLabel, trainingRecordKey, inspectTraining, type TrainingData } from './training';
+import { ThemeSurprises } from "./surprises";
+import { themes } from "./themes";
+import { mascot, dancingMascot, disappointedMascot } from "./mascots";
 import "./style.css";
 import { DEFEAT_DURATION_MS, VICTORY_DURATION_MS, Game } from "./game";
-import { modes, usesTables, questionCount, symbols, expression, spokenExpression } from "./calculations";
-import type { Duration, Mode, Length, GameSettings } from "./calculations";
+import { modes, symbols, expression, spokenExpression } from "./calculations";
+import type { Mode } from "./calculations";
 import {
   defaults,
   formatTime,
   readSaved,
-  recordKey,
   saveData,
-  saveRecord,
 } from "./storage";
 import { GameAudio } from "./audio";
 import { Particles } from "./particles";
+import { stages, worlds, adventureQuestions, readAdventure, saveAdventure, completeStage, stageUnlocked, worldFinished, type AdventureStage, type AdventureProgress } from './adventure';
+import { mapMarkup, revealUnlockedMissions } from './adventure-map';
+import './adventure.css';
+import { adventureDurations, adventureTimeLabel, adventureLives, adventureLivesLabel, resetAdventure } from './adventure';
+import { MISSION_REWARD_MS, MissionRewardScene } from './mission-rewards';
+import './mission-rewards.css';
+import { ThemedKeypad } from './keypad';
+import './keypad.css';
+import './training.css';
+import './landing.css';
+import './colony.css';
 
 const svg = (body: string, className = "") =>
   `<svg class="icon ${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+
 const icons = {
   sound: svg(
     '<path d="m11 5-5 4H3v6h3l5 4V5Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
@@ -39,55 +55,11 @@ const icons = {
     '<path d="M8 3h8v7a4 4 0 0 1-8 0V3Zm0 2H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4m-4 2v5m-4 2h8"/>',
   ),
 };
-const mascot = `<svg class="mascot" viewBox="0 0 360 290" fill="none" aria-hidden="true">
-  <g stroke="#9ac9ad" stroke-width="2" opacity=".6"><path d="m35 49 4-11 5 11 12 3-12 4-5 11-4-11-11-4 11-3ZM290 168l4-9 3 9 10 4-10 3-3 9-4-9-9-3Z"/><path d="M288 65v16m-8-8h16M44 197v12m-6-6h12M114 17l5 8m130 213 8 5"/></g>
-  <ellipse cx="178" cy="164" rx="130" ry="95" stroke="#9ac9ad" stroke-opacity=".25" stroke-dasharray="6 9" transform="rotate(-16 178 164)"/>
-  <path d="m134 203-8 43-25 7m106-54 19 42 27 2" stroke="#ffe39a" stroke-width="5" stroke-linecap="round"/>
-  <path d="M101 253q22-13 30-2l-1 9-32 1ZM229 242q24-6 30 11l-33 1Z" fill="#a5d7c1" stroke="#d3eee1" stroke-width="2"/>
-  <path d="M105 145q-28 7-33-13m178 18q26 0 33-26" stroke="#ffe39a" stroke-width="5" stroke-linecap="round"/>
-  <path d="m66 133 1-14m4 14 5-12m205 5-2-14m5 12 6-10" stroke="#ffe39a" stroke-width="3" stroke-linecap="round"/>
-  <path d="m175 47 33 66 73 12-51 51 10 73-66-32-63 34 10-75-52-49 73-12Z" fill="#efc965" stroke="#ffe49a" stroke-width="4" stroke-linejoin="round"/>
-  <path d="m178 57 28 62 65 10-47 47 10 63-60-28-57 31 10-70-48-42 67-10Z" stroke="#fff0b4" stroke-opacity=".4" stroke-width="1.5" stroke-linejoin="round"/>
-  <ellipse cx="154" cy="151" rx="5" ry="9" fill="#294b3c"/><ellipse cx="194" cy="149" rx="5" ry="9" fill="#294b3c"/>
-  <path d="M159 173q17 19 31-2" stroke="#294b3c" stroke-width="4" stroke-linecap="round"/>
-  <ellipse cx="140" cy="171" rx="10" ry="5" fill="#e89772"/><ellipse cx="210" cy="169" rx="10" ry="5" fill="#e89772"/>
-  <path d="m219 44 9-11m-1 26 15-3M109 81l-10-8" stroke="#ffdf87" stroke-width="3" stroke-linecap="round"/>
-</svg>`;
-
-const dancingMascot = `<svg class="party-mascot" viewBox="0 0 360 310" fill="none" aria-hidden="true">
-  <g class="party-left-leg"><path d="m137 220-10 48-21 5" stroke="#ffe89c" stroke-width="6" stroke-linecap="round"/><path d="M105 272q23-12 31 2l-2 9h-33Z" fill="#ff729e" stroke="#ffc1d3" stroke-width="2"/></g>
-  <g class="party-right-leg"><path d="m204 220 13 48 22 4" stroke="#ffe89c" stroke-width="6" stroke-linecap="round"/><path d="M213 271q24-8 32 10h-34Z" fill="#57f4c7" stroke="#c2ffe9" stroke-width="2"/></g>
-  <g class="party-left-arm"><path d="M111 147q-31-9-36-43m-3-3-12-8m17 9-3-14m7 16 8-11" stroke="#ffe89c" stroke-width="5" stroke-linecap="round"/></g>
-  <g class="party-right-arm"><path d="M245 148q31-9 36-43m3-3 12-8m-17 9 3-14m-7 16-8-11" stroke="#ffe89c" stroke-width="5" stroke-linecap="round"/></g>
-  <path d="m178 47 33 66 73 12-51 51 10 73-66-32-63 34 10-75-52-49 73-12Z" fill="#ffe54b" stroke="#fff2aa" stroke-width="5" stroke-linejoin="round"/>
-  <path d="m178 58 28 61 65 11-47 46 10 62-57-28-56 31 9-68-48-43 64-10Z" stroke="#fff7cb" stroke-opacity=".6" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M143 148q11-13 22 0m29 0q11-13 22 0" stroke="#294b3c" stroke-width="5" stroke-linecap="round"/>
-  <path d="M157 177q21 32 43-1" stroke="#294b3c" stroke-width="5" stroke-linecap="round"/>
-  <ellipse cx="137" cy="170" rx="10" ry="6" fill="#ff98ac"/><ellipse cx="217" cy="169" rx="10" ry="6" fill="#ff98ac"/>
-  <path d="m179 29 6-13m-20 13-9-9m30 13 11-8" stroke="#ffe54b" stroke-width="4" stroke-linecap="round"/>
-</svg>`;
-
-const disappointedMascot = `<svg class="defeat-mascot" viewBox="0 0 360 320" fill="none" aria-hidden="true">
-  <ellipse class="sad-shadow" cx="180" cy="291" rx="77" ry="10" fill="#052e354d"/>
-  <g class="sad-star">
-    <path d="m137 220-5 48-21 5m92-53 12 48 22 5" stroke="#ffe79d" stroke-width="5" stroke-linecap="round"/>
-    <path d="M109 273q22-11 29 1l-1 8h-33ZM212 272q23-8 31 9h-33Z" fill="#88ddc2" stroke="#d3eee1" stroke-width="2"/>
-    <path d="M111 149q-28 17-23 46m157-46q27 19 21 47" stroke="#ffe79d" stroke-width="5" stroke-linecap="round"/>
-    <path d="m84 190 2 13m6-14 2 12m168-10-1 13m7-15 1 12" stroke="#ffe79d" stroke-width="3" stroke-linecap="round"/>
-    <path d="m178 47 33 66 73 12-51 51 10 73-66-32-63 34 10-75-52-49 73-12Z" fill="#f3d36b" stroke="#ffe9a2" stroke-width="4" stroke-linejoin="round"/>
-    <path d="m141 139 17-5m38 0 17 5" stroke="#345047" stroke-width="3" stroke-linecap="round"/>
-    <path d="M145 155q7 9 14 0m38 0q7 9 14 0M164 189q13-13 26 0" stroke="#345047" stroke-width="4" stroke-linecap="round"/>
-    <ellipse cx="141" cy="173" rx="10" ry="5" fill="#e99589"/><ellipse cx="214" cy="173" rx="10" ry="5" fill="#e99589"/>
-    <path class="sad-tear" d="M210 164q-9 13-1 15 9-1 1-15Z" fill="#87deff"/>
-  </g>
-  <g class="sad-sparkles" stroke="#a0c8cc" stroke-width="2" stroke-linecap="round"><path d="m67 75 6 9m-18 3 11 3m226-17-7 10m15 5-10 2"/></g>
-</svg>`;
-
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="page-wrap">
     <div class="outside-note"><span class="little-star">✦</span> APPRENDRE, C’EST AUSSI JOUER.</div>
     <main class="wood-frame" aria-label="Calcul’Party">
-      <div class="board" id="board">
+      <div class="board" id="board"><div id="theme-scenery" class="theme-scenery" aria-hidden="true"></div><div id="theme-surprise" aria-hidden="true"></div>
         <header class="board-header">
           <a class="brand" href="#" aria-label="Calcul’Party, accueil"><span class="brand-mark">×</span><span>Calcul’Party<span class="brand-dot">.</span></span></a>
           <div class="header-right"><span class="arcade-label"><span></span> LE CLUB DU CALCUL</span><button class="voice-button" id="voice" type="button" aria-label="Couper la voix" aria-pressed="true">${icons.voice}<span>Voix</span></button><button class="icon-button" id="sound" type="button" aria-label="Couper le son" aria-pressed="false">${icons.sound}</button></div>
@@ -95,31 +67,12 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <p class="voice-notice" id="voice-unavailable" role="status" hidden>La voix n’a pas pu se charger. Tu peux réessayer avec « Réécouter ».</p>
 
         <section id="home" class="home-screen" aria-label="Accueil">
-          <div class="home-hero">
-            <div class="hero-copy">
-              <span class="eyebrow"><span class="tiny-line"></span> À TES MARQUES. PRÊT·E ? CALCULE !</span>
-              <h1>Les calculs font<br><span class="title-highlight">leur show !<svg viewBox="0 0 450 18" aria-hidden="true"><path d="M5 11Q188-1 440 6M40 17Q243 4 412 12"/></svg></span></h1>
-              <p class="hero-description">Un peu de vitesse, beaucoup de malice.<br>Fais chauffer tes neurones et remplis le tableau !</p>
-              <div class="hero-badges"><span>${icons.star} <span id="home-challenges">100 défis</span></span><span>${icons.heart} <span id="home-lives">3 vies</span></span><span>${icons.trophy} Ton record</span></div>
-            </div>
-            <div class="hero-art"><div class="art-scribble">6 × 7 = <span>42</span><svg viewBox="0 0 95 30" aria-hidden="true"><path d="M4 8Q45 28 84 8m-14-3 16 2-6 13"/></svg></div>${mascot}<span class="mascot-caption">Chaque réponse, une petite victoire !</span><div class="art-chalk-star">✧</div></div>
+          <div class="club-bunting" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="destination-heading"><span class="eyebrow">BIENVENUE AU CLUB DU CALCUL</span><h1>À chaque jour son expédition !</h1><p>Un monde à explorer, des choses à construire.</p><div class="club-supplies" aria-hidden="true"><span>+</span><span>−</span><span>×</span><span>=</span></div></div>
+          <div class="destinations">
+            <article class="destination-card"><span class="destination-tag">EXPLORER & DÉCOUVRIR</span><div class="destination-art">${themes.kitten.home}</div><h2>Partir à l’aventure</h2><p>Explore huit mondes et invite tes amis à la grande fête du chaton.</p><button id="open-adventure" class="play-button" type="button">Explorer la carte →</button></article>
+            <article class="destination-card camp-entry"><span class="destination-tag">S’ENTRAÎNER & CONSTRUIRE</span><div class="destination-art">${ant()}</div><h2>Le camp d’entraînement</h2><p>Choisis tes calculs et aide les petites fourmis à bâtir leur maison.</p><button id="open-training" class="play-button" type="button">S’entraîner avec les fourmis →</button></article>
           </div>
-          <fieldset class="mode-picker"><legend>Choisis ton terrain de jeu</legend><div class="mode-options">
-            ${Object.entries(modes).map(([id, mode], i) => `<button type="button" class="mode-option" data-mode="${id}" aria-pressed="false"><span class="mode-symbol">${mode.symbol}</span><span class="mode-number">MODE ${i + 1}</span><strong>${mode.name}</strong><small>${mode.description}</small></button>`).join("")}
-          </div></fieldset>
-          <div class="how-to" aria-label="Comment jouer">
-            <div><span class="step-number">1</span><p><strong>Observe le calcul.</strong><span><span id="mode-rule">Des additions jusqu’à 20.</span></span></p></div>
-            <div><span class="step-number">2</span><p><strong>Tape ta réponse.</strong><span>Elle se valide toute seule. Magique !</span></p></div>
-            <div><span class="step-number">3</span><p><strong id="home-goal">Vise les 100 !</strong><span>Une erreur ? −1 vie, puis réessaie plus tard.</span></p></div>
-          </div>
-          <div class="launch-panel">
-            <label class="setup-field" for="length-select"><span>Nombre de calculs</span><select id="length-select"></select><small id="length-summary">20 calculs à réussir</small></label>
-            <label class="setup-field" id="tables-field" for="tables-select"><span>${icons.star} Nombre de tables</span><select id="tables-select">${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1} table${i ? "s" : ""}</option>`).join("")}</select><small id="tables-summary">Tables de 1 à 10 · jusqu’à ×10</small></label>
-            <fieldset class="difficulty"><legend>${icons.clock} Ton temps par réponse</legend><div class="difficulty-options">${([5, 10, 15, 30] as const).map((d) => `<button class="duration-option" data-duration="${d}" type="button" aria-pressed="${d === 10}"><strong>${d}<small> s</small></strong><span>${d === 5 ? "Turbo" : d === 10 ? "Tempo" : d === 15 ? "Tranquille" : "Détente"}</span></button>`).join("")}</div></fieldset>
-            <label class="setup-field" for="lives-select"><span>${icons.heart} Nombre de vies</span><select id="lives-select">${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1} vie${i ? "s" : ""}</option>`).join("")}</select><small>De 1 à 10 vies · 3 par défaut</small></label>
-            <div class="start-area"><button class="play-button" data-action="start" type="button">C’est parti ! ${icons.arrow}</button><span class="play-note" id="play-note">100 multiplications. À toi de briller.</span></div>
-          </div>
-          <div class="home-bottom"><span>${icons.trophy}<span id="home-record">Ton premier record t’attend !</span></span><span class="chalk-note">Tu connais plus de réponses que tu ne le crois.</span></div>
         </section>
 
         <section id="play" class="play-screen" aria-label="Partie en cours" hidden>
@@ -139,7 +92,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               </div>
               <div class="feedback-line" id="feedback" role="status" aria-live="polite">Respire, tu sais le faire !</div>
             </div>
-            <div class="keypad-panel"><div class="keypad-label">LE BOUT DES DOIGTS, LE PLEIN D’IDÉES.</div><div class="keypad" aria-label="Pavé numérique">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-digit="${n}" aria-label="${n}">${n}</button>`).join("")}<span class="pad-star" aria-hidden="true">✦</span><button type="button" data-digit="0" aria-label="0">0</button><button type="button" id="erase" class="erase" aria-label="Effacer le dernier chiffre">${icons.erase}</button></div><p class="keypad-tip">Pas besoin d’Entrée.<br><strong>La réponse se valide toute seule !</strong></p></div>
+            <div class="keypad-panel"><div class="keypad-label">LE BOUT DES DOIGTS, LE PLEIN D’IDÉES.</div><div class="keypad" aria-label="Pavé numérique">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-digit="${n}" aria-label="${n}">${n}</button>`).join("")}<span class="pad-star" aria-hidden="true">✦</span><button type="button" data-digit="0" aria-label="0">0</button><button type="button" id="erase" class="erase" aria-label="Effacer le dernier chiffre">${icons.erase}</button></div></div>
             <aside class="progress-panel" aria-label="Progression"><div class="progress-title">OBJECTIF<br><strong id="progress-goal">100</strong></div><div class="thermometer" role="progressbar" id="progress" aria-label="Calculs réussis" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="thermo-track"><div id="progress-fill"></div><span class="thermo-tick tick-75"></span><span class="thermo-tick tick-50"></span><span class="thermo-tick tick-25"></span></div><div class="thermo-bulb">${icons.star}</div></div><strong id="progress-percent">0 %</strong><span class="progress-caption" id="progress-caption">0 / 100</span></aside>
           </div>
           <div class="game-footer"><span id="difficulty-label">TEMPO · 10 S PAR RÉPONSE</span><span>Un calcul réussi ne revient plus. Promis.</span></div>
@@ -147,7 +100,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 
         <section id="defeat" class="defeat-screen" style="--defeat-duration: ${DEFEAT_DURATION_MS}ms" role="status" aria-live="polite" tabindex="-1" hidden>
           <span class="eyebrow">PLUS DE VIES POUR CETTE PARTIE</span>
-          ${disappointedMascot}
+          <div id="sad-mascot">${disappointedMascot}</div>
           <h2>Ooooh…</h2>
           <p>Dommage… On fera mieux au prochain essai !</p>
           <div class="defeat-dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -157,7 +110,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="victory-stage" role="img" aria-label="L’étoile danse sous les projecteurs">
             <span class="party-light party-light-left"></span><span class="party-light party-light-right"></span>
             <span class="party-note party-note-one">♫</span><span class="party-note party-note-two">♪</span><span class="party-note party-note-three">♫</span>
-            <span class="party-floor"></span><div class="dancing-star">${dancingMascot}</div>
+            <span class="party-floor"></span><div class="dancing-star" id="dance-mascot">${dancingMascot}</div>
           </div>
           <h2>Tu l’as fait !</h2>
           <p id="victory-description">100 calculs réussis. Danse de la victoire !</p>
@@ -168,7 +121,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="result-record" id="result-record"></div><div class="result-actions"><button class="play-button" data-action="start" type="button">On rejoue ! ${icons.arrow}</button><button class="secondary-button" data-action="home" type="button">Changer les réglages</button></div>
         </section>
 
-        <div class="game-overlay" id="overlay" hidden><div id="countdown-panel"><span class="eyebrow" id="countdown-caption">LES CALCULS N’ONT QU’À BIEN SE TENIR</span><div class="countdown-number" id="countdown" role="status" aria-live="assertive">3</div><span class="countdown-note">Tes doigts sont prêts ?</span></div><div class="pause-panel" id="pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>${icons.pause}<h2 id="pause-title">Petite pause.</h2><p>Ton temps et tes vies t’attendent.</p><button class="play-button" id="resume" type="button">On continue ! ${icons.arrow}</button></div></div>
+        <div class="game-overlay" id="overlay" hidden><div id="countdown-panel"><span class="eyebrow" id="countdown-caption">LES CALCULS N’ONT QU’À BIEN SE TENIR</span><div class="countdown-number" id="countdown" role="status" aria-live="assertive">3</div><span class="countdown-note">Tes doigts sont prêts ?</span></div><div class="pause-panel" id="preparing-panel" hidden>${icons.voice}<div role="status"><h2>La voix se prépare…</h2><p>Ton chrono attend aussi !</p></div><button class="secondary-button" id="skip-voice" type="button">Continuer sans la voix</button></div><div class="pause-panel" id="pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>${icons.pause}<h2 id="pause-title">Petite pause.</h2><p>Ton temps et tes vies t’attendent.</p><button class="play-button" id="resume" type="button">On continue ! ${icons.arrow}</button></div></div>
         <canvas id="confetti" aria-hidden="true"></canvas>
         <div class="board-ledge" aria-hidden="true"><span class="chalk chalk-white"></span><span class="chalk chalk-yellow"></span><span class="eraser-prop"></span></div>
         <p class="sr-only" id="question-announcement" aria-live="polite"></p>
@@ -186,10 +139,83 @@ try {
 } catch {
   /* Storage may be disabled entirely. */
 }
+let campOpen = false;
+let trainingActive = false;
+let creditedMaterials = 0;
+let trainingStored = true;
+let trainingData: TrainingData = { settings: readTraining({getItem:()=>null}).settings, materials:0, records:{} };
+try { trainingData = readTraining(localStorage,localStorage.getItem('multipli-party:v1') ? saved : undefined); } catch { trainingStored=false; }
 const audio = new GameAudio();
+let activeStage: AdventureStage | null = null;
+let mapOpen = false;
+let adventureProgress: AdventureProgress = { completed: [] };
+let adventureStored = true;
+try { adventureProgress = readAdventure(localStorage); } catch { adventureStored = false; }
+const adventureMap = document.createElement('section');
+adventureMap.id = 'adventure-map'; adventureMap.hidden = true;
+adventureMap.setAttribute('aria-label', 'La carte de l’aventure');
+get('home').before(adventureMap);
+get('pause-panel').insertAdjacentHTML('beforeend','<button id="adventure-exit" class="secondary-button" type="button" hidden>Retour à la carte · recommencer cette mission plus tard</button>');
+get('victory-description').insertAdjacentHTML('afterend',`<div id="adventure-guests" aria-label="Tous les amis réunis" hidden>${worlds.map(w=>themes[w.id].home).join('')}</div>`);
+get('victory-description').insertAdjacentHTML('beforebegin','<div id="mission-reward" hidden></div>');
+const missionReward = new MissionRewardScene(get('mission-reward'));
 audio.muted = saved.muted;
 const particles = new Particles(get<HTMLCanvasElement>("confetti"));
-let game = new Game(saved);
+const surprises = new ThemeSurprises(get("theme-surprise"));
+const themedKeypad = new ThemedKeypad(document.querySelector<HTMLElement>('.keypad')!);
+function persistTraining(): boolean {
+  try { trainingStored=saveTraining(localStorage,trainingData); } catch { trainingStored=false; }
+  return trainingStored;
+}
+const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); audio.voiceStyle=trainingData.settings.voice; return stored; },()=>{ trainingActive=true; start(); },()=>showLanding(),()=>{
+  const entries=Object.entries(saved.records);
+  return entries.length ? '<ul>'+entries.map(([key,r])=>`<li>${legacyRecordLabel(key)} : ${formatTime(r.timeMs)} · ${r.mistakes} erreurs</li>`).join('')+'</ul>' : '<p>Aucun ancien record enregistré.</p>';
+});
+get('home').before(camp.root);
+get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
+get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
+get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
+get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="camp-results-exit" class="secondary-button" type="button" hidden>Retour au camp</button>');
+get('camp-results-exit').insertAdjacentHTML('afterend','<button id="camp-colony-ready" class="play-button" type="button" hidden>Un chantier est prêt ! Aller construire →</button>');
+function legacyRecordLabel(key: string): string {
+  const [mode,tables,count,duration,lives]=key.split('-');
+  return `${modes[mode as Mode]?.name??'Ancienne partie'} · ${Number(count)} calculs · ${Number(tables)} tables · ${Number(duration)} s · ${Number(lives)} vies`;
+}
+function openCamp(tab: 'missions'|'workshop'|'colony' = 'missions'): void {
+  trainingActive=false; activeStage=null; mapOpen=false; campOpen=true; previewVictory=false;
+  audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
+  get('board').classList.remove('adventure-playing','untimed-playing');
+  persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored);
+}
+function showLanding(): void {
+  campOpen=false; trainingActive=false; activeStage=null; mapOpen=false; previewVictory=false;
+  audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
+  get('board').classList.remove('adventure-playing','untimed-playing');
+  applyTheme(); render(performance.now()); get('open-training').focus();
+}
+get('open-training').addEventListener('click',()=>openCamp());
+get('camp-exit').addEventListener('click',()=>openCamp());
+get('camp-results-exit').addEventListener('click',()=>openCamp());
+get('camp-colony-ready').addEventListener('click',()=>openCamp('colony'));
+function createGame(): Game {
+  if (trainingActive) {
+    const s=trainingData.settings;
+    return new Game({...defaults(),duration:s.duration??10,lives:s.lives??3},Math.random,
+      question=>!saved.voiceEnabled || saved.muted || audio.questionPrepared(question),
+      {questions:trainingQuestions(s),untimed:s.duration===null,unlimitedLives:s.lives===null});
+  }
+  const duration = activeStage ? adventureDurations[activeStage.world.id] : null;
+  const lives = activeStage ? adventureLives[activeStage.world.id] : null;
+  return new Game({...saved,duration:duration ?? saved.duration,lives:lives ?? saved.lives}, Math.random, question =>
+    !saved.voiceEnabled || saved.muted || audio.questionPrepared(question),
+    activeStage ? {questions:adventureQuestions(activeStage),untimed:duration === null,unlimitedLives:lives === null,victoryDurationMs:MISSION_REWARD_MS} : undefined);
+}
+function prepareUpcomingQuestions(): void {
+  if (saved.voiceEnabled && !saved.muted) {
+    audio.prepareQuestions([...(game.current ? [game.current] : []), ...game.upcomingQuestions]);
+  }
+}
+let game = createGame();
 let previousPhase = game.phase;
 let previousQuestion = -1;
 let previousFeedback: typeof game.feedback = null;
@@ -238,42 +264,63 @@ function persist(): boolean {
     return false;
   }
 }
-function settingsLabel(settings: GameSettings): string {
-  return `${modes[settings.mode].name} · ${questionCount(settings)} calculs${usesTables(settings.mode) ? ` · ${settings.tables} table${settings.tables > 1 ? "s" : ""}` : ""} · ${difficultyNames[settings.duration]} · ${settings.lives} vie${settings.lives > 1 ? "s" : ""}`;
+function applyTheme(): void {
+  const landing = !activeStage && !campOpen && !trainingActive && !mapOpen;
+  const id = activeStage?.world.id ?? (campOpen || trainingActive ? 'ant' : mapOpen || landing ? 'kitten' : saved.theme);
+  const theme = themes[id];
+  document.documentElement.dataset.theme = landing ? 'club' : id;
+  document.documentElement.style.setProperty("--dance-beat", `${120 / theme.music.bpm}s`);
+  get("sad-mascot").innerHTML = theme.sad;
+  get("dance-mascot").innerHTML = theme.dance;
+  get("theme-scenery").innerHTML = landing ? '' : theme.scenery;
+  document.querySelector(".victory-stage")!.setAttribute("aria-label", theme.victoryLabel);
+  document.querySelector(".result-star")!.innerHTML = theme.home;
+  audio.voiceStyle = campOpen || trainingActive ? trainingData.settings.voice : saved.themeVoices[id];
+  surprises.setTheme(id);
+  themedKeypad.setTheme(id);
+  audio.setTheme(id);
+  particles.setTheme(id);
 }
-function normalizeLength(): void {
-  if (saved.mode !== "multiply" && saved.length === "all") saved.length = 20;
-  if (saved.mode === "multiply" && questionCount(saved) > saved.tables * 10) saved.length = "all";
+let newlyUnlockedMissions: string[] = [];
+let clearUnlockReveal = () => {};
+function showMap(): void {
+  clearUnlockReveal();
+  activeStage = null; mapOpen = true; previewVictory = false; campOpen=false; trainingActive=false;
+  audio.stopSpeech(); surprises.clear();
+  game = createGame(); previousPhase = 'finished';
+  adventureMap.innerHTML = mapMarkup(adventureProgress,adventureStored);
+  applyTheme(); render(performance.now());
+  get('map-title').focus();
 }
+get('open-adventure').addEventListener('click',showMap);
+get('adventure-exit').addEventListener('click',showMap);
+adventureMap.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!button || button.disabled) return;
+  if (button.id === 'reset-adventure') {
+    if (!window.confirm('Recommencer l’aventure depuis le début ?\n\nToutes les missions accomplies et les amis débloqués seront effacés sur cet appareil. Les réglages du camp, ses matériaux et les anciens records seront conservés.\n\nCette action ne peut pas être annulée.')) return;
+    let reset = false;
+    try { reset = resetAdventure(localStorage); } catch { /* Access to storage can itself be blocked. */ }
+    if (!reset) {
+      adventureMap.querySelector('.adventure-save')!.textContent = 'Impossible d’effacer la sauvegarde : le navigateur bloque le stockage. Ta progression est conservée. Tu peux réessayer.';
+      return;
+    }
+    adventureProgress = {completed:[]}; adventureStored = true;
+    showMap();
+    adventureMap.querySelector('.adventure-save')!.textContent = 'Les missions ont été réinitialisées. Une nouvelle aventure commence dans le jardin du chaton !';
+    return;
+  }
+  if (button.id === 'leave-adventure') {
+    mapOpen = false; applyTheme(); goHome(); get('open-adventure').focus(); return;
+  }
+  if (button.id === 'celebrate-adventure') { previewVictoryAnimation(); return; }
+  const stage = stages.find(s => s.id === button.dataset.stage);
+  if (!stage || !stageUnlocked(adventureProgress,stage)) return;
+  clearUnlockReveal(); newlyUnlockedMissions = [];
+  activeStage = stage; mapOpen = false; applyTheme(); start();
+});
+applyTheme();
 function renderPreferences(): void {
-  document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === saved.mode)));
-  get("tables-field").hidden = !usesTables(saved.mode);
-  get("mode-rule").textContent = modes[saved.mode].description + ".";
-  get<HTMLSelectElement>("length-select").innerHTML = [20, 50, 100].map(n => `<option value="${n}" ${saved.mode === "multiply" && n > saved.tables * 10 ? "disabled" : ""}>${n} calculs</option>`).join("") + (saved.mode === "multiply" ? `<option value="all">Toute la série · ${saved.tables * 10} calculs</option>` : "");
-  get<HTMLSelectElement>("length-select").value = String(saved.length);
-  get("length-summary").textContent = `${questionCount(saved)} calculs distincts à réussir`;
-  get<HTMLSelectElement>("tables-select").value = String(saved.tables);
-  get<HTMLSelectElement>("lives-select").value = String(saved.lives);
-  get("tables-summary").textContent =
-    `Tables de 1 à ${saved.tables} · jusqu’à ×10`;
-  get("home-challenges").textContent = `${questionCount(saved)} défis`;
-  get("home-lives").textContent =
-    `${saved.lives} vie${saved.lives > 1 ? "s" : ""}`;
-  get("home-goal").textContent = `Vise les ${questionCount(saved)} !`;
-  get("play-note").textContent =
-    `${questionCount(saved)} calculs. À toi de briller.`;
-  get("victory-goal").textContent =
-    `${questionCount(saved)} SUR ${questionCount(saved)} · MISSION ACCOMPLIE`;
-  get("victory-description").textContent =
-    `${questionCount(saved)} calculs réussis. Danse de la victoire !`;
-  document
-    .querySelectorAll<HTMLButtonElement>("[data-duration]")
-    .forEach((button) => {
-      button.setAttribute(
-        "aria-pressed",
-        String(Number(button.dataset.duration) === saved.duration),
-      );
-    });
   get("sound").innerHTML = saved.muted ? icons.mute : icons.sound;
   get("sound").setAttribute(
     "aria-label",
@@ -288,22 +335,46 @@ function renderPreferences(): void {
   get("voice").title = saved.voiceEnabled
     ? "Lecture automatique des calculs activée"
     : "Lecture automatique des calculs désactivée";
-  const record = saved.records[recordKey(saved)];
-  get("home-record").textContent = record
-    ? `Ton record ${settingsLabel(saved)} : ${formatTime(record.timeMs)}`
-    : "Ton premier record t’attend !";
+  if (trainingActive) {
+    get('victory-goal').textContent = `${game.totalQuestions} SUR ${game.totalQuestions} · BRAVO LES FOURMIS !`;
+    get('victory-description').textContent = `${game.totalQuestions} ${game.totalQuestions===1?'matériau apporté':'matériaux apportés'} à la fourmilière !`;
+  }
+  if (activeStage) {
+    get('victory-goal').textContent = `${activeStage.count} SUR ${activeStage.count} · MISSION ACCOMPLIE`;
+    get('victory-description').textContent = activeStage.index === 2 ? activeStage.world.souvenir : `${activeStage.name} : bravo, c’est fait !`;
+  } else if (mapOpen) {
+    get('victory-goal').textContent = 'LES HUIT AMIS SONT RÉUNIS';
+    get('victory-description').textContent = 'La fête du chaton peut commencer !';
+  }
 }
 
 function start(): void {
+  if (trainingActive && inspectTraining(trainingData.settings).error) { openCamp('workshop'); return; }
+  creditedMaterials=0;
+  get('camp-cargo-label').textContent='Chaque calcul réussi apporte un matériau.';
+  get('camp-exit').hidden=!trainingActive;
+  get('camp-results-exit').hidden=!trainingActive;
+  if (activeStage) missionReward.preload(activeStage);
+  surprises.reset();
   previewVictory = false;
   audio.stopSpeech();
-  void audio.unlock();
-  game = new Game(saved);
+  game = createGame();
   game.start(performance.now());
+  renderPreferences();
+  get('board').classList.toggle('adventure-playing', !!activeStage);
+  get('board').classList.toggle('untimed-playing', game.untimed);
+  get('adventure-exit').hidden = !activeStage;
+  get('pause-panel').querySelector('p')!.textContent = game.unlimitedLives ? 'Tes calculs t’attendent. Prends ton temps !' : 'Ton temps et tes vies t’attendent.';
+  document.querySelector('.lives-group .small-label')!.textContent = game.unlimitedLives ? 'TES ESSAIS' : 'TES VIES';
+  const startedGame = game;
+  void audio.unlock().then(() => {
+    if (game === startedGame) prepareUpcomingQuestions();
+  });
   get("hearts").innerHTML = Array.from(
     { length: game.startingLives },
     (_, i) => `<span data-heart="${i}">${icons.heart}</span>`,
   ).join("");
+  if (game.unlimitedLives) get('hearts').innerHTML = '<span class="practice-heart">∞</span><span class="practice-label">À volonté</span>';
   previousPhase = "welcome";
   previousQuestion = -1;
   previousFeedback = null;
@@ -311,45 +382,13 @@ function start(): void {
   lastWarning = -1;
   recordProcessed = false;
   get("difficulty-label").textContent =
-    `${settingsLabel(game.settings)} · ${game.duration} s`;
-  get("time-progress").setAttribute("aria-valuemax", String(saved.duration));
+    trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}` : '';
+  get("time-progress").setAttribute("aria-valuemax", String(game.duration));
   get("progress").setAttribute("aria-valuemax", String(game.totalQuestions));
   get("progress-goal").textContent = String(game.totalQuestions);
   render(performance.now());
 }
 
-document
-  .querySelectorAll<HTMLButtonElement>("[data-duration]")
-  .forEach((button) =>
-    button.addEventListener("click", () => {
-      saved.duration = Number(button.dataset.duration) as Duration;
-      persist();
-      renderPreferences();
-    }),
-  );
-document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach(button => button.addEventListener("click", () => {
-  saved.mode = button.dataset.mode as Mode;
-  normalizeLength();
-  persist();
-  renderPreferences();
-}));
-get<HTMLSelectElement>("length-select").addEventListener("change", event => {
-  const value = (event.target as HTMLSelectElement).value;
-  saved.length = value === "all" ? "all" : Number(value) as Length;
-  normalizeLength();
-  persist();
-  renderPreferences();
-});
-for (const setting of ["tables", "lives"] as const) {
-  get<HTMLSelectElement>(`${setting}-select`).addEventListener("change", (event) => {
-    const value = Number((event.target as HTMLSelectElement).value);
-    if (!Number.isInteger(value) || value < 1 || value > 10) return;
-    saved[setting] = value;
-    normalizeLength();
-    persist();
-    renderPreferences();
-  });
-}
 document
   .querySelectorAll<HTMLButtonElement>('[data-action="start"]')
   .forEach((button) => button.addEventListener("click", start));
@@ -358,6 +397,7 @@ function previewVictoryAnimation(): void {
   void audio.unlock().then(() => {
     if (game.phase !== "welcome" || previewVictory) return;
     previewVictory = true;
+    renderPreferences();
     previewEndsAt = performance.now() + VICTORY_DURATION_MS;
     render(performance.now());
   });
@@ -369,41 +409,54 @@ function goHome(): void {
     pause();
     return;
   }
-  game = new Game(saved);
-  previousPhase = "finished";
-  renderPreferences();
-  render(performance.now());
-  document
-    .querySelector<HTMLButtonElement>('[data-action="start"]')
-    ?.focus({ preventScroll: true });
+  if (trainingActive) { openCamp('workshop'); return; }
+  if (campOpen || mapOpen) { showLanding(); return; }
+  if (activeStage) {
+    const unlocked = newlyUnlockedMissions;
+    newlyUnlockedMissions = [];
+    showMap();
+    clearUnlockReveal = revealUnlockedMissions(adventureMap, unlocked, () => audio.missionUnlocked());
+    return;
+  }
+  showLanding();
 }
 get("sound").addEventListener("click", () => {
   saved.muted = !saved.muted;
   audio.setMuted(saved.muted);
   void audio.unlock().then(() => {
-    if (!saved.muted) speakCurrentQuestion();
+    prepareUpcomingQuestions();
+    if (!saved.muted) speakCurrentQuestion(true);
   });
   persist();
   renderPreferences();
 });
-function speakCurrentQuestion(): void {
+function speakCurrentQuestion(retry = false): void {
   if (
     game.phase === "question" &&
     game.current &&
     saved.voiceEnabled &&
     !saved.muted
   ) {
-    audio.speakQuestion(game.current);
+    audio.speakQuestion(game.current, retry);
   }
 }
 get("voice").addEventListener("click", () => {
   saved.voiceEnabled = !saved.voiceEnabled;
   if (!saved.voiceEnabled) audio.stopSpeech();
-  else void audio.unlock().then(speakCurrentQuestion);
+  else void audio.unlock().then(() => {
+    prepareUpcomingQuestions();
+    speakCurrentQuestion(true);
+  });
   persist();
   renderPreferences();
 });
-get("repeat-question").addEventListener("click", speakCurrentQuestion);
+get("repeat-question").addEventListener("click", () => speakCurrentQuestion(true));
+get("skip-voice").addEventListener("click", () => {
+  saved.voiceEnabled = false;
+  audio.stopSpeech();
+  persist();
+  renderPreferences();
+});
 
 function react(kind: "correct" | "error", label: string): void {
   const reaction = get("reaction");
@@ -428,15 +481,17 @@ function pause(): void {
 }
 get("pause").addEventListener("click", pause);
 get("resume").addEventListener("click", () => {
-  void audio.unlock();
+  void audio.unlock().then(prepareUpcomingQuestions);
   game.resume(performance.now());
   lastCountdown = -1;
   render(performance.now());
 });
 function digit(value: string): void {
   if (game.phase !== "question") return;
-  audio.key();
-  game.digit(value, performance.now());
+  if (game.digit(value, performance.now())) {
+    audio.key();
+    themedKeypad.press(value);
+  }
   render(performance.now());
 }
 document
@@ -445,7 +500,7 @@ document
     button.addEventListener("click", () => digit(button.dataset.digit!)),
   );
 get("erase").addEventListener("click", () => {
-  game.erase(performance.now());
+  if (game.erase(performance.now())) themedKeypad.erase();
   render(performance.now());
 });
 document.addEventListener("keydown", (event) => {
@@ -467,20 +522,28 @@ document.addEventListener("keydown", (event) => {
     digit(event.key);
   } else if (event.key === "Backspace" && game.phase === "question") {
     event.preventDefault();
-    game.erase(performance.now());
+    if (game.erase(performance.now())) themedKeypad.erase();
     render(performance.now());
   } else if (
     event.key === "Escape" &&
-    ["question", "countdown", "feedback"].includes(game.phase)
+    ["question", "countdown", "preparing", "feedback"].includes(game.phase)
   ) {
     event.preventDefault();
     pause();
   } else if (event.key === "Tab" && game.phase === "paused") {
     event.preventDefault();
-    get("resume").focus();
+    const exit = get('adventure-exit');
+    ((activeStage || trainingActive) && document.activeElement === get('resume') ? trainingActive ? get('camp-exit') : exit : get('resume')).focus();
   }
 });
 document.addEventListener("visibilitychange", () => {
+  document.documentElement.classList.toggle('camp-background',document.hidden);
+  if ((activeStage || trainingActive) && game.phase === 'victory') {
+    if (document.hidden) game.suspendCelebration(performance.now());
+    else game.resumeCelebration(performance.now());
+    audio.suspendReward(document.hidden);
+    return;
+  }
   if (document.hidden) {
     audio.stopSpeech();
     pause();
@@ -488,76 +551,110 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
+  document.documentElement.classList.add('camp-background');
   audio.stopSpeech();
+  if ((activeStage || trainingActive) && game.phase === 'victory') { game.suspendCelebration(performance.now()); audio.suspendReward(true); }
   game.pause(performance.now());
+});
+window.addEventListener('pageshow', () => {
+  document.documentElement.classList.toggle('camp-background',document.hidden);
+  if ((activeStage || trainingActive) && game.phase === 'victory' && !document.hidden) { game.resumeCelebration(performance.now()); audio.suspendReward(false); }
 });
 
 function renderResults(now: number): void {
-  const won = game.solved === game.totalQuestions;
-  const settings = game.settings;
-  let newRecord = false;
-  let stored = true;
-  if (!recordProcessed) {
-    recordProcessed = true;
-    if (won) {
-      newRecord = saveRecord(saved, settings, {
-        timeMs: game.elapsed(now),
-        mistakes: game.mistakes,
-        date: new Date().toISOString(),
-      });
-      stored = persist();
-      audio.victory();
-      particles.burst(true);
+  if (trainingActive) {
+    if (recordProcessed) return;
+    recordProcessed=true;
+    const won=game.solved===game.totalQuestions;
+    const s=trainingData.settings;
+    let recordText='Une séance pour progresser à ton rythme.';
+    if (won && s.duration!==null && s.lives!==null) {
+      const key=trainingRecordKey(s), score={timeMs:game.elapsed(now),mistakes:game.mistakes};
+      const best=trainingData.records[key];
+      if (!best || score.timeMs<best.timeMs) { trainingData.records[key]=score; persistTraining(); }
+      recordText=`Ton meilleur temps pour ces réglages : ${formatTime(trainingData.records[key].timeMs)}.`;
     }
-    get("result-eyebrow").textContent = won
-      ? "LE TABLEAU EST À TOI !"
-      : "CHAQUE ESSAI TE FAIT GRANDIR";
-    get("result-title").textContent = won
-      ? `${game.totalQuestions} fois bravo !`
-      : "On ne lâche rien !";
-    get("result-description").textContent = won
-      ? "Tous tes calculs sont réussis. Quelle étoile !"
-      : "Plus de vies pour cette partie. Tes petites victoires, elles, restent dans ta tête.";
-    get("result-solved").textContent = String(game.solved);
-    get("result-total").textContent = `sur ${game.totalQuestions} réussies`;
-    get("result-time").textContent = formatTime(game.elapsed(now));
-    get("result-mistakes").textContent = String(game.mistakes);
-    get("result-streak").textContent = String(game.bestStreak);
-    get("last-correction").hidden = won || !game.feedback;
-    if (!won && game.feedback) {
-      const pair = game.feedback.pair;
-      get("last-correction").textContent =
-        `${game.feedback.timeout ? "Le temps était écoulé." : "À retenir :"} ${expression(pair)} = ${pair.result}`;
-    }
-    const best = saved.records[recordKey(settings)];
-    get("result-record").textContent = won
-      ? `${newRecord ? "✦ Nouveau record !" : "Ton record :"} ${formatTime(best!.timeMs)} · ${settingsLabel(settings)}${stored ? "" : " · Conservé pour cette visite seulement"}`
-      : `${game.solved} petites victoires aujourd’hui. Encore plus la prochaine fois ?`;
-    renderPreferences();
-    get("results")
-      .querySelector<HTMLButtonElement>("button")
-      ?.focus({ preventScroll: true });
+    get('result-eyebrow').textContent='LA FOURMILIÈRE GRANDIT AVEC TOI';
+    get('result-title').textContent=won?'Bravo, petite fourmi !':'Chaque petit pas compte !';
+    get('result-description').textContent=`${creditedMaterials} ${creditedMaterials===1?'matériau gagné':'matériaux gagnés'} · ${colonyStatus(trainingData).stock} dans ta réserve. À toi de lancer les travaux dans la fourmilière !`;
+    get('result-solved').textContent=String(game.solved);
+    get('result-total').textContent=`sur ${game.totalQuestions} réussis`;
+    get('result-time').textContent=formatTime(game.elapsed(now));
+    get('result-mistakes').textContent=String(game.mistakes);
+    get('result-streak').textContent=String(game.bestStreak);
+    get('last-correction').hidden=true;
+    get('result-record').textContent=recordText+(trainingStored?'':' Pour cette visite seulement : stockage indisponible.');
+    const replay=get('results').querySelector<HTMLButtonElement>('[data-action="start"]')!;
+    const edit=get('results').querySelector<HTMLButtonElement>('[data-action="home"]')!;
+    replay.textContent='Rejouer'; replay.className='play-button';
+    edit.textContent='Modifier ma séance'; edit.className='secondary-button';
+    replay.parentElement!.append(replay,edit,get('camp-results-exit'));
+    replay.focus();
+    return;
   }
+  if (activeStage) {
+    if (!recordProcessed) {
+      const won = game.solved === game.totalQuestions;
+      recordProcessed = true;
+      get('result-eyebrow').textContent = won ? 'UNE ÉTAPE DE PLUS VERS LA FÊTE' : 'UN NOUVEL ESSAI T’ATTEND';
+      get('result-title').textContent = won ? activeStage.index === 2 ? `${activeStage.world.friend} rejoint la fête !` : 'Mission accomplie !' : 'On retente la mission ?';
+      get('result-description').textContent = won ? activeStage.index === 2 ? activeStage.world.souvenir : `${activeStage.name} : c’est réussi. La prochaine mission t’attend sur la carte.` : 'Tu n’as plus de vies. Recommence cette mission avec tous tes cœurs : les missions déjà gagnées restent acquises !';
+      get('result-solved').textContent = String(game.solved);
+      get('result-total').textContent = `sur ${game.totalQuestions} réussis`;
+      get('result-time').textContent = formatTime(game.elapsed(now));
+      get('result-mistakes').textContent = String(game.mistakes);
+      get('result-streak').textContent = String(game.bestStreak);
+      get('last-correction').hidden = true;
+      get('result-record').textContent = `${adventureProgress.completed.length} / ${stages.length} missions · ${worlds.filter(w=>worldFinished(adventureProgress,w.id)).length} amis réunis${adventureStored ? '' : ' · Pour cette visite seulement'}`;
+      const replay = get('results').querySelector<HTMLButtonElement>('[data-action="start"]')!;
+      replay.textContent = won ? 'Rejouer la mission' : 'Réessayer la mission';
+      const next = get('results').querySelector<HTMLButtonElement>('[data-action="home"]')!;
+      next.textContent = won ? 'Choisir ma prochaine destination →' : 'Retour à la carte';
+      replay.className = won ? 'secondary-button' : 'play-button';
+      next.className = won ? 'play-button' : 'secondary-button';
+      replay.parentElement!.append(...(won ? [next, replay] : [replay, next]));
+      (won ? next : replay).focus();
+    }
+    return;
+  }
+
 }
 
 function render(now: number): void {
+  if (trainingActive && game.solved>creditedMaterials) {
+    creditedMaterials=awardMaterials(trainingData,game.solved,creditedMaterials);
+    persistTraining();
+    get('camp-cargo-label').textContent=`${creditedMaterials} ${creditedMaterials===1?'matériau apporté':'matériaux apportés'} · ${colonyStatus(trainingData).missing || 'Chantier prêt ! Clique dans la fourmilière'}${colonyStatus(trainingData).missing ? ' matériaux avant le prochain chantier' : ''}${trainingStored?'':' · Pour cette visite seulement'}`;
+    get('camp-cargo').classList.remove('delivering');
+    void get('camp-cargo').offsetWidth;
+    get('camp-cargo').classList.add('delivering');
+  }
   const phase = previewVictory ? "victory" : game.phase;
+  get('camp-colony-ready').hidden=phase!=='finished' || !trainingActive || colonyStatus(trainingData).missing>0;
   const isPlaying = !["welcome", "defeat", "victory", "finished"].includes(phase);
-  const overlay = phase === "countdown" || phase === "paused";
+  const overlay = phase === "countdown" || phase === "paused" || phase === "preparing";
   get("voice-unavailable").hidden =
     phase !== "question" || audio.speechStatus !== "unavailable";
   get("voice").classList.toggle(
     "is-speaking",
     audio.speechStatus === "speaking",
   );
-  get("home").hidden = phase !== "welcome";
+  get("home").hidden = phase !== "welcome" || mapOpen || campOpen;
+  camp.root.hidden = phase !== 'welcome' || !campOpen;
+  get('camp-cargo').hidden=!trainingActive || !isPlaying;
+  get('camp-victory').hidden=!trainingActive || phase!=='victory';
+  get('camp-results-exit').hidden=!trainingActive;
+  adventureMap.hidden = phase !== 'welcome' || !mapOpen;
   get("play").hidden = !isPlaying;
+  themedKeypad.setActive(!document.hidden && (phase === 'question' || phase === 'feedback'));
   get("results").hidden = phase !== "finished";
   get("defeat").hidden = phase !== "defeat";
   get("victory").hidden = phase !== "victory";
+  get('adventure-guests').hidden = phase !== 'victory' || !!activeStage || !(adventureProgress.completed.length === stages.length && mapOpen);
   get("overlay").hidden = !overlay;
   get("play").inert = overlay;
   get("countdown-panel").hidden = phase !== "countdown";
+  get("preparing-panel").hidden = phase !== "preparing";
   get("pause-panel").hidden = phase !== "paused";
   get("board").classList.toggle("is-game", isPlaying);
   document
@@ -571,6 +668,9 @@ function render(now: number): void {
           : "Calcul’Party, accueil",
     );
   if (phase !== previousPhase) {
+    if (phase !== 'victory') { missionReward.clear(); get('victory').classList.remove('mission-victory'); }
+    if (!["question", "feedback"].includes(phase)) surprises.clear();
+    if (phase !== "feedback") get("board").classList.remove("magic-celebration");
     if (phase !== "question") audio.stopSpeech();
     else {
       get("board").classList.remove("reaction-correct", "reaction-error");
@@ -579,24 +679,35 @@ function render(now: number): void {
     }
     if (phase === "defeat") {
       get("board").classList.remove("reaction-correct", "reaction-error");
-      if (saved.voiceEnabled) audio.disappointment();
+      if (saved.voiceEnabled) { audio.disappointment(); if (saved.theme !== "star") audio.end(); }
       else audio.end();
       get("defeat").focus({ preventScroll: true });
     }
     if (phase === "victory") {
+      const availableBefore = new Set(stages.filter(stage => stageUnlocked(adventureProgress, stage)).map(stage => stage.id));
+      if (activeStage && !previewVictory && completeStage(adventureProgress,activeStage)) {
+        newlyUnlockedMissions = stages.filter(stage => !availableBefore.has(stage.id) && stageUnlocked(adventureProgress, stage)).map(stage => stage.id);
+        try { adventureStored = saveAdventure(localStorage,adventureProgress); } catch { adventureStored = false; }
+      }
       get("board").classList.remove("reaction-correct", "reaction-error");
-      audio.victoryDance();
+      const mission = activeStage && !previewVictory;
+      get('victory').classList.toggle('mission-victory',!!mission);
+      if (mission) missionReward.show(activeStage!);
+      if (trainingActive) get('camp-victory').innerHTML=campScene(colonyStatus(trainingData).built,colonyStatus(trainingData).stars)+`<div class="camp-victory-builder">${ant()}</div>`;
+      audio.victoryDance(mission ? MISSION_REWARD_MS : undefined);
       particles.burst(true);
       get("victory").focus({ preventScroll: true });
     }
     if (phase === "paused") get("resume").focus({ preventScroll: true });
-    if (phase === "question" && previousPhase === "countdown") {
+    if (phase === "preparing") get("skip-voice").focus({ preventScroll: true });
+    if (phase === "question" && (previousPhase === "countdown" || previousPhase === "preparing")) {
       if (previousFocus?.isConnected && previousFocus.closest("#play"))
         previousFocus.focus({ preventScroll: true });
       else get("pause").focus({ preventScroll: true });
     }
     previousPhase = phase;
   }
+  if (phase === 'victory' && activeStage && !previewVictory) missionReward.update(game.victoryElapsed(now));
   if (phase === "countdown") {
     const count = game.countdown(now);
     if (lastCountdown !== count) {
@@ -615,7 +726,7 @@ function render(now: number): void {
 
   get("hearts").setAttribute(
     "aria-label",
-    `${game.lives} vie${game.lives > 1 ? "s" : ""} restante${game.lives > 1 ? "s" : ""}`,
+    game.unlimitedLives ? 'Essais illimités' : `${game.lives} vie${game.lives > 1 ? "s" : ""} restante${game.lives > 1 ? "s" : ""}`,
   );
   document
     .querySelectorAll<HTMLElement>("[data-heart]")
@@ -638,7 +749,7 @@ function render(now: number): void {
   });
   get<HTMLButtonElement>("repeat-question").disabled =
     phase !== "question" || !saved.voiceEnabled || saved.muted;
-  const left = game.timeLeft(now);
+  const left = game.untimed ? 0 : game.timeLeft(now);
   const seconds = Math.ceil(left / 1000);
   get("time-left").textContent = `${seconds} s`;
   get("time-fill").style.transform =
@@ -646,10 +757,10 @@ function render(now: number): void {
   get("time-progress").setAttribute("aria-valuenow", String(seconds));
   get("time-box").classList.toggle(
     "urgent",
-    phase === "question" && seconds <= 3,
+    !game.untimed && phase === "question" && seconds <= 3,
   );
   if (
-    phase === "question" &&
+    !game.untimed && phase === "question" &&
     seconds <= 3 &&
     seconds > 0 &&
     lastWarning !== seconds
@@ -687,6 +798,7 @@ function render(now: number): void {
     get("question-caption").textContent = "À toi de trouver !";
     positionQuestion();
     speakCurrentQuestion();
+    prepareUpcomingQuestions();
   }
   if (renderedAnswer !== game.answer) {
     get("answer")
@@ -720,6 +832,8 @@ function render(now: number): void {
       get("question-caption").textContent = "Oui, c’est ça !";
       audio.success(milestone);
       particles.burst(milestone);
+      if (game.phase === "feedback" && surprises.success(now)) audio.surprise();
+      get("board").classList.toggle("magic-celebration", milestone);
       react(
         "correct",
         milestone
@@ -729,6 +843,7 @@ function render(now: number): void {
             : ["YES !", "BIM !", "BRAVO !"][game.solved % 3],
       );
     } else {
+      surprises.clear();
       get("feedback").textContent =
         `${timeout ? "Temps écoulé !" : "Oups !"} ${expression(pair)} = ${pair.result} · On le reverra.`;
       get("correct-result").textContent = `${pair.result} !`;
@@ -756,16 +871,17 @@ function frame(now: number): void {
       previewVictory = false;
       render(now);
       document
-        .querySelector<HTMLButtonElement>('#home [data-action="start"]')
+        .querySelector<HTMLButtonElement>('#open-training')
         ?.focus({ preventScroll: true });
     }
     game.tick(now);
     render(now);
     particles.frame(now);
+    surprises.frame(now);
     audio.ambience(
       game.phase === "question" || game.phase === "feedback",
-      game.solved,
-      game.phase === "question" && game.timeLeft(now) <= 3000,
+      Math.round(game.solved / game.totalQuestions * 100),
+      !game.untimed && game.phase === "question" && game.timeLeft(now) <= 3000,
     );
   }
   requestAnimationFrame(frame);
