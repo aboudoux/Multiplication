@@ -54,6 +54,30 @@ export class GameAudio {
       );
   }
 
+  /** Three soft notes for menu navigation, unlocked by the user's click. */
+  async navigation(): Promise<void> {
+    if (this.muted) return;
+    await this.unlock();
+    [523.25, 659.25, 783.99].forEach((note, i) => this.tone(note, i * .085, .14, .1, 'triangle'));
+  }
+
+  private homePlaying = false;
+  private homeBeat = 0;
+  private nextHomeBeat = 0;
+  /** A gentle music-box loop for the club entrance, separate from game music. */
+  homeMusic(active: boolean): void {
+    const ctx=this.context;
+    if (!active || this.muted || !ctx || ctx.state!=='running') { this.homePlaying=false; this.homeBeat=0; return; }
+    if (!this.homePlaying) { this.homePlaying=true; this.nextHomeBeat=ctx.currentTime+.65; }
+    if (ctx.currentTime<this.nextHomeBeat) return;
+    this.nextHomeBeat=ctx.currentTime+.3;
+    const melody=[392,493.88,587.33,0,523.25,493.88,440,0,349.23,440,523.25,0,493.88,440,392,0];
+    const note=melody[this.homeBeat%melody.length];
+    if (note) this.tone(note,0,.24,.055,'sine');
+    if (this.homeBeat%4===0) this.tone([196,174.61,174.61,196][Math.floor(this.homeBeat/4)%4],0,.27,.025,'sine');
+    this.homeBeat++;
+  }
+
   private tone(
     frequency: number,
     delay = 0,

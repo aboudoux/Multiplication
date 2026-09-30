@@ -160,6 +160,18 @@ get('victory-description').insertAdjacentHTML('afterend',`<div id="adventure-gue
 get('victory-description').insertAdjacentHTML('beforebegin','<div id="mission-reward" hidden></div>');
 const missionReward = new MissionRewardScene(get('mission-reward'));
 audio.muted = saved.muted;
+// Mobile browsers require a gesture before music can begin.
+const unlockMenuAudio=()=>{ if (!audio.muted) void audio.unlock(); };
+document.addEventListener('pointerdown',unlockMenuAudio,{once:true});
+document.addEventListener('keydown',unlockMenuAudio,{once:true});
+// Capture the target before menu rendering replaces it. The melody starts
+// after the click handlers have switched worlds, so setTheme cannot cut it off.
+document.addEventListener('click', event => {
+  const target=(event.target as Element).closest<HTMLButtonElement|HTMLAnchorElement>(
+    '.brand, #open-adventure, #open-training, #leave-adventure, [data-tab], [data-preset], #camp-home, #camp-exit, #camp-results-exit, #camp-colony-ready, #adventure-exit, [data-action="home"], [data-stage], #camp-start, [data-action="start"]',
+  );
+  if (target && !target.matches(':disabled')) void audio.navigation();
+}, {capture:true});
 const particles = new Particles(get<HTMLCanvasElement>("confetti"));
 const surprises = new ThemeSurprises(get("theme-surprise"));
 const themedKeypad = new ThemedKeypad(document.querySelector<HTMLElement>('.keypad')!);
@@ -866,6 +878,7 @@ function render(now: number): void {
 renderPreferences();
 render(performance.now());
 function frame(now: number): void {
+  audio.homeMusic(!document.hidden && !get('home').hidden && !previewVictory);
   if (!document.hidden) {
     if (previewVictory && now >= previewEndsAt) {
       previewVictory = false;
