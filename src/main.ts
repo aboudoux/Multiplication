@@ -200,7 +200,7 @@ get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory"
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
 get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="camp-results-exit" class="secondary-button" type="button" hidden>Retour au camp</button>');
 get('camp-results-exit').insertAdjacentHTML('afterend','<button id="camp-colony-ready" class="play-button" type="button" hidden>Un chantier est prêt ! Aller construire →</button>');
-function openCamp(tab: 'missions'|'workshop'|'colony' = 'missions'): void {
+function openCamp(tab: 'workshop'|'colony' = 'workshop'): void {
   trainingActive=false; activeStage=null; mapOpen=false; campOpen=true; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');

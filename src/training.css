@@ -22,7 +22,7 @@
 .camp-heading p { line-height:1.6; color:#d5e5d8; }
 .camp-guide { width:190px; flex-shrink:0; transform:rotate(5deg); }
 .ant-character { width:100%; height:100%; }
-.camp-nav { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:26px; }
+.camp-nav { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:26px; }
 .camp-nav button { background:#193c33; border:1px solid #88ac9477; border-radius:15px; padding:15px 8px; min-height:52px; color:#e9f0db; }
 .camp-nav button[aria-current="page"] { background:#f4d080; color:#304737; border-color:#f4d080; font-weight:bold; }
 .camp-nav button span { margin-right:9px; }
@@ -32,7 +32,6 @@
 .camp-presets button { display:flex; flex-direction:column; text-align:left; padding:22px; gap:12px; color:#304737; background:#f5ebcf; border:2px solid transparent; border-radius:20px; box-shadow:0 5px 0 #142d2940; transition:transform .15s; }
 .camp-presets button:hover { transform:translateY(-3px); border-color:#f4d080; }
 .camp-presets strong { font-size:21px; }.camp-presets small { line-height:1.5; }.camp-symbol { font:700 36px Kalam,cursive; color:#537f64; }.camp-preset-note { font-size:12px; margin-top:auto; line-height:1.5; }
-.camp-resume { border-top:1px dashed #e6d8ac66; margin-top:32px; padding:12px 0; }
 .camp-field { border:1px solid #a8c4a96b; border-radius:18px; padding:18px; margin:18px 0; min-width:0; background:#193e352c; }
 .camp-field legend { font-weight:bold; color:#f5d891; padding:0 8px; }
 .camp-checks { display:flex; gap:10px; flex-wrap:wrap; }
@@ -112,3 +111,6 @@ html[data-theme="ant"] .camp-content select { background:#f7f0dd; color:#2a493b;
 @keyframes ant-install { 0% { transform:translateX(-50%); } 75%,100% { transform:translateX(230%); } }
 @media(max-width:700px) { .destinations,.camp-presets { grid-template-columns:1fr; }.destination-card { padding:20px; }.destination-card .destination-art { width:140px; height:140px; }.camp-guide { width:105px; }.camp-heading { gap:5px; }.camp-heading .eyebrow { font-size:10px; }.camp-heading p { font-size:14px; }.camp-nav button { font-size:12px; padding:12px 4px; }.camp-nav button span { display:block; margin:0 0 5px; font-size:20px; }.camp-presets button { display:grid; grid-template-columns:55px 1fr; gap:7px 14px; }.camp-presets .camp-symbol { grid-row:1/4; }.camp-number-grid { grid-template-columns:1fr; }.camp-launch { position:static; flex-direction:column; align-items:stretch; padding:17px; }.camp-launch .play-button { white-space:normal; }.camp-buildings { grid-template-columns:1fr 1fr; }.camp-top { font-size:12px; }.camp-materials { padding:10px; } }
 @media(prefers-reduced-motion:reduce) { .camp-cargo.delivering .ant-character,.camp-victory-builder { animation:none; }.camp-presets button { transition:none; } }
+
+.camp-quick-sessions { border:1px solid #a8c4a96b; border-radius:18px; padding:4px 16px; background:#193e352c; }
+.camp-quick-sessions summary { color:#f5d891; font-weight:bold; }

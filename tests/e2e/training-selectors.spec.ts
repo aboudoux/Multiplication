@@ -7,9 +7,9 @@ test('visible choices preserve precise settings, keyboard navigation and saved e
  await expect(page.locator('#training select')).toHaveCount(0);
  await page.locator('#camp-add-ceiling-100').check();
  await page.locator('#camp-subtract-ceiling-50').check();
- await page.locator('details summary').first().click();
+ await page.locator('#camp-add-advanced summary').click();
  await page.locator('#camp-add-carry-with').check();
- await expect(page.locator('details').first()).toHaveAttribute('open','');
+ await expect(page.locator('#camp-add-advanced')).toHaveAttribute('open','');
  await page.locator('#camp-add-max').fill('75');await page.locator('#camp-add-max').press('Tab');
  await expect(page.locator('#camp-add-ceiling-75')).toBeChecked();
  await page.locator('#camp-multiplier-min-2').check();
@@ -35,7 +35,7 @@ test('visible choices preserve precise settings, keyboard navigation and saved e
 
 for(const width of [390,768,1365]) test(`choice tiles fit and remain touchable at ${width}px`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
- await prepareCamp(page);await page.locator('details summary').first().click();
+ await prepareCamp(page);await page.locator('#camp-add-advanced summary').click();
  await page.locator('#camp-length-5').check();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  const sizes=await page.locator('.camp-choice span').evaluateAll(items=>items.map(item=>{const r=item.getBoundingClientRect();return {width:r.width,height:r.height};}));

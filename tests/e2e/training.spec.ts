@@ -16,7 +16,7 @@ async function solve(page:Page) {
 }
 test('guided setup, exact tables, completion, materials, replay and independent adventure',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
- await load(page);await page.locator('[data-preset="tables"]').click();
+ await load(page);await page.locator('#camp-quick-sessions summary').click();await page.locator('[data-preset="tables"]').click();
  await page.locator('[data-tables="none"]').click();await expect(page.locator('#camp-start')).toBeDisabled();
  await page.locator('#camp-table-3').check();await page.locator('#camp-table-7').check();
  await page.locator('#camp-length-5').check();await page.locator('#camp-start').click();await page.clock.runFor(4050);
@@ -38,7 +38,7 @@ test('guided setup, exact tables, completion, materials, replay and independent 
 for(const width of [390,768,1365]) test(`camp and workshop fit ${width}px`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});await load(page);
  await page.screenshot({path:info.outputPath('camp.png'),fullPage:true});
- await page.locator('[data-preset="mix"]').click();await page.locator('details summary').first().click();
+ await page.locator('#camp-quick-sessions summary').click();await page.locator('[data-preset="mix"]').click();await page.locator('#camp-add-advanced summary').click();
  await page.locator('#camp-add-max').fill('100');await page.locator('#camp-add-max').press('Tab');
  await page.locator('#camp-add-carry-with').check();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
