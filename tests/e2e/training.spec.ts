@@ -19,7 +19,7 @@ test('guided setup, exact tables, completion, materials, replay and independent 
  await load(page);await page.locator('[data-preset="tables"]').click();
  await page.locator('[data-tables="none"]').click();await expect(page.locator('#camp-start')).toBeDisabled();
  await page.locator('#camp-table-3').check();await page.locator('#camp-table-7').check();
- await page.locator('#camp-length').selectOption('5');await page.locator('#camp-start').click();await page.clock.runFor(4050);
+ await page.locator('#camp-length-5').check();await page.locator('#camp-start').click();await page.clock.runFor(4050);
  await expect(page.locator('html')).toHaveAttribute('data-theme','ant');await expect(page.locator('#time-left')).toBeHidden();
  await page.clock.runFor(60000);await expect(page.locator('#correction-card')).toBeHidden();
  for(let i=0;i<5;i++) {const a=Number((await page.locator('#equation').innerText()).match(/\d+/)![0]);expect([3,7]).toContain(a);await solve(page);}
@@ -40,7 +40,7 @@ for(const width of [390,768,1365]) test(`camp and workshop fit ${width}px`,async
  await page.screenshot({path:info.outputPath('camp.png'),fullPage:true});
  await page.locator('[data-preset="mix"]').click();await page.locator('details summary').first().click();
  await page.locator('#camp-add-max').fill('100');await page.locator('#camp-add-max').press('Tab');
- await page.locator('#camp-add-carry').selectOption('with');
+ await page.locator('#camp-add-carry-with').check();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:info.outputPath('workshop.png'),fullPage:true});
  await page.locator('[data-tab="colony"]').click();await page.screenshot({path:info.outputPath('colony.png'),fullPage:true});
@@ -48,7 +48,7 @@ for(const width of [390,768,1365]) test(`camp and workshop fit ${width}px`,async
 test('finite lives, timeout, records, storage failure and existing preferences',async({page})=>{
  await load(page);await page.locator('nav [data-tab="workshop"]').click();
  await expect(page.locator('#camp-duration')).toHaveAttribute('data-duration','10');await expect(page.locator('#camp-life-3')).toHaveAttribute('aria-pressed','true');
- await setCampRhythm(page,'5');await page.locator('#camp-life-1').click();await page.locator('#camp-length').selectOption('5');
+ await setCampRhythm(page,'5');await page.locator('#camp-life-1').click();await page.locator('#camp-length-5').check();
  await page.locator('#camp-start').click();await page.clock.runFor(4050);await solve(page);await page.clock.runFor(5000);
  await expect(page.locator('#correction-card')).toBeVisible();await page.clock.runFor(8100);await expect(page.locator('#results')).toBeVisible();
  expect(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).materials,TRAINING_KEY)).toBe(1);
