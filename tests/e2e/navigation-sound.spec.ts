@@ -65,7 +65,7 @@ test('blocked autoplay falls back to a gesture, then respects navigation, mute a
  const music=()=>page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='sine').length);
  await page.waitForTimeout(800);expect(await music()).toBe(0);
  await page.locator('h1').click();await expect.poll(music).toBeGreaterThan(0);
- await chime(page,'#open-training');const away=await music();await page.waitForTimeout(800);expect(await music()).toBe(away);
+ await chime(page,'#open-training');const away=await music();await expect.poll(music).toBeGreaterThan(away);
  await chime(page,'#camp-home');await expect.poll(music).toBeGreaterThan(away);
  await page.locator('#sound').click();const muted=await music();await page.waitForTimeout(800);expect(await music()).toBe(muted);
  await page.locator('#sound').click();await expect.poll(music).toBeGreaterThan(muted);
@@ -73,6 +73,24 @@ test('blocked autoplay falls back to a gesture, then respects navigation, mute a
  const hidden=await music();await page.waitForTimeout(800);expect(await music()).toBe(hidden);
  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
  await expect.poll(music).toBeGreaterThan(hidden);
+});
+
+test('menu music continues through camp and adventure, stops on launch and resumes on return',async({page})=>{
+ await prepare(page);await page.locator('h1').click();
+ const music=()=>page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='sine').length);
+ await expect.poll(music).toBeGreaterThan(0);
+ for (const selector of ['#open-training','nav [data-tab="workshop"]','nav [data-tab="colony"]','#camp-home','#open-adventure','#leave-adventure']) {
+  const before=await music();await chime(page,selector);await expect.poll(music).toBeGreaterThan(before);
+ }
+ await chime(page,'#open-training');await chime(page,'nav [data-tab="workshop"]');
+ await page.locator('#camp-start').click();const duringCountdown=await music();
+ await page.waitForTimeout(1000);expect(await music()).toBe(duringCountdown);
+ await expect(page.locator('#countdown-panel')).toBeVisible();
+ await page.locator('#pause').click();await page.locator('#camp-exit').click();
+ await expect.poll(music).toBeGreaterThan(duringCountdown);
+ await page.locator('#camp-home').click();await page.locator('#open-adventure').click();
+ await page.locator('[data-stage="kitten-1"]').click();const adventureCountdown=await music();
+ await page.waitForTimeout(1000);expect(await music()).toBe(adventureCountdown);
 });
 
 test.describe('audible autoplay permitted',()=>{

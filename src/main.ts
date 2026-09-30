@@ -363,6 +363,7 @@ function renderPreferences(): void {
 
 function start(): void {
   if (trainingActive && inspectTraining(trainingData.settings).error) { openCamp('workshop'); return; }
+  audio.homeMusic(false);
   creditedMaterials=0;
   get('camp-cargo-label').textContent='Chaque calcul réussi apporte un matériau.';
   get('camp-exit').hidden=!trainingActive;
@@ -879,7 +880,8 @@ function render(now: number): void {
 renderPreferences();
 render(performance.now());
 function frame(now: number): void {
-  audio.homeMusic(!document.hidden && !get('home').hidden && !previewVictory);
+  audio.homeMusic(!document.hidden && !previewVictory && !trainingActive && !activeStage
+    && game.phase==='welcome' && (campOpen || mapOpen || !get('home').hidden));
   if (!document.hidden) {
     if (previewVictory && now >= previewEndsAt) {
       previewVictory = false;

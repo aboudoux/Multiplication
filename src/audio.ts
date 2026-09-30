@@ -62,19 +62,23 @@ export class GameAudio {
   }
 
   private homePlaying = false;
+  private menuSources = new Set<OscillatorNode>();
   private homeBeat = 0;
   private nextHomeBeat = 0;
-  /** A gentle music-box loop for the club entrance, separate from game music. */
+  /** The same music-box loop throughout the menus, separate from game music. */
   homeMusic(active: boolean): void {
     const ctx=this.context;
-    if (!active || this.muted || !ctx || ctx.state!=='running') { this.homePlaying=false; this.homeBeat=0; return; }
+    if (!active || this.muted || !ctx || ctx.state!=='running') {
+      for (const source of this.menuSources) { try {source.stop();} catch { /* Already ended. */ } }
+      this.menuSources.clear();this.homePlaying=false;this.homeBeat=0;return;
+    }
     if (!this.homePlaying) { this.homePlaying=true; this.nextHomeBeat=ctx.currentTime+.65; }
     if (ctx.currentTime<this.nextHomeBeat) return;
     this.nextHomeBeat=ctx.currentTime+.3;
     const melody=[392,493.88,587.33,0,523.25,493.88,440,0,349.23,440,523.25,0,493.88,440,392,0];
     const note=melody[this.homeBeat%melody.length];
-    if (note) this.tone(note,0,.24,.055,'sine');
-    if (this.homeBeat%4===0) this.tone([196,174.61,174.61,196][Math.floor(this.homeBeat/4)%4],0,.27,.025,'sine');
+    if (note) this.tone(note,0,.24,.055,'sine',true);
+    if (this.homeBeat%4===0) this.tone([196,174.61,174.61,196][Math.floor(this.homeBeat/4)%4],0,.27,.025,'sine',true);
     this.homeBeat++;
   }
 
@@ -84,6 +88,7 @@ export class GameAudio {
     length = 0.13,
     volume = 0.2,
     type: OscillatorType = "sine",
+    menu = false,
   ): void {
     const ctx = this.context;
     if (!ctx || !this.master || ctx.state !== "running" || this.muted) return;
@@ -97,9 +102,11 @@ export class GameAudio {
     envelope.gain.exponentialRampToValueAtTime(0.001, start + length);
     oscillator.connect(envelope);
     envelope.connect(this.master);
+    if (menu) this.menuSources.add(oscillator);
     oscillator.start(start);
     oscillator.stop(start + length + 0.02);
     oscillator.onended = () => {
+      this.menuSources.delete(oscillator);
       oscillator.disconnect();
       envelope.disconnect();
     };
