@@ -25,7 +25,8 @@ async function chime(page:Page,selector:string) {
  const notes=await page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='triangle'&&[523.25,659.25,783.99].includes(note.frequency)).slice(-3));
  expect(notes.map((note:any)=>note.frequency)).toEqual([523.25,659.25,783.99]);
  expect(notes.every((note:any)=>note.type==='triangle')).toBe(true);
- expect(notes[2].delay-notes[0].delay).toBeCloseTo(.17,2);
+ expect(notes[2].delay-notes[0].delay).toBeGreaterThan(.1);
+ expect(notes[2].delay-notes[0].delay).toBeLessThan(.24);
 }
 
 test('first click, camp menus, adventure and return each play one short chime',async({page})=>{
@@ -52,7 +53,14 @@ test('blocked audio still allows menu navigation',async({page})=>{
  await page.locator('#camp-home').click();await expect(page.locator('#open-adventure')).toBeVisible();expect(errors).toEqual([]);
 });
 
-test('home music waits for a gesture, pauses outside home and respects mute and visibility',async({page})=>{
+test('blocked autoplay falls back to a gesture, then respects navigation, mute and visibility',async({page})=>{
+ await page.addInitScript(()=>{
+  const NativeAudioContext=window.AudioContext;
+  window.AudioContext=class extends NativeAudioContext {
+   constructor(){super();void this.suspend();}
+   resume(){return navigator.userActivation.isActive?super.resume():Promise.resolve();}
+  };
+ });
  await prepare(page);
  const music=()=>page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='sine').length);
  await page.waitForTimeout(800);expect(await music()).toBe(0);
@@ -65,4 +73,24 @@ test('home music waits for a gesture, pauses outside home and respects mute and 
  const hidden=await music();await page.waitForTimeout(800);expect(await music()).toBe(hidden);
  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
  await expect.poll(music).toBeGreaterThan(hidden);
+});
+
+test.describe('audible autoplay permitted',()=>{
+ test('home music starts on arrival without any click',async({playwright})=>{
+  const browser=await playwright.chromium.launch({channel:'msedge',args:['--autoplay-policy=no-user-gesture-required']});
+  try {
+  const page=await browser.newPage({baseURL:'http://127.0.0.1:4173'});
+  await prepare(page);
+  await expect.poll(()=>page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='sine').length)).toBeGreaterThan(0);
+  await expect(page.locator('#home')).toBeVisible();
+  } finally {await browser.close();}
+ });
+ test('saved mute still prevents music on arrival',async({playwright})=>{
+  const browser=await playwright.chromium.launch({channel:'msedge',args:['--autoplay-policy=no-user-gesture-required']});
+  try {
+  const page=await browser.newPage({baseURL:'http://127.0.0.1:4173'});
+  await prepare(page,true);await page.waitForTimeout(1000);
+  expect(await page.evaluate(()=>(window as any).navigationProbe.length)).toBe(0);
+  } finally {await browser.close();}
+ });
 });

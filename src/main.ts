@@ -164,6 +164,7 @@ audio.muted = saved.muted;
 const unlockMenuAudio=()=>{ if (!audio.muted) void audio.unlock(); };
 document.addEventListener('pointerdown',unlockMenuAudio,{once:true});
 document.addEventListener('keydown',unlockMenuAudio,{once:true});
+unlockMenuAudio(); // Start immediately when the browser permits audible autoplay.
 // Capture the target before menu rendering replaces it. The melody starts
 // after the click handlers have switched worlds, so setTheme cannot cut it off.
 document.addEventListener('click', event => {
