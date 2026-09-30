@@ -1,0 +1,52 @@
+/* A colourful playground entrance, independent of the adventure worlds. */
+html[data-theme="club"] {
+  --world-bg:#ffe1af; --world-frame:#eb985c; --world-board:#ffd99b;
+  --world-panel:#ffdcb7; --world-edge:#c4796a; --world-accent:#ffc94d;
+  --world-secondary:#8de0cc; --world-ink:#34335f; --world-light:#fff1c2;
+  --world-muted:#554064; --world-page-ink:#554064; --chalk:#40315d;
+  --muted:#554064; color:#40315d;
+}
+html[data-theme="club"] body {
+  background:radial-gradient(circle at 8% 15%,#ffad8b 0 12%,transparent 12.2%),radial-gradient(circle at 95% 75%,#a0ded0 0 15%,transparent 15.2%),linear-gradient(145deg,#ffe19b,#ffc5a5 60%,#ffd483);
+}
+html[data-theme="club"] .wood-frame { padding:10px; background:#ed9862; border-color:#d78050; box-shadow:0 18px 55px #a9664630; }
+html[data-theme="club"] .board { background:radial-gradient(ellipse at 95% 5%,#ffc29e 0,transparent 50%),radial-gradient(ellipse at 0% 80%,#ffe975 0,transparent 55%),#ffdda4; border-color:#ffe9bc; box-shadow:inset 0 0 24px #f2ab5833; }
+html[data-theme="club"] .board-header { border-bottom:2px dashed #c97e6d88; }
+html[data-theme="club"] .brand-dot { color:#d45976; }
+html[data-theme="club"] .board-ledge { display:none; }
+html[data-theme="club"] .home-screen { position:relative; }
+.club-bunting { display:flex; justify-content:center; gap:25px; height:43px; margin:18px auto 0; max-width:390px; border-top:2px solid #91516e; transform:rotate(-2deg); }
+.club-bunting i { width:28px; height:36px; background:#37b9a5; clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%); }
+.club-bunting i:nth-child(3n+2) { background:#ef7795; }.club-bunting i:nth-child(3n) { background:#8b78d9; }
+html[data-theme="club"] .destination-heading { margin:14px 0 20px; }
+html[data-theme="club"] .destination-heading .eyebrow { color:#815171; font-size:10px; letter-spacing:2px; justify-content:center; }
+html[data-theme="club"] .destination-heading h1 { margin-top:10px; font-size:clamp(32px,4.5vw,52px); color:#49335e; text-shadow:0 2px 0 #ffeec5; }
+html[data-theme="club"] .destination-heading p { color:#654664; }
+.club-supplies { display:flex; justify-content:center; gap:12px; margin-top:16px; }
+.club-supplies span { display:grid; place-items:center; width:38px; height:38px; border-radius:11px; font:700 27px Kalam,cursive; background:#ef7c9b; color:#532444; box-shadow:0 4px 0 #bd5670; transform:rotate(-9deg); }
+.club-supplies span:nth-child(even) { background:#7bd9c3; color:#20594d; box-shadow:0 4px 0 #439b87; transform:rotate(8deg); }
+.club-supplies span:nth-child(3) { background:#ad9cea; color:#493170; box-shadow:0 4px 0 #8171ba; }
+html[data-theme="club"] .destinations { gap:28px; padding:18px 0 24px; }
+html[data-theme="club"] .destination-card { position:relative; border:3px solid #a28ade; border-radius:30px 30px 36px 12px; padding:20px 24px 28px; background:linear-gradient(145deg,#ddd2ff,#c6d3ff); box-shadow:0 7px 0 #9b86cd,0 12px 20px #72589822; }
+html[data-theme="club"] .destination-card.camp-entry { border-color:#50bfa4; border-radius:30px 30px 12px 36px; background:linear-gradient(145deg,#b3edbe,#91e2d2); box-shadow:0 7px 0 #42a589,0 12px 20px #477d6422; }
+.destination-tag { font-size:10px; font-weight:700; letter-spacing:1.4px; margin:5px 0 12px; color:#523d7b; background:#b4a0ec66; padding:7px 12px; border-radius:30px; }
+html[data-theme="club"] .camp-entry .destination-tag { color:#245e4c; background:#4caf8d25; }
+html[data-theme="club"] .destination-art { position:relative; isolation:isolate; border-radius:50%; background:radial-gradient(circle,#ffcd66 0 55%,transparent 56%); }
+html[data-theme="club"] .camp-entry .destination-art { background:radial-gradient(circle,#67caaa 0 55%,transparent 56%); }
+html[data-theme="club"] .destination-art::before { content:""; position:absolute; top:10%; left:0; width:28px; height:28px; background:#fff0a0; transform:rotate(-15deg); clip-path:polygon(50% 0,61% 35%,98% 35%,68% 58%,79% 95%,50% 73%,21% 95%,32% 58%,2% 35%,39% 35%); }
+html[data-theme="club"] .destination-art::after { content:""; position:absolute; right:2%; bottom:18%; width:14px; height:14px; border:4px solid #ec7e9d; border-radius:50%; }
+html[data-theme="club"] .destination-card h2 { font-size:30px; color:#49335e; }
+html[data-theme="club"] .destination-card p { color:#514167; }
+html[data-theme="club"] .camp-entry h2,html[data-theme="club"] .camp-entry p { color:#245246; }
+html[data-theme="club"] .destination-card .play-button { font-size:15px; border-color:#ffe8a7; background:#ffcb4f; color:#513745; box-shadow:0 5px 0 #c69735; }
+html[data-theme="club"] .destination-card .play-button:hover { background:#ffdc7b; }
+html[data-theme="club"] .camp-entry .play-button { background:#ffe078; border-color:#fff0ac; box-shadow:0 5px 0 #b99b38; color:#305540; }
+html[data-theme="club"] .camp-entry .play-button:hover { background:#ffeb9d; }
+html[data-theme="club"] .destination-card .play-button:focus-visible { outline:3px solid #49335e; outline-offset:5px; }
+@media(max-width:700px) {
+ .club-bunting { gap:18px; max-width:280px; height:33px; }.club-bunting i { width:22px; height:29px; }
+ html[data-theme="club"] .destinations { gap:27px; }
+ html[data-theme="club"] .destination-card { padding:18px 14px 23px; }
+ html[data-theme="club"] .destination-card h2 { font-size:27px; }
+ html[data-theme="club"] .destination-card .play-button { font-size:14px; padding-inline:12px; white-space:normal; }
+}
