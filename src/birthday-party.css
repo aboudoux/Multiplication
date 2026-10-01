@@ -1,0 +1,31 @@
+.birthday-party { position:relative; padding:26px 0 12px; }
+.birthday-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.birthday-heading h2 { margin:4px 0 0; color:#ffe3ac; font:700 clamp(24px,3vw,38px)/1.2 Kalam,cursive; }
+.birthday-heading h2:focus { outline:none; }
+.birthday-heading .eyebrow { color:#c9e9ed; }
+.birthday-duration { font-size:12px; color:#f7d9c0; }
+.birthday-cinema { position:relative; overflow:hidden; border:2px solid #f7d6b9; border-radius:24px; box-shadow:0 15px 34px #30162740; background:#402657; }
+.birthday-film { display:block; width:100%; height:auto; }
+.birthday-cinema-tag { position:absolute; top:12px; left:16px; color:#f9e6ee; font-size:8px; letter-spacing:2px; opacity:.6; }
+.birthday-caption { min-height:2.6em; margin:18px auto 10px; max-width:750px; color:#fff0d3; font:700 clamp(16px,2vw,22px)/1.5 Kalam,cursive; text-align:center; }
+.birthday-controls { display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap; }
+.birthday-controls .play-button { width:auto; min-height:46px; font-size:16px; margin:0; padding:10px 20px; }
+.birthday-controls .secondary-button { width:auto; font-size:13px; min-height:44px; }
+.birthday-playback { display:flex; align-items:center; gap:10px; flex:1; min-width:170px; max-width:330px; }
+.birthday-progress { height:6px; border-radius:10px; flex:1; overflow:hidden; background:#fff3dc25; }
+.birthday-progress span { display:block; height:100%; border-radius:10px; background:#ffdda0; }
+.birthday-time { font-size:11px; white-space:nowrap; font-variant-numeric:tabular-nums; color:#f3d8c2; }
+.birthday-audio-notice { font-size:12px; color:#ffe0a7; text-align:center; }
+@media(max-width:600px) {
+  .birthday-party { padding-top:18px; }
+  .birthday-heading { flex-direction:column; align-items:flex-start; gap:5px; }
+  .birthday-heading .eyebrow { font-size:8px; letter-spacing:1.5px; }
+  .birthday-duration { font-size:10px; }
+  .birthday-cinema { margin:0 -10px; border-radius:15px; }
+  .birthday-cinema-tag { font-size:5px; top:7px; left:9px; letter-spacing:1px; }
+  .birthday-caption { min-height:4.5em; margin:16px 0 8px; }
+  .birthday-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .birthday-playback { order:-1; grid-column:1/-1; min-width:0; max-width:none; }
+  .birthday-controls .play-button { font-size:13px; padding:10px 13px; }
+  .birthday-controls .secondary-button { font-size:11px; padding:10px 12px; }
+}

@@ -27,6 +27,8 @@ import './keypad.css';
 import './training.css';
 import './landing.css';
 import './colony.css';
+import { BirthdayParty } from './birthday-party';
+import './birthday-party.css';
 
 const svg = (body: string, className = "") =>
   `<svg class="icon ${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
@@ -160,6 +162,10 @@ get('pause-panel').insertAdjacentHTML('beforeend','<button id="adventure-exit" c
 get('victory-description').insertAdjacentHTML('afterend',`<div id="adventure-guests" aria-label="Tous les amis réunis" hidden>${worlds.map(w=>themes[w.id].home).join('')}</div>`);
 get('victory-description').insertAdjacentHTML('beforebegin','<div id="mission-reward" hidden></div>');
 const missionReward = new MissionRewardScene(get('mission-reward'));
+const birthdayParty = new BirthdayParty(get('board'), () => {
+  showMap();
+  get('celebrate-adventure').focus({preventScroll:true});
+});
 audio.muted = saved.muted;
 // Mobile browsers require a gesture before music can begin.
 const unlockMenuAudio=()=>{ if (!audio.muted) void audio.unlock(); };
@@ -332,7 +338,11 @@ adventureMap.addEventListener('click', event => {
   if (button.id === 'leave-adventure') {
     mapOpen = false; applyTheme(); goHome(); get('open-adventure').focus(); return;
   }
-  if (button.id === 'celebrate-adventure') { previewVictoryAnimation(); return; }
+  if (button.id === 'celebrate-adventure') {
+    if (adventureProgress.completed.length !== stages.length || birthdayParty.active) return;
+    audio.homeMusic(false); audio.stopSpeech();
+    birthdayParty.start(saved.muted); render(performance.now()); return;
+  }
   const stage = stages.find(s => s.id === button.dataset.stage);
   if (!stage || !stageUnlocked(adventureProgress,stage)) return;
   clearUnlockReveal(); newlyUnlockedMissions = [];
@@ -423,6 +433,7 @@ function previewVictoryAnimation(): void {
   });
 }
 function goHome(): void {
+  if (birthdayParty.active) birthdayParty.close();
   if (previewVictory) return;
   // The brand is only a home link outside an active game; no accidental loss of progress.
   if (!["welcome", "finished"].includes(game.phase)) {
@@ -443,6 +454,7 @@ function goHome(): void {
 get("sound").addEventListener("click", () => {
   saved.muted = !saved.muted;
   audio.setMuted(saved.muted);
+  birthdayParty.setMuted(saved.muted);
   void audio.unlock().then(() => {
     prepareUpcomingQuestions();
     if (!saved.muted) speakCurrentQuestion(true);
@@ -524,6 +536,13 @@ get("erase").addEventListener("click", () => {
   render(performance.now());
 });
 document.addEventListener("keydown", (event) => {
+  if (birthdayParty.active) {
+    if (event.key === 'Escape') {
+      event.preventDefault(); birthdayParty.close(); showMap();
+      get('celebrate-adventure').focus({preventScroll:true});
+    }
+    return;
+  }
   if (
     event.ctrlKey &&
     event.altKey &&
@@ -557,6 +576,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 document.addEventListener("visibilitychange", () => {
+  birthdayParty.setBackground(document.hidden);
   document.documentElement.classList.toggle('camp-background',document.hidden);
   if ((activeStage || trainingActive) && game.phase === 'victory') {
     if (document.hidden) game.suspendCelebration(performance.now());
@@ -571,12 +591,14 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
+  birthdayParty.setBackground(true);
   document.documentElement.classList.add('camp-background');
   audio.stopSpeech();
   if ((activeStage || trainingActive) && game.phase === 'victory') { game.suspendCelebration(performance.now()); audio.suspendReward(true); }
   game.pause(performance.now());
 });
 window.addEventListener('pageshow', () => {
+  birthdayParty.setBackground(document.hidden);
   document.documentElement.classList.toggle('camp-background',document.hidden);
   if ((activeStage || trainingActive) && game.phase === 'victory' && !document.hidden) { game.resumeCelebration(performance.now()); audio.suspendReward(false); }
 });
@@ -664,7 +686,7 @@ function render(now: number): void {
   get('camp-cargo').hidden=!trainingActive || !isPlaying;
   get('camp-victory').hidden=!trainingActive || phase!=='victory';
   get('camp-results-exit').hidden=!trainingActive;
-  adventureMap.hidden = phase !== 'welcome' || !mapOpen;
+  adventureMap.hidden = phase !== 'welcome' || !mapOpen || birthdayParty.active;
   get("play").hidden = !isPlaying;
   themedKeypad.setActive(!document.hidden && (phase === 'question' || phase === 'feedback'));
   get("results").hidden = phase !== "finished";
@@ -886,11 +908,12 @@ function render(now: number): void {
 renderPreferences();
 render(performance.now());
 function frame(now: number): void {
-  const inMenus=!previewVictory && !trainingActive && !activeStage
+  const inMenus=!birthdayParty.active && !previewVictory && !trainingActive && !activeStage
     && game.phase==='welcome' && (campOpen || mapOpen || !get('home').hidden);
   get('menu-audio-enable').hidden=!inMenus || (!saved.muted && audio.ready);
   audio.homeMusic(!document.hidden && inMenus);
   if (!document.hidden) {
+    birthdayParty.update(now);
     if (previewVictory && now >= previewEndsAt) {
       previewVictory = false;
       render(now);
