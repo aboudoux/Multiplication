@@ -118,3 +118,24 @@ test('blocked soundtrack playback still allows the film and return to the map',a
   await expect(page.locator('#birthday-party')).toHaveAttribute('data-chapter','finished');
   await page.locator('.birthday-back').click();await expect(page.locator('#adventure-map')).toBeVisible();
 });
+
+for(const returnWith of ['button','escape'] as const)test(`the direct preview starts automatically without unlocking missions and returns with ${returnWith}`,async({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.addInitScript(({key,savedKey,saved})=>{
+    localStorage.setItem(key,JSON.stringify({completed:['kitten-1']}));
+    localStorage.setItem(savedKey,JSON.stringify(saved));
+  },{key:ADVENTURE_KEY,savedKey:STORAGE_KEY,saved:{...defaults(),muted:true,voiceEnabled:false}});
+  await page.clock.install({time:new Date('2026-10-01T12:00:00Z')});
+  await page.goto('/?fete=1');await page.clock.pauseAt(new Date('2026-10-01T12:00:01Z'));
+  const party=page.locator('#birthday-party');
+  await expect(party).toBeVisible();await expect(page.locator('#home')).toBeHidden();
+  await expect(party).toHaveAttribute('data-chapter','cake');
+  await page.clock.runFor(29_200);await expect(party).toHaveAttribute('data-chapter','finished');
+  if(returnWith==='button')await party.locator('.birthday-back').click();
+  else await page.keyboard.press('Escape');
+  await expect(party).toBeHidden();await expect(page.locator('#adventure-map')).toBeVisible();
+  await expect(page.locator('#map-title')).toBeFocused();
+  await expect(page.locator('#celebrate-adventure')).toHaveCount(0);
+  expect(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).completed,ADVENTURE_KEY)).toEqual(['kitten-1']);
+  expect(errors).toEqual([]);
+});

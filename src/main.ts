@@ -162,10 +162,15 @@ get('pause-panel').insertAdjacentHTML('beforeend','<button id="adventure-exit" c
 get('victory-description').insertAdjacentHTML('afterend',`<div id="adventure-guests" aria-label="Tous les amis réunis" hidden>${worlds.map(w=>themes[w.id].home).join('')}</div>`);
 get('victory-description').insertAdjacentHTML('beforebegin','<div id="mission-reward" hidden></div>');
 const missionReward = new MissionRewardScene(get('mission-reward'));
-const birthdayParty = new BirthdayParty(get('board'), () => {
+function returnFromBirthday(): void {
   showMap();
-  get('celebrate-adventure').focus({preventScroll:true});
-});
+  (document.querySelector<HTMLButtonElement>('#celebrate-adventure') ?? get('map-title')).focus({preventScroll:true});
+}
+const birthdayParty = new BirthdayParty(get('board'), returnFromBirthday);
+function showBirthday(): void {
+  audio.homeMusic(false); audio.stopSpeech();
+  birthdayParty.start(saved.muted); render(performance.now());
+}
 audio.muted = saved.muted;
 // Mobile browsers require a gesture before music can begin.
 const unlockMenuAudio=()=>{ if (!audio.muted) void audio.unlock(); };
@@ -340,8 +345,7 @@ adventureMap.addEventListener('click', event => {
   }
   if (button.id === 'celebrate-adventure') {
     if (adventureProgress.completed.length !== stages.length || birthdayParty.active) return;
-    audio.homeMusic(false); audio.stopSpeech();
-    birthdayParty.start(saved.muted); render(performance.now()); return;
+    showBirthday(); return;
   }
   const stage = stages.find(s => s.id === button.dataset.stage);
   if (!stage || !stageUnlocked(adventureProgress,stage)) return;
@@ -538,8 +542,7 @@ get("erase").addEventListener("click", () => {
 document.addEventListener("keydown", (event) => {
   if (birthdayParty.active) {
     if (event.key === 'Escape') {
-      event.preventDefault(); birthdayParty.close(); showMap();
-      get('celebrate-adventure').focus({preventScroll:true});
+      event.preventDefault(); birthdayParty.close(); returnFromBirthday();
     }
     return;
   }
@@ -907,6 +910,10 @@ function render(now: number): void {
 
 renderPreferences();
 render(performance.now());
+// A shareable preview of the film; adventure progress is only read, never unlocked.
+if (new URLSearchParams(location.search).get('fete') === '1') {
+  showMap(); showBirthday();
+}
 function frame(now: number): void {
   const inMenus=!birthdayParty.active && !previewVictory && !trainingActive && !activeStage
     && game.phase==='welcome' && (campOpen || mapOpen || !get('home').hidden);
