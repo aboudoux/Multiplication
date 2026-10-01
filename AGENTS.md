@@ -1,5 +1,11 @@
 # Consignes pour les agents
 
+## Création d’aventures et de missions
+
+- Avant toute création ou modification d’aventure ou de mission, consulter [le guide de création des aventures](docs/creation-aventure.md) et les sources concernées.
+- Utiliser ses modèles de brief et ses fiches pour couvrir l’histoire, les personnages, les mondes, les calculs, les animations, le son et les récompenses. Pour une mission isolée, réutiliser les éléments de l’aventure concernée.
+- Si seul un thème est donné, compléter les choix créatifs et conserver les règles de jeu existantes par défaut. Distinguer les fonctions disponibles des extensions nécessaires et mettre le guide à jour lorsque ses règles de référence évoluent.
+
 ## Après chaque demande
 
 - Après chaque modification demandée par l’utilisateur, effectuer les vérifications adaptées puis créer un commit Git avec un message court en français, sans redemander confirmation.

@@ -2,6 +2,10 @@
 
 Un jeu de calcul mental en français : une aventure à travers huit mondes et un camp d’entraînement personnalisable avec des fourmis bâtisseuses. Additions, soustractions, multiplications, voix locales et sauvegarde sur l’appareil.
 
+## Créer une aventure ou une mission
+
+Consulter le [guide de création des aventures](docs/creation-aventure.md) : histoire, huit personnages dont le héros, huit mondes, 24 missions, palettes, touches animées, calculs, scènes de réussite et modèles de brief.
+
 ## Jouer en local
 
 PrÃ©requis : Node.js 22.12 ou plus rÃ©cent (vÃ©rifiÃ© avec Node.js 24.13 sous Windows).
