@@ -123,7 +123,7 @@ Le registre `mentalMastery` est versionné et séparé de l’ancienne maîtrise
 
 - Réussir tous les calculs de la mission avant d’épuiser ses vies valide la mission. Un calcul déjà réussi ne revient pas pendant cette tentative.
 - Une erreur ou un délai dépassé coûte une vie lorsqu’elles sont limitées. La correction et une phrase de stratégie apparaissent pendant deux secondes. Dans le parcours mental, le rappel vient après trois variantes encore inédites, ou plus tôt si la file est courte ; cela évite de tourner en boucle sur les premières erreurs. Le mode classique garde son retour en fin de file.
-- En mode classique, la saisie se valide automatiquement à la longueur attendue ; les entiers des parcours adaptés suivent aussi cette règle ; décimaux et fractions attendent une validation explicite. Clavier, tactile et effacement doivent rester opérationnels.
+- Garder les barres et les chiffres à la craie dans tous les parcours : une barre par caractère attendu, signe moins séparé des chiffres. En mode classique, la saisie se valide automatiquement à la longueur attendue ; les entiers des parcours adaptés suivent aussi cette règle ; décimaux et fractions attendent une validation explicite et peuvent étendre les barres pour une écriture équivalente. Clavier, tactile et effacement doivent rester opérationnels.
 - Le chrono attend la préparation vocale avant de démarrer avec le calcul visible. La pause suspend la partie ; la reprise conserve la tentative.
 - À zéro vie, recommencer restaure les vies et repart de zéro calcul validé, en conservant les missions précédemment gagnées.
 - Quitter vers la carte ou recharger abandonne la tentative en cours. Rejouer une mission réussie ne duplique pas son acquisition.

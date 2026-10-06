@@ -925,7 +925,7 @@ function render(now: number): void {
       spokenExpression(game.current),
     );
     get("question-announcement").textContent =
-      game.explicitAnswers ? `${spokenExpression(game.current)}. Saisis ta réponse, puis valide.` : `${spokenExpression(game.current)}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
+      game.autoInteger ? `${spokenExpression(game.current)}. ${String(Math.abs(game.current.result)).length} chiffre${Math.abs(game.current.result)<10?'':'s'} à saisir.` : game.explicitAnswers ? `${spokenExpression(game.current)}. Saisis ta réponse, puis valide.` : `${spokenExpression(game.current)}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
     get("answer").innerHTML = [...String(game.current.result)]
       .map((_, i) => `<span class="answer-slot" data-slot="${i}"></span>`)
       .join("");
