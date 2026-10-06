@@ -105,13 +105,21 @@ Une mission associe un objectif narratif à un défi de calcul explicite : titre
 
 Les bornes concernent les opérandes **et** le résultat des additions et soustractions. Les multiplications utilisent les tables indiquées, avec des multiplicateurs de 1 à 10. Le dernier défi contient les 100 multiplications ordonnées des dix tables, 20 additions et 20 soustractions ; `2 × 3` et `3 × 2` sont deux questions distinctes.
 
-Ces valeurs constituent le réglage actuel, pas une obligation pour chaque thème. Par défaut, les conserver lors d’un changement d’univers. Toute modification pédagogique doit rester progressive et être vérifiée sur les banques de calculs. Le moteur d’aventure ne propose actuellement ni division ni résultat négatif ; les réglages étendus du camp ne se transposent pas automatiquement à l’aventure.
+Ces valeurs constituent le **mode classique**, conservé pour « Joueur actuel » à la migration et disponible en décochant l’adaptation dans le profil. Toute modification pédagogique doit rester progressive et être vérifiée sur les banques de calculs.
+
+### Parcours scolaires disponibles
+
+Les profils locaux proposent GS à seconde GT (âges indicatifs 5–15 ans), avec compétences et références dans [la progression scolaire](progression-scolaire.md). `src/adaptive-adventure.ts` adapte les deux histoires existantes sans changer leurs mondes, titres narratifs, identifiants, dépendances, scènes, sons ou récompenses. Changer de classe conserve toutes les missions acquises ; rejouer utilise la classe actuelle.
+
+Chaque monde suit découverte → entraînement → consolidation ; le dernier mélange les compétences pratiquées. Quantités GS : 5/6/8 puis 10 au final ; CP–CE2 : 8/10/12 puis 15 ; CM1–seconde : 10/12/15 puis 20. Plafonner à la banque distincte disponible. Les nouvelles notions sont sans chrono et à essais illimités. Les familles comprennent collections, compléments, divisions, produits structurés, fractions, décimaux, relatifs, puissances, racines, inconnues, équations et problèmes courts. L’atelier complet d’opérations posées reste une extension.
+
+Les nouvelles réponses demandent **Valider ou Entrée** : entiers signés, décimaux avec virgule ou point, fractions équivalentes (irréductibles quand demandé), quotient/reste en deux champs, toutes les solutions séparées par `;`, ou inéquation `x ≤ 4`. Utiliser les fragments vocaux locaux pour tous les nombres et opérateurs. Ne pas déduire la difficulté de la seule taille des nombres. Le suivi distingue premier essai, correction, aide et temps actif ; les réglages restent figés pendant une mission.
 
 ### Déroulement d’une tentative
 
 - Réussir tous les calculs de la mission avant d’épuiser ses vies valide la mission. Un calcul déjà réussi ne revient pas pendant cette tentative.
 - Une erreur ou un délai dépassé coûte une vie lorsqu’elles sont limitées. La correction apparaît pendant deux secondes, puis le calcul reste à résoudre dans la banque.
-- La saisie se valide automatiquement à la longueur attendue ; clavier, tactile et effacement doivent rester opérationnels.
+- En mode classique, la saisie se valide automatiquement à la longueur attendue ; les parcours scolaires utilisent une validation explicite. Clavier, tactile et effacement doivent rester opérationnels.
 - Le chrono attend la préparation vocale avant de démarrer avec le calcul visible. La pause suspend la partie ; la reprise conserve la tentative.
 - À zéro vie, recommencer restaure les vies et repart de zéro calcul validé, en conservant les missions précédemment gagnées.
 - Quitter vers la carte ou recharger abandonne la tentative en cours. Rejouer une mission réussie ne duplique pas son acquisition.
@@ -140,7 +148,7 @@ La dernière mission conserve sa scène de dix secondes. Dans l’aventure actue
 
 **Affichage et accessibilité.** Vérifier téléphone, tablette et ordinateur, les changements d’orientation et l’absence de débordement horizontal. Garder des touches d’au moins 44 px, des libellés accessibles, un focus visible et une zone de calcul dégagée. Avec réduction des animations, le pavé accepte la saisie sans sortie d’élément, les surprises sont supprimées et les récompenses de mission montrent leur état final immobile pendant dix secondes. Les scènes de réussite se suspendent avec leur musique en arrière-plan et reprennent au retour.
 
-**Sauvegarde.** Les missions acquises sont enregistrées sur l’appareil dans la clé de l’aventure active : `calcul-party:adventure:v1` pour le chaton et `calcul-party:adventure:pico:v1` pour Pico. Seules les missions réussies sont conservées, pas une tentative interrompue. Une sauvegarde bloquée doit être signalée sans empêcher de jouer ; une sauvegarde corrompue ne doit pas débloquer un monde tardif. La réinitialisation de l’aventure demande confirmation et conserve le camp des fourmis, ses matériaux et ses réglages.
+**Sauvegarde.** `calcul-party:players:v1` isole les joueurs et leurs compétences. Chaque profil contient les clés logiques `calcul-party:adventure:v1` pour le chaton et `calcul-party:adventure:pico:v1` pour Pico, ainsi que réglages et camp. Les anciennes clés sont reprises dans « Joueur actuel » et gardées pour compatibilité. Seules les missions réussies sont conservées, pas une tentative interrompue. Une sauvegarde bloquée doit être signalée sans empêcher de jouer ; une sauvegarde corrompue ne doit pas débloquer un monde tardif. La réinitialisation vise seulement l’aventure du joueur actif, demande confirmation et conserve camp, matériaux, compétences et réglages.
 
 **Plusieurs aventures.** La coexistence est disponible : l’entrée aventure ouvre un choix entre le chaton et [Pico et le phare des îles](aventure-pico.md). Chaque `AdventureDefinition` porte une identité, ses textes, ses mondes, ses missions, ses récompenses et son contrôleur final. Passer cette définition aux fonctions de progression, à la carte et aux sauvegardes ; ne pas assimiler la liste des thèmes à une seule aventure. Les exports historiques `worlds` et `stages` restent ceux du chaton. Conserver sa clé `calcul-party:adventure:v1` ; Pico utilise `calcul-party:adventure:pico:v1`, au même format `completed`. Toute nouvelle aventure doit avoir ses propres identifiants et sa propre clé. Les résumés des deux aventures sont lus au choix ; seule la progression active est écrite et réinitialisée. Le changement conserve les acquis de chacune, même dans la mémoire de visite lorsque le stockage est bloqué. Ne pas réutiliser silencieusement les anciens acquis.
 

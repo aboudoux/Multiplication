@@ -2,6 +2,7 @@ import { missionRewards, type Reward } from './mission-rewards';
 import { createPool, shuffle, type Calculation, type Operation, type Duration } from './calculations';
 import type { ThemeId as AllThemeIds } from './themes';
 import { picoCast, type PicoThemeId } from './pico-content';
+import type {Grade} from './curriculum';
 type ThemeId = Exclude<AllThemeIds, 'ant'>;
 type OriginalThemeId = Exclude<ThemeId, PicoThemeId>;
 const originalThemeIds:readonly OriginalThemeId[] = ['kitten','unicorn','alien','christmas','halloween','wizard','dragon','star'];
@@ -39,7 +40,7 @@ export const worlds: readonly AdventureWorld[] = [
   {id:'dragon',name:'La montagne des trésors',friend:'Dragon',tier:3,color:'#ff9959',missions:['Découvre les cristaux','Ouvre le coffre','Invite le dragon'],souvenir:'Le dragon apporte un trésor de confettis !'},
   {id:'star',name:'La grande fête',friend:'Étoile',tier:4,color:'#fff17d',missions:['Installe les guirlandes','Prépare la piste','Que la fête commence !'],souvenir:'Tous les amis sont réunis. Place à la fête !'},
 ];
-export interface AdventureStage { id: string; world: AdventureWorld; index: number; name: string; count: number; operations: Operation[]; limit: number; tables: number; lesson: string; quotas?: Partial<Record<Operation,number>> }
+export interface AdventureStage { id: string; world: AdventureWorld; index: number; name: string; count: number; operations: Operation[]; limit: number; tables: number; lesson: string; quotas?: Partial<Record<Operation,number>>; study?:{grade:Grade;skills:string[];phase:number} }
 type Challenge = {difficulty:string; counts:number[]; limits:number[]; tables:number[]; operations:Operation[][]};
 const originalChallenges: Record<OriginalThemeId,Challenge> = {
  kitten:{difficulty:'Découverte',counts:[5,8,10],limits:[5,8,10],tables:[1,1,1],operations:[['add'],['add'],['add']]},
@@ -65,6 +66,7 @@ export const picoWorlds:readonly AdventureWorld[] = picoCast.map(c=>({id:c.id,na
 export const picoStages = createStages(picoWorlds);
 export type AdventureId = 'chaton'|'pico';
 export interface AdventureDefinition {
+ adaptive?:boolean;
  id:AdventureId; title:string; heading:string; description:string; hero:ThemeId; storageKey:string;
  worlds:readonly AdventureWorld[]; stages:readonly AdventureStage[]; rewards:Readonly<Record<string,Reward>>; regions:readonly string[];
  endingTitle:string; endingDescription:string; celebrateLabel:string; finale:'birthday'|'lighthouse';

@@ -17,6 +17,11 @@ describe('réponses exactes',()=>{
  });
 });
 describe('moteur explicite',()=>{
+ it('mesure le temps de réflexion à travers les pauses sans compter la pause',()=>{
+  const q:StudyQuestion={kind:'arithmetic',skillId:'add',prompt:'1 + 2',spoken:'un plus deux',hint:'Réunir',answer:{kind:'integer',value:3}};
+  const observed:{timeMs:number}[]=[];const game=new Game(defaults(),()=>0,()=>true,{questions:[studyCalculation(q,'a')],untimed:true,unlimitedLives:true,onAnswer:(_,e)=>observed.push(e)});
+  game.start(0);game.tick(4000);game.pause(5000);game.resume(20000);game.tick(24000);game.submitAnswer('3',26000);expect(observed[0].timeMs).toBe(3000);
+ });
  it('ne révèle pas la longueur, attend Valider et ne recompte pas une correction',()=>{
   const q:StudyQuestion={kind:'arithmetic',skillId:'add',prompt:'1 + 2',spoken:'un plus deux',hint:'Réunir',answer:{kind:'integer',value:3}};
   const observed:unknown[]=[];const game=new Game(defaults(),()=>0,()=>true,{questions:[studyCalculation(q,'a')],untimed:true,unlimitedLives:true,onAnswer:(_,e)=>observed.push(e)});

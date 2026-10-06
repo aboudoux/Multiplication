@@ -20,6 +20,8 @@ Le champ de numération ne constitue pas une banque d’opérations aléatoires 
 5. Relatifs, priorités, puissances et racines : livré.
 6. Nombres manquants et équations : livré. Solutions choisies avant construction ; produits nuls et carrés demandent toutes les solutions.
 7. Pourcentages, problèmes, fonctions et prolongement seconde : livré. Les identités remarquables sont travaillées par décomposition numérique ; les inéquations attendent une réponse de la forme x ≤ 4.
-8. Missions adaptatives des deux aventures : à réaliser.
+8. Missions adaptatives des deux aventures : livré. Identifiants narratifs et récompenses conservés. Le dernier monde mélange les compétences pratiquées dans le parcours actuel et les notions récentes (à défaut, celles du parcours proposé). Changer de classe conserve les acquis et adapte également le final. Les banques et les missions sont figées au lancement.
+
+Les volumes GS sont 5/6/8, puis 10 au final ; CP–CE2 8/10/12, puis 15 ; CM1–seconde 10/12/15, puis 20. Une banque plus courte plafonne la quantité, par exemple sept cubes distincts. Le camp propose un défi conseillé, les notions de la classe et des révisions repliées ; classe et difficulté peuvent être choisies manuellement. Une difficulté observée sur un prérequis propose de le retravailler. Une classe élevée sert de départ sans marquer artificiellement les prérequis comme maîtrisés.
 
 Chaque lot requiert ses tests unitaires et navigateur pertinents, compilation, commit français et publication sur l’hébergement existant. Le pavé et ses animations demandent `npm run test:keypad`.

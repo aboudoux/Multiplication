@@ -52,6 +52,7 @@ export class Game {
   useHint():void {if(this.phase==='question')this.helped=true;}
   private deadline = 0;
   private questionStarted = 0;
+  private questionActiveMs = 0;
   private activeMs = 0;
   private remainingMs = 0;
   private countdownAction: CountdownAction = "next";
@@ -178,6 +179,7 @@ export class Game {
     this.tick(now);
     if (this.phase === "question") {
       this.activeMs += Math.max(0, now - this.questionStarted);
+      this.questionActiveMs += Math.max(0,now-this.questionStarted);
       this.remainingMs = this.deadline - now;
       this.countdownAction = "resume-question";
     } else if (this.phase === "feedback") {
@@ -203,6 +205,7 @@ export class Game {
     this.current = this.queue.shift() ?? null;
     if (!this.current) return;
     this.questionNumber++;
+    this.questionActiveMs=0;
     this.answer = "";
     this.helped=false;
     this.feedback = null;
@@ -230,7 +233,7 @@ export class Game {
     );
     if(!this.observed.has(this.current.id)) {
       this.observed.add(this.current.id);
-      this.practice?.onAnswer?.(this.current,{first:correct,helped:this.helped,timeMs:Math.max(0,Math.min(now,this.deadline)-this.questionStarted)});
+      this.practice?.onAnswer?.(this.current,{first:correct,helped:this.helped,timeMs:this.questionActiveMs+Math.max(0,Math.min(now,this.deadline)-this.questionStarted)});
     }
     this.feedback = {
       correct,

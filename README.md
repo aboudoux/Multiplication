@@ -55,7 +55,7 @@ La sauvegarde du camp est indépendante dans **`calcul-party:training:v1`** : de
 
 Les réglages **Son** et **Voix** restent accessibles en haut. La voix du camp peut être Classique ou Fourmi malicieuse. Les annonces déjà disponibles sont conservées ; les nouveaux calculs utilisent 104 fragments français locaux (0 à 100, plus, moins, fois), assemblés avant l’affichage du calcul. Ils sont générés avec `scripts/generate-training-voice.ps1` (Microsoft Julie, PCM mono 22,05 kHz), puis leurs silences sont ajustés. Aucun service externe ni moteur vocal du navigateur n’est requis. Le chargement reste borné à cinq secondes ; pause, arrêt, réécoute et poursuite sans voix empêchent les lectures tardives. Le cache des annonces assemblées reste limité.
 
-La progression du camp n’invite aucun ami de l’aventure. Réinitialiser l’aventure conserve le camp et ses matériaux. Les divisions, nombres négatifs et tables supérieures à 10 ne sont pas proposés.
+La progression du camp n’invite aucun ami de l’aventure. Réinitialiser l’aventure conserve le camp et ses matériaux. Le mode classique garde ses trois opérations et ses tables jusqu’à 10.
 
 ## Compiler et vÃ©rifier
 
@@ -116,3 +116,11 @@ Illustration des fourmis : `public/themes/ants.png`, générée avec l’outil i
 L’entrée aventure propose le chaton et **Pico et le phare des îles** : huit animaux amis réparent ensemble le phare de leur archipel, en 24 missions. Les règles pédagogiques restent celles du chaton, avec une progression indépendante dans `calcul-party:adventure:pico:v1`. Une réinitialisation n’efface que l’aventure choisie et conserve l’autre aventure ainsi que le camp. Les huit planches originales, 24 récompenses de dix secondes, deux surprises par île et le film collectif de trente secondes utilisent des animaux de style album jeunesse et une musique maritime originale.
 
 Voir les [fiches complètes de l’aventure Pico](docs/aventure-pico.md) et le [guide de création des aventures](docs/creation-aventure.md). Les sources spécifiques sont `src/pico-content.ts`, `src/pico-themes.ts`, `src/pico-rewards.ts`, `src/pico-art.ts`, `src/lighthouse-party.ts` et `src/pico.css`. Le choix et la progression sont reliés par `src/adventure.ts`, `src/adventure-map.ts` et `src/main.ts`. Les tests de récompenses couvrent maintenant les 48 missions et les contrôles du pavé couvrent les 16 mondes d’aventure. L’anniversaire du chaton et `?fete=1` restent disponibles.
+
+## Parcours de 5 à 15 ans
+
+Le bouton joueur crée des profils locaux indépendants : classe modifiable, réglages, camp, matériaux, deux aventures et maîtrise par compétence. Les anciennes sauvegardes deviennent « Joueur actuel » en mode classique. Les nouveaux profils commencent avec un parcours scolaire adapté ; aucun compte distant n’est nécessaire.
+
+Le camp propose un défi conseillé et un accès manuel aux collections, divisions, grands produits structurés, fractions, décimaux, relatifs, puissances, racines, équations, pourcentages et problèmes courts. Les nouveaux exercices attendent **Valider ou Entrée** et commencent sans chrono, avec essais illimités. Les aventures conservent leurs 24 missions et récompenses, avec des compétences et volumes adaptés. Changer de classe ne supprime pas les acquis.
+
+Voir [la progression et les références scolaires 2026–2027](docs/progression-scolaire.md) et [les règles de création d’aventures](docs/creation-aventure.md). L’atelier de calcul posé, la géométrie générale et les statistiques restent des extensions. Le calcul exact utilise des fractions rationnelles ; une correction ne compte pas comme réussite au premier essai.

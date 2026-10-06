@@ -1,4 +1,4 @@
-import { grades, type Grade, type Masteries } from './curriculum';
+import { grades, skillById, type Grade, type Masteries } from './curriculum';
 export const PROFILES_KEY='calcul-party:players:v1';
 export const scopedKeys=['multipli-party:v1','calcul-party:training:v1','calcul-party:adventure:v1','calcul-party:adventure:pico:v1'];
 export interface Player {id:string;name:string;avatar:string;grade:Grade;adaptive:boolean;data:Record<string,string>;mastery:Masteries}
@@ -46,9 +46,10 @@ export class Profiles {
       if(this.active.id==='current') {try{this.disk.setItem(key,value);}catch{/* Primary profile save succeeded. */}}
     },
     removeItem:(key)=>{
+      // A failed legacy deletion must not claim to reset the migrated player's adventure.
+      if(this.active.id==='current')this.disk.removeItem(key);
       const previous=this.active.data[key];delete this.active.data[key];
-      if(!this.save()){if(previous!==undefined)this.active.data[key]=previous;throw new Error('Stockage indisponible');}
-      if(this.active.id==='current'){try{this.disk.removeItem(key);}catch{/* The profile is authoritative. */}}
+      if(!this.save()){if(previous!==undefined){this.active.data[key]=previous;if(this.active.id==='current'){try{this.disk.setItem(key,previous);}catch{/* The profile retains the previous save. */}}}throw new Error('Stockage indisponible');}
     },
   };
 }
@@ -56,6 +57,7 @@ function validateMastery(value:unknown):Masteries {
   const output:Masteries={};
   if(!value||typeof value!=='object'||Array.isArray(value))return output;
   for(const [id,m] of Object.entries(value)) {
+    if(!skillById(id))continue;
     if(!m||typeof m!=='object')continue;
     const v=m as Masteries[string];
     if(typeof v.comfortable!=='boolean'||![0,1,2].includes(v.level)||!Array.isArray(v.series)||!Array.isArray(v.samples))continue;

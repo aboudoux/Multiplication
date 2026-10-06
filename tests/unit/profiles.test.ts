@@ -15,6 +15,12 @@ describe('profils locaux',()=>{
   expect(p.stored).toBe(false);expect(()=>p.storage.removeItem('x')).toThrow();expect(p.active.data.x).toBe('keep');p.add('Noé','CM1');expect(p.active.name).toBe('Noé');
  });
  it('revient à la sauvegarde historique si le registre est corrompu',()=>{const d=disk();d.setItem(PROFILES_KEY,'{');d.setItem('calcul-party:training:v1','backup');expect(new Profiles(d).storage.getItem('calcul-party:training:v1')).toBe('backup');});
+ it('réinitialise seulement l’aventure active et conserve les autres joueurs et compétences',()=>{
+  const d=disk(),p=new Profiles(d);const a=p.add('Lina','CM1');p.storage.setItem('calcul-party:adventure:v1','chaton');p.storage.setItem('calcul-party:adventure:pico:v1','pico');p.storage.setItem('calcul-party:training:v1','camp');recordEvidence(a.mastery,'add',{first:true,helped:false,timeMs:100});p.save();
+  const b=p.add('Noé','GS');p.storage.setItem('calcul-party:adventure:v1','autre');p.select(a.id);p.storage.removeItem('calcul-party:adventure:v1');
+  expect(p.storage.getItem('calcul-party:adventure:pico:v1')).toBe('pico');expect(p.storage.getItem('calcul-party:training:v1')).toBe('camp');expect(a.mastery.add.samples).toHaveLength(1);
+  p.select(b.id);expect(p.storage.getItem('calcul-party:adventure:v1')).toBe('autre');expect(new Profiles(d).active.name).toBe('Noé');
+ });
 });
 describe('compétences',()=>{
  it('sépare aide, correction et premier essai et ajuste après dix observations',()=>{

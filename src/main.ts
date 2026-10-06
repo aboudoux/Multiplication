@@ -1,4 +1,5 @@
 import {studyVisual} from './study-visual';
+import {adaptedAdventure,adaptiveQuestions} from './adaptive-adventure';
 import {generateStudyQuestions} from './study-generator';
 import {AnswerUI} from './answer-ui';
 import {resultLabel} from './questions';
@@ -6,7 +7,7 @@ import {escapeHtml} from './profile-ui';
 import {LearningUI,basicSettings} from './learning-ui';
 import {openProfiles} from './profiles';
 import {ProfileUI} from './profile-ui';
-import {recordEvidence} from './curriculum';
+import {recordEvidence,skillById} from './curriculum';
 import './learning.css';
 import { ant, campScene } from './ants';
 import { TrainingUI } from './training-ui';
@@ -102,7 +103,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               <div class="question-area" id="question-area">
                 <span class="board-doodle doodle-one">✧</span><span class="board-doodle doodle-two">×</span>
                 <div class="question-content" id="question-content"><div class="question-caption" id="question-caption">À toi de trouver !</div><div class="equation" id="equation" aria-label="Calcul"></div><div id="answer" class="answer-slots" aria-label="Ta réponse"></div></div>
-                <div class="correction-card" id="correction-card" role="alert" hidden><span class="correction-kicker">OUPS !</span><span class="correction-phrase">Désolé, mais c’était</span><strong id="correct-result"></strong><span class="correction-sparkle" aria-hidden="true">✦</span></div>
+                <div class="correction-card" id="correction-card" role="alert" hidden><span class="correction-kicker">OUPS !</span><span class="correction-phrase">Désolé, mais c’était</span><strong id="correct-result"></strong><p id="study-explanation" hidden></p><span class="correction-sparkle" aria-hidden="true">✦</span></div>
                 <div class="game-reaction" id="reaction" aria-hidden="true"></div>
               </div>
               <div class="feedback-line" id="feedback" role="status" aria-live="polite">Respire, tu sais le faire !</div>
@@ -160,9 +161,10 @@ let campOpen = false;
 let trainingActive = false;
 let studySkill:string|null=null;
 let studyGrade=profiles.active.grade;
+let studyLevel:number|null=null;
 let studyQuestions:import('./calculations').Calculation[]=[];
 let creditedMaterials = 0;
-let trainingStored = true;
+let trainingStored = profiles.stored;
 let trainingData: TrainingData = { settings: readTraining({getItem:()=>null}).settings, materials:0, records:{} };
 try { trainingData = readTraining(playerStorage,playerStorage.getItem('multipli-party:v1') ? saved : undefined); } catch { trainingStored=false; }
 const audio = new GameAudio();
@@ -173,7 +175,7 @@ let activeAdventure:AdventureDefinition=chatonAdventure;
 let worlds=activeAdventure.worlds, stages=activeAdventure.stages;
 const adventureSaves=new Map<AdventureId,{progress:AdventureProgress;stored:boolean}>();
 for(const adventure of adventures) {
-  let stored=true, progress:AdventureProgress={completed:[]};
+  let stored=profiles.stored, progress:AdventureProgress={completed:[]};
   try { playerStorage.getItem(adventure.storageKey); progress=readAdventure(playerStorage,adventure); } catch {stored=false;}
   adventureSaves.set(adventure.id,{progress,stored});
 }
@@ -247,7 +249,7 @@ const profileUI=new ProfileUI(profiles,()=>{
   audio.setMuted(saved.muted);showLanding();renderPreferences();
 });
 document.querySelector('.header-right')!.prepend(profileUI.button);
-const learningUI=new LearningUI(profiles,(skill,grade)=>{studySkill=skill.id;studyGrade=grade;trainingActive=true;start();});
+const learningUI=new LearningUI(profiles,(skill,grade,level)=>{studySkill=skill.id;studyGrade=grade;studyLevel=level;trainingActive=true;start();});
 camp.root.before(learningUI.root);
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
 get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
@@ -272,7 +274,7 @@ get('camp-results-exit').addEventListener('click',()=>openCamp());
 get('camp-colony-ready').addEventListener('click',()=>openCamp('colony'));
 function createGame(): Game {
   if(trainingActive && studySkill) {
-    studyQuestions=generateStudyQuestions(studySkill,studyGrade,profiles.active.mastery[studySkill]?.level??0,studyGrade==='GS'?5:['CP','CE1','CE2'].includes(studyGrade)?10:15);
+    studyQuestions=generateStudyQuestions(studySkill,studyGrade,studyLevel??profiles.active.mastery[studySkill]?.level??0,studyGrade==='GS'?5:['CP','CE1','CE2'].includes(studyGrade)?10:15);
     return new Game(defaults(),Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:studyQuestions,untimed:true,unlimitedLives:true,explicitAnswers:true,onAnswer:(q,e)=>{recordEvidence(profiles.active.mastery,q.exercise!.skillId,e);profiles.save();}});
   }
   if (trainingActive) {
@@ -283,6 +285,9 @@ function createGame(): Game {
         const id=q.operation==='multiply'?'tables':q.operation==='add'?s.add.max<=10?'small-add':'add':s.subtract.max<=10?'small-subtract':'subtract';
         recordEvidence(profiles.active.mastery,id,e);profiles.save();
       }});
+  }
+  if(activeStage?.study) {
+    return new Game(defaults(),Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:adaptiveQuestions(activeStage,profiles.active.mastery),untimed:true,unlimitedLives:true,explicitAnswers:true,victoryDurationMs:MISSION_REWARD_MS,onAnswer:(q,e)=>{recordEvidence(profiles.active.mastery,q.exercise!.skillId,e);profiles.save();}});
   }
   const duration = activeStage ? adventureDurations[activeStage.world.id] : null;
   const lives = activeStage ? adventureLives[activeStage.world.id] : null;
@@ -366,6 +371,9 @@ let newlyUnlockedMissions: string[] = [];
 let clearUnlockReveal = () => {};
 function showMap(): void {
   clearUnlockReveal();
+  const original=adventures.find(a=>a.id===activeAdventure.id)!;
+  activeAdventure=profiles.active.adaptive?adaptedAdventure(original,profiles.active.grade,profiles.active.mastery):original;
+  worlds=activeAdventure.worlds;stages=activeAdventure.stages;
   activeStage = null; mapOpen = true; chooserOpen=false; previewVictory = false; campOpen=false; trainingActive=false;
   audio.stopSpeech(); surprises.clear();
   game = createGame(); previousPhase = 'finished';
@@ -444,7 +452,7 @@ function renderPreferences(): void {
     get('victory-description').textContent = `${game.totalQuestions} ${game.totalQuestions===1?'matériau apporté':'matériaux apportés'} à la fourmilière !`;
   }
   if (activeStage) {
-    get('victory-goal').textContent = `${activeStage.count} SUR ${activeStage.count} · MISSION ACCOMPLIE`;
+    get('victory-goal').textContent = `${game.totalQuestions} SUR ${game.totalQuestions} · MISSION ACCOMPLIE`;
     get('victory-description').textContent = activeStage.index === 2 ? activeStage.world.souvenir : `${activeStage.name} : bravo, c’est fait !`;
   } else if (mapOpen) {
     get('victory-goal').textContent = 'LES HUIT AMIS SONT RÉUNIS';
@@ -487,7 +495,7 @@ function start(): void {
   lastWarning = -1;
   recordProcessed = false;
   get("difficulty-label").textContent =
-    studySkill ? `${studyGrade} · ${studyQuestions[0]?.exercise?.skillId} · Sans chrono · Essais illimités` : trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}` : '';
+    trainingActive&&studySkill ? `${studyGrade} · ${skillById(studySkill)?.title} · Sans chrono · Essais illimités` : trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${activeStage.study?'Sans chrono · Essais illimités':`${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}`}` : '';
   get("time-progress").setAttribute("aria-valuemax", String(game.duration));
   get("progress").setAttribute("aria-valuemax", String(game.totalQuestions));
   get("progress-goal").textContent = String(game.totalQuestions);
@@ -632,7 +640,13 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
-  if(game.explicitAnswers && (event.target as Element).closest('#study-answer') && event.key!=='Escape')return;
+  if(game.explicitAnswers && (event.target as Element).closest('#study-answer') && event.key!=='Escape'){
+    if(game.phase==='question'&&(event.target instanceof HTMLInputElement)){
+      if(/^\d$/.test(event.key)){event.preventDefault();digit(event.key);}
+      else if(event.key==='Backspace'){event.preventDefault();if(answerUI.erase())themedKeypad.erase();render(performance.now());}
+    }
+    return;
+  }
   if(game.explicitAnswers && game.phase==='question' && event.key==='Enter'){event.preventDefault();game.submitAnswer(game.answer,performance.now());render(performance.now());return;}
   if(game.explicitAnswers && game.phase==='question' && ['-','−',',','.','/',';'].includes(event.key)){event.preventDefault();game.setAnswer(game.answer+event.key,performance.now());render(performance.now());return;}
   if (/^\d$/.test(event.key) && game.phase === "question") {
@@ -973,9 +987,11 @@ function render(now: number): void {
       );
     } else {
       surprises.clear();
-      get("feedback").textContent =
+      get("feedback").textContent = pair.exercise?`La réponse est ${resultLabel(pair)}. Ouvre l’indice pour comprendre.`:
         `${timeout ? "Temps écoulé !" : "Oups !"} ${expression(pair)} = ${resultLabel(pair)} · On le reverra.`;
       get("correct-result").textContent = `${resultLabel(pair)} !`;
+      get('study-explanation').hidden=!pair.exercise;
+      get('study-explanation').textContent=pair.exercise?.hint??'';
       get("correction-card").setAttribute(
         "aria-label",
         `Désolé, mais c’était ${resultLabel(pair)} !`,

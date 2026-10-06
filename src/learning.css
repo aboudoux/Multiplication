@@ -21,3 +21,6 @@
 .board.is-study .study-symbols button{width:auto;flex:0 0 auto;min-width:44px}
 .board.is-study #study-submit{padding:10px 16px;font:600 1rem system-ui}
 .board.is-study .study-answer{margin:10px auto 0}
+.board.is-study #study-explanation{font:1rem/1.4 system-ui;margin:10px 0;max-width:420px}
+.learning-review summary,.learning-panel>details>summary{cursor:pointer;min-height:36px;padding:8px 0}
+.learning-panel h2{color:#233c36;font-size:2rem;margin:8px 0 18px}

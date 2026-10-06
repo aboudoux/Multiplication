@@ -44,7 +44,7 @@ test('six click-to-build stages and an earned star, reduced motion and interrupt
 });
 test('insufficient stock cannot build and unavailable storage leaves an honest session-only notice',async({page})=>{
  await enter(page,59);await expect(page.locator('#camp-build')).toBeDisabled();
- await page.evaluate(key=>{const data=JSON.parse(localStorage.getItem(key)!);data.materials=60;localStorage.setItem(key,JSON.stringify(data));},TRAINING_KEY);
+ await page.evaluate(key=>{const data=JSON.parse(localStorage.getItem(key)!);data.materials=60;localStorage.setItem(key,JSON.stringify(data));const profiles=JSON.parse(localStorage.getItem('calcul-party:players:v1')!);profiles.players.find((p:{id:string})=>p.id===profiles.active).data[key]=JSON.stringify(data);localStorage.setItem('calcul-party:players:v1',JSON.stringify(profiles));},TRAINING_KEY);
  await page.reload();await page.locator('#open-training').click();await page.locator('[data-tab="colony"]').click();
  await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw Error('unavailable');};});
  await page.locator('#camp-build').click();await expect(page.locator('.camp-save')).toContainText('cette visite seulement');

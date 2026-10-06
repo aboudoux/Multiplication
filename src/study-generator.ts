@@ -151,6 +151,12 @@ export function candidate(id:string,n:number,grade:Grade,level:number):StudyQues
 /** Bounded candidates: never enumerate all pairs in the school's numeration range. */
 export function generateStudyQuestions(id:string,grade:Grade,level=0,count=10,random=Math.random):Calculation[] {
  if(!skillById(id)||!grades.includes(grade)||!Number.isInteger(count)||count<1||count>100||![0,1,2].includes(level))throw new RangeError('Séance invalide');
+ return shuffle([...studyBank(id,grade,level)],random).slice(0,count);
+}
+const banks=new Map<string,Calculation[]>();
+/** Immutable question banks, bounded cache; generators shuffle copies. */
+export function studyBank(id:string,grade:Grade,level=0):readonly Calculation[] {
+ const cacheKey=`${id}:${grade}:${level}`;const cached=banks.get(cacheKey);if(cached)return cached;
  const pool=new Map<string,Calculation>();
  const candidates=id==='tables'?100:id.startsWith('small-')?121:id==='add'||id==='subtract'?10201:2048;
  for(let n=0;n<candidates;n++) {
@@ -159,5 +165,5 @@ export function generateStudyQuestions(id:string,grade:Grade,level=0,count=10,ra
   if(!pool.has(key))pool.set(key,studyCalculation(q,key));
  }
  if(!pool.size)throw new RangeError('Aucun exercice disponible pour cette compétence');
- return shuffle([...pool.values()],random).slice(0,Math.min(count,pool.size));
+ const bank=[...pool.values()];if(banks.size>=24)banks.delete(banks.keys().next().value!);banks.set(cacheKey,bank);return bank;
 }

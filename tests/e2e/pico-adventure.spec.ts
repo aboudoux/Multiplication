@@ -52,8 +52,8 @@ test('a won Pico mission survives reload and replay; reset preserves kitten and 
 });
 test('blocked storage retains each adventure for this visit; failed reset preserves progress',async({page})=>{
  await page.addInitScript(()=>{
-  const get=Storage.prototype.getItem;Storage.prototype.getItem=function(key){if(key.startsWith('calcul-party:adventure:'))throw Error('blocked');return get.call(this,key);};
-  const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.startsWith('calcul-party:adventure:'))throw Error('blocked');return set.call(this,key,value);};
+  const get=Storage.prototype.getItem;Storage.prototype.getItem=function(key){if(key.startsWith('calcul-party:adventure:')||key==='calcul-party:players:v1')throw Error('blocked');return get.call(this,key);};
+  const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.startsWith('calcul-party:adventure:')||key==='calcul-party:players:v1')throw Error('blocked');return set.call(this,key,value);};
   Storage.prototype.removeItem=function(){throw Error('blocked');};
  });
  await setup(page);await select(page,'pico');await expect(page.locator('.adventure-save')).toContainText('indisponible');

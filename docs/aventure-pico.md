@@ -2,6 +2,8 @@
 
 Aventure coopérative jouable à côté de [l’aventure du chaton](creation-aventure.md), avec huit personnages principaux, huit mondes et 24 missions. Cette fiche applique les trois modèles du guide et décrit le contenu livré.
 
+Les lignes « Calculs » ci-dessous décrivent le mode classique. Les profils scolaires adaptent compétences et quantités selon [la progression de 5 à 15 ans](progression-scolaire.md), sans chrono et à essais illimités. Histoire, personnages, missions acquises, animations, sons et récompenses restent ceux de cette fiche.
+
 ## Brief d’aventure
 
 Après une tempête, le phare magique de l’archipel s’est éteint. Pico, petit renard curieux au foulard turquoise, quitte son port pour retrouver ses sept amis dispersés. Aider chacun permet de préparer un élément du phare. L’objectif commun est de rendre aux bateaux leur chemin dans la nuit.
