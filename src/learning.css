@@ -16,3 +16,8 @@
 .is-study .equation{white-space:normal;font-size:clamp(1.4rem,3vw,2.6rem);line-height:1.2;overflow-wrap:anywhere;text-align:center}.is-study #question-content{width:min(100%,500px);transform:none!important}.is-study #question-area{min-height:320px}.is-study #question-caption{font-size:.8rem}.is-study #answer{display:none}.is-study #question-content{position:relative;left:auto;top:auto;margin:auto}.is-study .chalk-write{animation:none}.is-study #correct-result{font-size:1.6rem;overflow-wrap:anywhere}.is-study #correction-card{pointer-events:none}
 @media(max-width:600px){.is-study #question-area{min-height:330px}.study-symbols button{font-size:.9rem}.study-fields input{font-size:1.1rem}.is-study .question-content{max-width:100%}}
 @media(max-width:600px){#player-picker{max-width:150px;padding:8px;font-size:.75rem}#player-dialog{padding:16px}.header-right{flex-wrap:wrap}}
+.board.is-study .question-area{height:auto;min-height:300px;padding:12px 0;align-items:center}
+.board.is-study .equation{display:block;letter-spacing:normal;line-height:1.35}
+.board.is-study .study-symbols button{width:auto;flex:0 0 auto;min-width:44px}
+.board.is-study #study-submit{padding:10px 16px;font:600 1rem system-ui}
+.board.is-study .study-answer{margin:10px auto 0}

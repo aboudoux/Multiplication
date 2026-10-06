@@ -23,6 +23,7 @@ test('les problèmes guidés et inéquations sont jouables en seconde',async({pa
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.locator('#pause').click();await page.locator('#camp-exit').click();await page.locator('[data-skill=inequality]').click();await page.clock.runFor(4050);
  const prompt=await page.locator('#equation').innerText();const [a,b,c]=prompt.match(/-?\d+/g)!.map(Number);const op=prompt.match(/[≤≥<>]/)![0];await page.locator('#study-input-0').fill(`x${op}${(c-b)/a}`);await page.locator('#study-input-0').press('Enter');await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');
+ const form=await page.locator('#study-answer').boundingBox(),keypad=await page.locator('.keypad').boundingBox();expect(form!.y+form!.height).toBeLessThan(keypad!.y);
  await page.screenshot({path:'artifacts/learning-mobile.png',fullPage:true});
 });
 test('les équations demandent une valeur et les carrés toutes les solutions',async({page})=>{
