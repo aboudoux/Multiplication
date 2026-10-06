@@ -78,6 +78,7 @@ export class Game {
   get untimed(): boolean { return !!this.practice?.untimed; }
   get explicitAnswers():boolean {return !!this.practice?.explicitAnswers || !!this.current?.exercise;}
   get autoInteger():boolean {return !!this.practice?.autoIntegers&&this.current?.exercise?.answer.kind==='integer';}
+  get autoExactAnswer():boolean {return !!this.practice?.autoIntegers&&['decimal','fraction'].includes(this.current?.exercise?.answer.kind??'')&&!this.current?.exercise?.choices;}
   get hasNegativeIntegers():boolean {return !!this.practice?.questions.some(q=>q.exercise?.answer.kind==='integer'&&q.exercise.answer.value<0);}
   get unlimitedLives(): boolean { return !!this.practice?.unlimitedLives; }
   get victoryDuration(): number { return this.practice?.victoryDurationMs ?? VICTORY_DURATION_MS; }
@@ -169,6 +170,7 @@ export class Game {
       const normalized=value.replace('−','-');
       if(/^-?\d+$/.test(normalized)&&normalized.replace('-','').length===String(Math.abs(this.current.exercise.answer.value)).length)this.resolve(answerMatches(this.current.exercise.answer,value),false,now);
     }
+    else if(this.autoExactAnswer&&this.current?.exercise&&answerMatches(this.current.exercise.answer,value))this.resolve(true,false,now);
     return true;
   }
   submitAnswer(value:string,now:number):boolean {

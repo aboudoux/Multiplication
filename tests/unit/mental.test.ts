@@ -91,8 +91,8 @@ describe('saisie mentale et rappels',()=>{
   for(let i=0;i<30&&seen.size<10;i++){g.setAnswer(g.current!.result===9?'8':'9',t+10);t+=2100;g.tick(t);}
   expect(seen.size).toBe(10);expect(g.solved).toBe(0);
  });
- it('un dépassement ne compte qu’une fois et les décimaux attendent Valider',()=>{
+ it('un dépassement ne compte qu’une fois et les décimaux justes se valident seuls',()=>{
   let observed=0;const g=new Game({...defaults(),duration:10,lives:5},()=>.5,()=>true,{questions:[question(2)],untimed:false,unlimitedLives:false,explicitAnswers:true,autoIntegers:true,onAnswer:()=>observed++});g.start(0);g.tick(4001);g.setAnswer('2',14002);g.tick(14002);expect(g.lives).toBe(4);expect(observed).toBe(1);
-  const decimalQ=mentalFacts('decimal-add','CM1',0)[0],d=new Game(defaults(),()=>.5,()=>true,{questions:[{...question(0),exercise:decimalQ}],untimed:true,unlimitedLives:true,explicitAnswers:true,autoIntegers:true});d.start(0);d.tick(4001);d.setAnswer('1,0',4100);expect(d.phase).toBe('question');d.submitAnswer('1.0',4101);expect(d.solved).toBe(1);
+  const decimalQ=mentalFacts('decimal-add','CM1',0)[0],d=new Game(defaults(),()=>.5,()=>true,{questions:[{...question(0),exercise:decimalQ}],untimed:true,unlimitedLives:true,explicitAnswers:true,autoIntegers:true});d.start(0);d.tick(4001);d.setAnswer('1,0',4100);expect(d.phase).toBe('victory');d.submitAnswer('1.0',4101);expect(d.solved).toBe(1);
  });
 });

@@ -921,13 +921,13 @@ function render(now: number): void {
     answerUI.root.hidden=!game.explicitAnswers;
     if(!game.explicitAnswers)answerUI.signControls.hidden=true;
     get("board").classList.toggle("is-study",game.explicitAnswers);
-    if(game.explicitAnswers){answerUI.show(game.current,game.autoInteger,game.hasNegativeIntegers);const visual=game.current.exercise?studyVisual(game.current.exercise):'';answerUI.root.insertAdjacentHTML('afterbegin',visual);}
+    if(game.explicitAnswers){answerUI.show(game.current,game.autoInteger,game.hasNegativeIntegers,game.autoExactAnswer);const visual=game.current.exercise?studyVisual(game.current.exercise):'';answerUI.root.insertAdjacentHTML('afterbegin',visual);}
     get("equation").setAttribute(
       "aria-label",
       spokenExpression(game.current),
     );
     get("question-announcement").textContent =
-      game.autoInteger ? `${spokenExpression(game.current)}. ${String(Math.abs(game.current.result)).length} chiffre${Math.abs(game.current.result)<10?'':'s'} à saisir.` : game.explicitAnswers ? `${spokenExpression(game.current)}. Saisis ta réponse, puis valide.` : `${spokenExpression(game.current)}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
+      game.autoInteger ? `${spokenExpression(game.current)}. ${String(Math.abs(game.current.result)).length} chiffre${Math.abs(game.current.result)<10?'':'s'} à saisir.` : game.autoExactAnswer ? `${spokenExpression(game.current)}. Saisis ta réponse. Une bonne réponse est validée automatiquement.` : game.explicitAnswers ? `${spokenExpression(game.current)}. Saisis ta réponse, puis valide.` : `${spokenExpression(game.current)}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
     get("answer").innerHTML = [...String(game.current.result)]
       .map((_, i) => `<span class="answer-slot" data-slot="${i}"></span>`)
       .join("");

@@ -10,8 +10,27 @@ async function launch(page:Page,id:string) {
  const button=page.locator(`[data-skill=${id}]`);await button.evaluate(element=>{let p=element.parentElement;while(p){if(p instanceof HTMLDetailsElement)p.open=true;p=p.parentElement;}});await button.click();await page.clock.runFor(4050);
 }
 async function numbers(page:Page){return (await page.locator('#equation').innerText()).replaceAll('−','-').replaceAll(',','.').match(/-?\d+(?:\.\d+)?/g)!.map(Number);}
-async function answer(page:Page,value:string|number){await page.locator('#study-input-0').fill(String(value));if(await page.locator('#study-submit').count())await page.locator('#study-submit').click();await page.clock.runFor(700);}
+async function answer(page:Page,value:string|number){await page.locator('#study-input-0').fill(String(value));if(await page.locator('#study-submit').count()&&await page.locator('#study-submit').isEnabled())await page.locator('#study-submit').click();await page.clock.runFor(700);}
 async function leave(page:Page){await page.locator('#pause').click();await page.locator('#camp-exit').click();}
+
+for(const example of [
+ {age:'10',grade:'CM2' as const,skill:'decimal-divide',prompt:'1 ÷ 2',partial:'0,',last:'5',count:10},
+ {age:'13',grade:'4e' as const,skill:'fraction-multiply',prompt:'1/3 × 1/2',partial:'2/1',last:'2',count:5},
+])test(`${example.skill} : clavier et pavé acceptent la réponse sans Valider`,async({page})=>{
+ await player(page,example.age);const bank=[...studyBank(example.skill,example.grade,0)],target=bank.find(q=>q.exercise!.prompt===example.prompt)!;
+ expect(target).toBeTruthy();const ordered=[target,...bank.filter(q=>q.id!==target.id)],pool=[...bank],draws:number[]=[];
+ for(let i=pool.length-1;i>0;i--){const j=pool.findIndex(q=>q.id===ordered[i].id);draws.push((j+.5)/(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+ await page.evaluate(draws=>{const random=Math.random;Math.random=()=>draws.length?draws.shift()!:random();},draws);
+ await launch(page,example.skill);await expect(page.locator('#equation')).toHaveText(example.prompt);
+ await expect(page.locator('#study-format')).toContainText('validée automatiquement');
+ await expect(page.locator('#question-announcement')).toContainText('validée automatiquement');
+ await page.keyboard.type(example.partial);await expect(page.locator('#progress-caption')).toHaveText(`0 / ${example.count}`);
+ await page.locator(`[data-digit="${example.last}"]`).click();await expect(page.locator('#progress-caption')).toHaveText(`1 / ${example.count}`);
+ await expect(page.locator('#study-submit')).toBeDisabled();await page.keyboard.press('Enter');await page.clock.runFor(700);
+ await expect(page.locator('#progress-caption')).toHaveText(`1 / ${example.count}`);
+ const progress=await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('calcul-party:players:v1')!),p=data.players.find((p:any)=>p.id===data.active);return {materials:JSON.parse(p.data['calcul-party:training:v1']).materials,samples:Object.values(p.mentalMastery.skills).flatMap((s:any)=>s.samples).length};});
+ expect(progress).toEqual({materials:1,samples:1});
+});
 
 for(const width of [390,768,1365])test(`la touche moins est accessible près des chiffres à ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:width===390?844:1024});await player(page,'13');
@@ -82,9 +101,9 @@ test('les exercices longs disparaissent de tous les accès, même en seconde',as
 test('le CM1 ne rencontre que des inconnues à une opération',async({page})=>{
  await player(page,'9');await launch(page,'missing');for(let i=0;i<3;i++){const text=await page.locator('#equation').innerText();expect(text).not.toMatch(/[()]/);expect(text.match(/[+−×÷]/g)).toHaveLength(1);const [a,b]=await numbers(page);await answer(page,text.includes('+')?b-a:a-b);}await expect(page.locator('#progress-caption')).toHaveText('3 / 10');
 });
-test('fractions et virgule attendent Valider, les comparaisons offrent deux choix',async({page})=>{
- await player(page,'10');await launch(page,'fraction-picture');const [a,b]=(await page.locator('.study-fraction').getAttribute('aria-label'))!.match(/\d+/g)!.map(Number);await page.locator('#study-input-0').fill(`${a}/${b}`);await expect(page.locator('.study-chalk-slots')).toHaveText(`${a}/${b}`);await expect(page.locator('.study-chalk-slots .answer-slot')).toHaveCount(`${a}/${b}`.length);await expect(page.locator('#progress-caption')).toHaveText('0 / 10');await page.locator('#study-input-0').press('Enter');await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
- await leave(page);await launch(page,'decimal-divide');const [dividend,divisor]=await numbers(page);await page.locator('#study-input-0').fill((dividend/divisor).toFixed(2).replace('.',','));await expect(page.locator('#progress-caption')).toHaveText('0 / 10');await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
+test('fractions et virgule justes se valident seules, les comparaisons offrent deux choix',async({page})=>{
+ await player(page,'10');await launch(page,'fraction-picture');const [a,b]=(await page.locator('.study-fraction').getAttribute('aria-label'))!.match(/\d+/g)!.map(Number);await page.locator('#study-input-0').fill(`${a}/`);await expect(page.locator('#progress-caption')).toHaveText('0 / 10');await page.locator('#study-input-0').fill(`${a}/${b}`);await expect(page.locator('.study-chalk-slots')).toHaveText(`${a}/${b}`);await expect(page.locator('.study-chalk-slots .answer-slot')).toHaveCount(`${a}/${b}`.length);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');await page.keyboard.press('Enter');await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
+ await leave(page);await launch(page,'decimal-divide');const [dividend,divisor]=await numbers(page);await page.locator('#study-input-0').fill((dividend/divisor).toFixed(2).replace('.',','));await expect(page.locator('#progress-caption')).toHaveText('1 / 10');await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
  await leave(page);await launch(page,'fraction-compare');const buttons=page.locator('[data-choice]');await expect(buttons).toHaveCount(2);const values=await buttons.allTextContents();const ratio=(v:string)=>{const [n,d]=v.split('/').map(Number);return n/d;};await buttons.nth(ratio(values[0])>ratio(values[1])?0:1).click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
 });
 test('relatifs, équations simples et petits cubes se jouent de tête',async({page})=>{

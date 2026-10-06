@@ -27,13 +27,14 @@ export class AnswerUI {
  get value():string {
   const inputs=[...this.root.querySelectorAll<HTMLInputElement>('input')];return inputs.map(i=>i.value).join(';');
  }
- show(q:Calculation,autoInteger=false,signed=false):void {
+ show(q:Calculation,autoInteger=false,signed=false,autoExact=false):void {
   const answer=q.exercise?.answer,format=answer?.kind;
   this.root.hidden=false;
   const labels=format==='remainder'?['Quotient','Reste']:['Ta réponse'];
   const lengths=answer?.kind==='remainder'?[String(answer.quotient).length,String(answer.remainder).length]:[resultLabel(q).replace(/^[-−]/,'').length];
   const slots=(count:number)=>Array.from({length:count},()=>'<span class="answer-slot"></span>').join('');
-  const note=format==='set'?'Toutes les solutions, séparées par ;':format==='inequality'?'Écris par exemple x ≤ 4':format==='fraction'?(answer?.kind==='fraction'&&answer.irreducible?'Écris une fraction irréductible, par exemple 3/4':'Écris une fraction, par exemple 3/4'):format==='decimal'?'Virgule ou point sont acceptés':'';
+  const formatNote=format==='set'?'Toutes les solutions, séparées par ;':format==='inequality'?'Écris par exemple x ≤ 4':format==='fraction'?(answer?.kind==='fraction'&&answer.irreducible?'Écris une fraction irréductible, par exemple 3/4':'Écris une fraction, par exemple 3/4'):format==='decimal'?'Virgule ou point sont acceptés':'';
+  const note=formatNote+(autoExact?' · Bonne réponse validée automatiquement':'');
   this.root.innerHTML=`<div class="study-fields">${labels.map((label,i)=>`<label><span class="sr-only">${label}${format==='integer'?` : ${lengths[i]} chiffre${lengths[i]>1?'s':''} à saisir`:''}</span><div class="study-chalk-field"><div class="study-chalk-display" aria-hidden="true"><span class="study-chalk-sign" hidden></span><div class="answer-slots study-chalk-slots" data-characters="${lengths[i]}" data-signed="${signed||resultLabel(q).startsWith('-')}">${slots(lengths[i])}</div></div><input id="study-input-${i}" autocomplete="off" spellcheck="false" maxlength="40" inputmode="none" aria-describedby="study-format" required></div></label>`).join('')}</div><small id="study-format" ${note?'':'hidden'}>${note}</small><div class="study-symbols">${['−',',','/',';','≤','≥','<','>','x'].filter(c=>format==='inequality'||format==='set'?true:format==='fraction'?['−','/'].includes(c):format==='decimal'?['−',','].includes(c):c==='−').map(c=>`<button type="button" class="secondary-button" data-char="${c}">${c}</button>`).join('')}<button id="study-submit" type="submit" class="play-button">Valider</button></div><details id="study-hint"><summary>Un indice</summary><p>${escapeHtml(q.exercise?.hint??'Décompose le calcul.')}</p></details>`;
   this.text=this.root.querySelector('input')!;
   this.focused=this.text;
