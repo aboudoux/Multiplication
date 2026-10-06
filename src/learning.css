@@ -1,5 +1,5 @@
 #player-picker{font-size:.85rem;min-height:44px;max-width:240px;white-space:normal}
-.study-keypad-sign{width:min(100%,252px);margin:0 auto 8px;display:flex;justify-content:center}.study-keypad-sign[hidden]{display:none}.study-keypad-sign button{width:64px;flex:0 0 auto;min-width:64px;min-height:44px;padding:0 16px;font:700 32px/1 Kalam,cursive;color:var(--board-text,#fff);border:2px solid var(--board-text,#fff);border-radius:14px;background:var(--board);cursor:pointer}.study-keypad-sign button:disabled{opacity:.5;cursor:default}
+.study-keypad-symbols{width:min(100%,252px);margin:0 auto 8px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.study-keypad-symbols[hidden]{display:none}.study-keypad-symbols button{width:64px;flex:0 0 auto;min-width:64px;min-height:44px;padding:0 16px;font:700 32px/1 Kalam,cursive;color:var(--board-text,#fff);border:2px solid var(--board-text,#fff);border-radius:14px;background:var(--board);cursor:pointer}.study-keypad-symbols button:disabled{opacity:.5;cursor:default}
 #player-dialog{max-width:min(620px,calc(100vw - 32px));max-height:85dvh;overflow:auto;border:2px solid #d3c2a4;border-radius:22px;padding:24px;background:#fff9ec;color:#233c36}
 #player-dialog::backdrop{background:#152d29aa}
 #player-dialog form{display:grid;gap:12px;border-top:1px solid #d3c2a4;margin-top:18px;padding-top:12px}

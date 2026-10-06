@@ -13,10 +13,12 @@ async function numbers(page:Page){return (await page.locator('#equation').innerT
 async function answer(page:Page,value:string|number){await page.locator('#study-input-0').fill(String(value));if(await page.locator('#study-submit').count()&&await page.locator('#study-submit').isEnabled())await page.locator('#study-submit').click();await page.clock.runFor(700);}
 async function leave(page:Page){await page.locator('#pause').click();await page.locator('#camp-exit').click();}
 
-for(const example of [
+for(const width of [390,768,1365])for(const example of [
  {age:'10',grade:'CM2' as const,skill:'decimal-divide',prompt:'1 ÷ 2',partial:'0,',last:'5',count:10},
  {age:'13',grade:'4e' as const,skill:'fraction-multiply',prompt:'1/3 × 1/2',partial:'2/1',last:'2',count:5},
-])test(`${example.skill} : clavier et pavé acceptent la réponse sans Valider`,async({page})=>{
+ {age:'10',grade:'CM2' as const,skill:'decimal-scale',prompt:'0,8 × 10',partial:'',last:'8',count:10},
+])test(`${example.skill} : symboles sur le pavé et aucun Valider à ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:width===390?844:1024});
  await player(page,example.age);const bank=[...studyBank(example.skill,example.grade,0)],target=bank.find(q=>q.exercise!.prompt===example.prompt)!;
  expect(target).toBeTruthy();const ordered=[target,...bank.filter(q=>q.id!==target.id)],pool=[...bank],draws:number[]=[];
  for(let i=pool.length-1;i>0;i--){const j=pool.findIndex(q=>q.id===ordered[i].id);draws.push((j+.5)/(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
@@ -24,9 +26,17 @@ for(const example of [
  await launch(page,example.skill);await expect(page.locator('#equation')).toHaveText(example.prompt);
  await expect(page.locator('#study-format')).toContainText('validée automatiquement');
  await expect(page.locator('#question-announcement')).toContainText('validée automatiquement');
- await page.keyboard.type(example.partial);await expect(page.locator('#progress-caption')).toHaveText(`0 / ${example.count}`);
+ await expect(page.locator('#study-submit')).toHaveCount(0);
+ const symbol=page.getByRole('button',{name:example.skill==='fraction-multiply'?'Barre de fraction':'Virgule',exact:true});await expect(symbol).toBeVisible();
+ expect(await symbol.evaluate(el=>!!el.closest('.keypad-panel'))).toBe(true);expect(await page.locator('#study-answer [data-char]').count()).toBe(0);
+ const box=await symbol.boundingBox(),pad=await page.locator('.keypad').boundingBox();
+ expect(box!.width).toBeGreaterThanOrEqual(44);expect(box!.height).toBeGreaterThanOrEqual(44);expect(box!.y+box!.height).toBeLessThanOrEqual(pad!.y);expect(pad!.y-box!.y-box!.height).toBeLessThan(16);
+ expect(box!.x).toBeGreaterThanOrEqual(pad!.x);expect(box!.x+box!.width).toBeLessThanOrEqual(pad!.x+pad!.width);
+ for(const char of example.partial){if(/[0-9]/.test(char))await page.keyboard.type(char);else await symbol.click();}await expect(page.locator('#progress-caption')).toHaveText(`0 / ${example.count}`);
+ await page.screenshot({path:`artifacts/keypad-${example.skill}-${width}.png`,fullPage:true});
+ await page.locator('#pause').click();await expect(symbol).toBeDisabled();await page.clock.runFor(30000);await page.locator('#resume').click();await expect(symbol).toBeDisabled();await page.clock.runFor(4050);await expect(symbol).toBeEnabled();
  await page.locator(`[data-digit="${example.last}"]`).click();await expect(page.locator('#progress-caption')).toHaveText(`1 / ${example.count}`);
- await expect(page.locator('#study-submit')).toBeDisabled();await page.keyboard.press('Enter');await page.clock.runFor(700);
+ await expect(symbol).toBeDisabled();await expect(page.locator('#study-submit')).toHaveCount(0);await page.keyboard.press('Enter');await page.clock.runFor(700);
  await expect(page.locator('#progress-caption')).toHaveText(`1 / ${example.count}`);
  const progress=await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('calcul-party:players:v1')!),p=data.players.find((p:any)=>p.id===data.active);return {materials:JSON.parse(p.data['calcul-party:training:v1']).materials,samples:Object.values(p.mentalMastery.skills).flatMap((s:any)=>s.samples).length};});
  expect(progress).toEqual({materials:1,samples:1});
@@ -52,7 +62,7 @@ for(const width of [390,768,1365])test(`la touche moins est accessible près des
  await page.locator('#pause').click();await expect(minus).toBeDisabled();await page.locator('#resume').click();await expect(minus).toBeDisabled();await page.clock.runFor(4050);await expect(minus).toBeEnabled();
  await minus.click();await page.locator('[data-digit="4"]').click();await page.locator('[data-digit="5"]').click();
  await expect(page.locator('#progress-caption')).toHaveText('1 / 10');await page.clock.runFor(700);
- await leave(page);await launch(page,'divide');await expect(page.locator('.study-keypad-sign')).toBeHidden();await expect(page.locator('[data-char="−"]')).toHaveCount(0);
+ await leave(page);await launch(page,'divide');await expect(page.locator('.study-keypad-symbols')).toBeHidden();await expect(page.locator('[data-char="−"]')).toHaveCount(0);
 });
 
 test('les opérateurs ont une voix locale prête, réécoutable et annulable',async({page})=>{

@@ -18,7 +18,7 @@ async function solveStage(page:Page,adventure:typeof adventures[number],id:strin
   await expect(page.locator('#equation')).toHaveText(q.exercise!.prompt);const answer=q.exercise!.answer;
   if(answer.kind==='remainder'){await page.locator('#study-input-0').fill(String(answer.quotient));await page.locator('#study-input-1').fill(String(answer.remainder));}
   else await page.locator('#study-input-0').fill(answerLabel(answer));
-  if(answer.kind!=='integer'&&await page.locator('#study-submit').isEnabled())await page.locator('#study-input-0').press('Enter');await page.clock.runFor(700);
+  if(answer.kind!=='integer'&&await page.locator('#study-submit').count()&&await page.locator('#study-submit').isEnabled())await page.locator('#study-input-0').press('Enter');await page.clock.runFor(700);
  }
  await expect(page.locator('.mission-scene')).toHaveAttribute('data-mission',id);await page.clock.runFor(10100);await page.locator('[data-action=home]').click();
 }

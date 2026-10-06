@@ -608,7 +608,7 @@ get("resume").addEventListener("click", () => {
 });
 const answerUI=new AnswerUI(value=>{game.setAnswer(value,performance.now());render(performance.now());},value=>{game.submitAnswer(value,performance.now());render(performance.now());},()=>game.useHint());
 get('answer').after(answerUI.root);
-document.querySelector('.keypad')!.before(answerUI.signControls);
+document.querySelector('.keypad')!.before(answerUI.symbolControls);
 function digit(value: string): void {
   if (game.phase !== "question") return;
   if (game.explicitAnswers ? answerUI.append(value) : game.digit(value, performance.now())) {
@@ -923,7 +923,7 @@ function render(now: number): void {
     get("equation").innerHTML = game.current.exercise ? escapeHtml(expression(game.current)) :
       `<span>${game.current.a}</span><span class="multiply-sign">${symbols[game.current.operation]}</span><span>${game.current.b}</span>`;
     answerUI.root.hidden=!game.explicitAnswers;
-    if(!game.explicitAnswers)answerUI.signControls.hidden=true;
+    if(!game.explicitAnswers)answerUI.symbolControls.hidden=true;
     get("board").classList.toggle("is-study",game.explicitAnswers);
     if(game.explicitAnswers){answerUI.show(game.current,game.autoInteger,game.hasNegativeIntegers,game.autoExactAnswer);const visual=game.current.exercise?studyVisual(game.current.exercise):'';answerUI.root.insertAdjacentHTML('afterbegin',visual);}
     get("equation").setAttribute(
