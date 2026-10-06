@@ -29,4 +29,17 @@ describe('exercices structurés',()=>{
   const deck=generateStudyQuestions('square','4e',2,100);expect(deck.some(q=>q.exercise!.prompt.startsWith('(-'))).toBe(true);expect(deck.some(q=>q.exercise!.prompt.startsWith('−'))).toBe(true);
   for(const q of deck){const prompt=q.exercise!.prompt,base=Number(prompt.match(/\d+/)![0]);expect(q.exercise!.answer).toEqual({kind:'integer',value:prompt.startsWith('−')?-base*base:base*base});}
  });
+ it('les équations construites ont les solutions annoncées dans les deux membres',()=>{
+  for(const id of ['equation-two','equation-both'])for(const q of generateStudyQuestions(id,'4e',1,100)){
+   const [a,b,c,d]=q.exercise!.prompt.match(/-?\d+/g)!.map(Number);const answer=q.exercise!.answer;if(answer.kind!=='integer')throw Error('Entier attendu');
+   expect(a*answer.value+b).toBe(id==='equation-both'?c*answer.value+d:c);
+   if(id==='equation-both')expect(a).not.toBe(c);
+  }
+  for(const q of generateStudyQuestions('equation-set','3e',0,20)){
+   const answer=q.exercise!.answer;if(answer.kind!=='set')throw Error('Ensemble attendu');
+   const squared=Number(q.exercise!.prompt.match(/\d+/)![0]);expect(answer.values).toHaveLength(2);
+   for(const v of answer.values)expect(v.numerator**2).toBe(squared);
+   expect(answerMatches(answer,String(answer.values[0].numerator))).toBe(false);
+  }
+ });
 });

@@ -39,6 +39,7 @@ export const skills: readonly Skill[] = [
   skill('times-hundred','Multiplier par 100','CE2',3,['times-ten'],'Chaque unité devient une centaine.','84 × 100'),
   skill('fraction-add','Additionner des fractions','CE2',4,['fraction-picture'],'Additionner les parts après avoir choisi une même unité.','1/4 + 2/4'),
   skill('times-thousand','Multiplier par 1 000','CM1',3,['times-hundred'],'Chaque unité devient un millier.','45 × 1 000'),
+  skill('mystery','Nombres mystères','CM1',6,['missing','tables'],'Retrouver les étapes dans l’ordre inverse.','3 × (? + 2) = 21'),
   skill('remainder','Division avec reste','CM1',4,['divide'],'Dividende = diviseur × quotient + reste ; le reste est plus petit que le diviseur.','23 ÷ 5'),
   skill('decimal-add','Additions et soustractions décimales','CM1',4,['add','subtract'],'Aligner les unités, dixièmes et centièmes.','4,45 + 0,3'),
   skill('decimal-scale','Décimaux × et ÷ 10, 100, 1 000','CM2',4,['decimal-add'],'La valeur de chaque chiffre change de rang.','7,2 ÷ 100'),
@@ -69,7 +70,7 @@ export const skills: readonly Skill[] = [
   skill('successive','Évolutions successives','2de',7,['evolution'],'Multiplier les coefficients successifs, sans additionner les taux.','100 €, puis +10 % et −10 %'),
   skill('program','Programmes de calcul','CM2',7,['tables','add'],'Suivre les étapes dans l’ordre et conserver le résultat intermédiaire.','Ajouter 3 à 5, puis multiplier par 2'),
 ];
-export const AVAILABLE_LOT = 5;
+export const AVAILABLE_LOT = 6;
 export const skillById = (id: string) => skills.find(s=>s.id===id);
 export function curriculum(grade: Grade, available = AVAILABLE_LOT): Skill[] {
   return skills.filter(s=>grades.indexOf(s.grade)<=grades.indexOf(grade) && s.lot<=available);

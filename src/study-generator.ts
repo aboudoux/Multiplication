@@ -89,6 +89,28 @@ export function candidate(id:string,n:number,grade:Grade,level:number):StudyQues
  } else if(id==='negative-power') {
   const base=[2,3,4,5,10][n%5],exponent=Math.floor(n/5)%4+1;
   prompt=`${base}^(−${exponent})`;kind='power';answer={kind:'fraction',value:rational(1,base**exponent)};
+ } else if(id==='missing') {
+  const x=n%11,a=Math.floor(n/11)%11,minus=n%2===1;
+  if(minus){prompt=`${x+a} − ? = ${a}`;}else{prompt=`${a} + ? = ${a+x}`;}
+  whole(x);kind='missing';
+ } else if(id==='mystery') {
+  const x=n%13,a=Math.floor(n/13)%8+2,b=Math.floor(n/104)%9+1;
+  prompt=`${a} × (? + ${b}) = ${a*(x+b)}`;whole(x);kind='missing';
+ } else if(id==='substitution') {
+  const x=n%21-10,a=Math.floor(n/21)%8+2,b=Math.floor(n/168)%10;
+  prompt=`${a}x + ${b}, pour x = ${x}`;whole(a*x+b);voice=['function',...numberTokens(x),...mathTokens(`${a}x + ${b}`)];
+ } else if(id==='equation-one') {
+  const x=level===0?n%13: n%25-12,a=Math.floor(n/25)%9+1;
+  prompt=n%2===0?`x + ${a} = ${x+a}`:`${a}x = ${a*x}`;whole(x);kind='equation';
+ } else if(id==='equation-two'||id==='equation-both') {
+  const x=n%25-12,a=Math.floor(n/25)%8+2,b=Math.floor(n/200)%11-5,c=id==='equation-both'?a-1-Math.floor(n/25)%3:0;
+  prompt=id==='equation-both'?`${a}x + (${b}) = ${c}x + (${(a-c)*x+b})`:`${a}x + (${b}) = ${a*x+b}`;
+  whole(x);kind='equation';
+ } else if(id==='equation-set') {
+  const a=n%10+1,b=Math.floor(n/10)%10+1;kind='equation';
+  if(level===0){prompt=`x² = ${a*a}`;answer={kind:'set',values:[rational(-a),rational(a)]};}
+  else {if(a===b)return null;prompt=`(x − ${a}) × (x + ${b}) = 0`;answer={kind:'set',values:[rational(a),rational(-b)]};}
+  voice=['all',...mathTokens(prompt)];
  } else return null;
  voice??=mathTokens(prompt);
  return {kind,skillId:id,prompt,spoken:tokensText(voice),voiceTokens:voice,hint:skill.strategy,answer,visual} as StudyQuestion;

@@ -17,6 +17,12 @@ test('une séance explicite attend Valider et crédite le profil actif',async({p
  await expect(page.locator('#learning-panel')).toContainText('En entraînement');
  const data=await page.evaluate(()=>JSON.parse(localStorage.getItem('calcul-party:players:v1')!));const active=data.players.find((p:{id:string})=>p.id===data.active);expect(JSON.parse(active.data['calcul-party:training:v1']).materials).toBe(5);
 });
+test('les équations demandent une valeur et les carrés toutes les solutions',async({page})=>{
+ await player(page,'14');await page.locator('[data-skill=equation-two]').click();await page.clock.runFor(4050);
+ const [a,b,c]=(await page.locator('#equation').innerText()).match(/-?\d+/g)!.map(Number);await page.locator('#study-input-0').fill(String((c-b)/a));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');
+ await page.locator('#pause').click();await page.locator('#camp-exit').click();await page.locator('[data-skill=equation-set]').click();await page.clock.runFor(4050);
+ const squared=Number((await page.locator('#equation').innerText()).match(/\d+/)![0]);const x=Math.sqrt(squared);await page.locator('#study-input-0').fill(`${x};−${x}`);await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
+});
 test('le parcours est lisible sur téléphone et le clavier garde Entrée',async({page})=>{
  await page.setViewportSize({width:390,height:844});await player(page);await page.locator('[data-skill=small-subtract]').click();await page.clock.runFor(4050);
  const label=(await page.locator('#equation').getAttribute('aria-label'))!;const [a,b]=label.match(/\d+/g)!.map(Number);
