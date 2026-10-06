@@ -15,6 +15,7 @@ export interface Calculation {
   b: number;
   id: string;
   result: number;
+  exercise?: import('./questions').StudyQuestion;
 }
 export const modes: Record<Mode, { name: string; description: string; symbol: string; operations: Operation[] }> = {
   add: { name: "Le petit plus", description: "Additions jusqu’à 20", symbol: "+", operations: ["add"] },
@@ -27,8 +28,8 @@ export const symbols: Record<Operation, string> = { add: "+", subtract: "−", m
 export const words: Record<Operation, string> = { add: "plus", subtract: "moins", multiply: "fois" };
 export const usesTables = (mode: Mode) => modes[mode].operations.includes("multiply");
 export const questionCount = (settings: GameSettings) => settings.length === "all" ? settings.tables * 10 : settings.length;
-export const expression = (q: Calculation) => `${q.a} ${symbols[q.operation]} ${q.b}`;
-export const spokenExpression = (q: Calculation) => `${q.a} ${words[q.operation]} ${q.b}`;
+export const expression = (q: Calculation) => q.exercise?.prompt ?? `${q.a} ${symbols[q.operation]} ${q.b}`;
+export const spokenExpression = (q: Calculation) => q.exercise?.spoken ?? `${q.a} ${words[q.operation]} ${q.b}`;
 export const voicePath = (q: Pick<Calculation, "operation" | "a" | "b">) => {
   const existing = q.operation === 'multiply' ? q.a>=1 && q.a<=10 && q.b>=1 && q.b<=10
     : q.a>=0 && q.a<=20 && q.b>=0 && q.b<=20 && (q.operation==='add'?q.a+q.b:q.a-q.b)>=0 && (q.operation==='add'?q.a+q.b:q.a-q.b)<=20;

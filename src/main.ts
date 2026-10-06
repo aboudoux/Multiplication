@@ -1,3 +1,7 @@
+import {generateStudyQuestions} from './study-generator';
+import {AnswerUI} from './answer-ui';
+import {resultLabel} from './questions';
+import {escapeHtml} from './profile-ui';
 import {LearningUI,basicSettings} from './learning-ui';
 import {openProfiles} from './profiles';
 import {ProfileUI} from './profile-ui';
@@ -153,6 +157,9 @@ try {
 }
 let campOpen = false;
 let trainingActive = false;
+let studySkill:string|null=null;
+let studyGrade=profiles.active.grade;
+let studyQuestions:import('./calculations').Calculation[]=[];
 let creditedMaterials = 0;
 let trainingStored = true;
 let trainingData: TrainingData = { settings: readTraining({getItem:()=>null}).settings, materials:0, records:{} };
@@ -220,7 +227,7 @@ function persistTraining(): boolean {
   try { trainingStored=saveTraining(playerStorage,trainingData); } catch { trainingStored=false; }
   return trainingStored;
 }
-const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); audio.voiceStyle=trainingData.settings.voice; return stored; },()=>{ trainingActive=true; start(); },()=>showLanding(),()=>{
+const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); audio.voiceStyle=trainingData.settings.voice; return stored; },()=>{ studySkill=null; trainingActive=true; start(); },()=>showLanding(),()=>{
   const entries=Object.entries(saved.records);
   return entries.length ? `<table class="camp-records"><caption>Meilleurs résultats par réglage</caption><thead><tr><th scope="col">Séance</th><th scope="col">Temps</th><th scope="col">Erreurs</th></tr></thead><tbody>${entries.map(([key,r])=>{
     const [mode,tables,count,duration,lives]=key.split('-');
@@ -239,7 +246,7 @@ const profileUI=new ProfileUI(profiles,()=>{
   audio.setMuted(saved.muted);showLanding();renderPreferences();
 });
 document.querySelector('.header-right')!.prepend(profileUI.button);
-const learningUI=new LearningUI(profiles,(skill,grade)=>{trainingData.settings=basicSettings(grade,skill.id);persistTraining();camp.open('workshop',trainingStored);learningUI.open();});
+const learningUI=new LearningUI(profiles,(skill,grade)=>{studySkill=skill.id;studyGrade=grade;trainingActive=true;start();});
 camp.root.before(learningUI.root);
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
 get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
@@ -247,13 +254,13 @@ get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class=
 get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="camp-results-exit" class="secondary-button" type="button" hidden>Retour au camp</button>');
 get('camp-results-exit').insertAdjacentHTML('afterend','<button id="camp-colony-ready" class="play-button" type="button" hidden>Un chantier est prêt ! Aller construire →</button>');
 function openCamp(tab: 'workshop'|'colony' = 'workshop'): void {
-  trainingActive=false; activeStage=null; mapOpen=false; chooserOpen=false; campOpen=true; previewVictory=false;
+  trainingActive=false; studySkill=null; activeStage=null; mapOpen=false; chooserOpen=false; campOpen=true; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
   persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored); camp.root.before(learningUI.root); learningUI.open();
 }
 function showLanding(): void {
-  campOpen=false; trainingActive=false; activeStage=null; mapOpen=false; chooserOpen=false; previewVictory=false;
+  campOpen=false; trainingActive=false; studySkill=null; activeStage=null; mapOpen=false; chooserOpen=false; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
   applyTheme(); render(performance.now()); get('open-training').focus();
@@ -263,6 +270,10 @@ get('camp-exit').addEventListener('click',()=>openCamp());
 get('camp-results-exit').addEventListener('click',()=>openCamp());
 get('camp-colony-ready').addEventListener('click',()=>openCamp('colony'));
 function createGame(): Game {
+  if(trainingActive && studySkill) {
+    studyQuestions=generateStudyQuestions(studySkill,studyGrade,profiles.active.mastery[studySkill]?.level??0,studyGrade==='GS'?5:['CP','CE1','CE2'].includes(studyGrade)?10:15);
+    return new Game(defaults(),Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:studyQuestions,untimed:true,unlimitedLives:true,explicitAnswers:true,onAnswer:(q,e)=>{recordEvidence(profiles.active.mastery,q.exercise!.skillId,e);profiles.save();}});
+  }
   if (trainingActive) {
     const s=trainingData.settings;
     return new Game({...defaults(),duration:s.duration??10,lives:s.lives??3},Math.random,
@@ -441,7 +452,7 @@ function renderPreferences(): void {
 }
 
 function start(): void {
-  if (trainingActive && inspectTraining(trainingData.settings).error) { openCamp('workshop'); return; }
+  if (trainingActive && !studySkill && inspectTraining(trainingData.settings).error) { openCamp('workshop'); return; }
   audio.homeMusic(false);
   creditedMaterials=0;
   get('camp-cargo-label').textContent='Chaque calcul réussi apporte un matériau.';
@@ -475,7 +486,7 @@ function start(): void {
   lastWarning = -1;
   recordProcessed = false;
   get("difficulty-label").textContent =
-    trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}` : '';
+    studySkill ? `${studyGrade} · ${studyQuestions[0]?.exercise?.skillId} · Sans chrono · Essais illimités` : trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}` : '';
   get("time-progress").setAttribute("aria-valuemax", String(game.duration));
   get("progress").setAttribute("aria-valuemax", String(game.totalQuestions));
   get("progress-goal").textContent = String(game.totalQuestions);
@@ -581,9 +592,11 @@ get("resume").addEventListener("click", () => {
   lastCountdown = -1;
   render(performance.now());
 });
+const answerUI=new AnswerUI(value=>{game.setAnswer(value,performance.now());},value=>{game.submitAnswer(value,performance.now());render(performance.now());},()=>game.useHint());
+get('answer').after(answerUI.root);
 function digit(value: string): void {
   if (game.phase !== "question") return;
-  if (game.digit(value, performance.now())) {
+  if (game.explicitAnswers ? answerUI.append(value) : game.digit(value, performance.now())) {
     audio.key();
     themedKeypad.press(value);
   }
@@ -595,7 +608,7 @@ document
     button.addEventListener("click", () => digit(button.dataset.digit!)),
   );
 get("erase").addEventListener("click", () => {
-  if (game.erase(performance.now())) themedKeypad.erase();
+  if (game.explicitAnswers ? answerUI.erase() : game.erase(performance.now())) themedKeypad.erase();
   render(performance.now());
 });
 document.addEventListener("keydown", (event) => {
@@ -618,12 +631,15 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+  if(game.explicitAnswers && (event.target as Element).closest('#study-answer') && event.key!=='Escape')return;
+  if(game.explicitAnswers && game.phase==='question' && event.key==='Enter'){event.preventDefault();game.submitAnswer(game.answer,performance.now());render(performance.now());return;}
+  if(game.explicitAnswers && game.phase==='question' && ['-','−',',','.','/',';'].includes(event.key)){event.preventDefault();game.setAnswer(game.answer+event.key,performance.now());render(performance.now());return;}
   if (/^\d$/.test(event.key) && game.phase === "question") {
     event.preventDefault();
     digit(event.key);
   } else if (event.key === "Backspace" && game.phase === "question") {
     event.preventDefault();
-    if (game.erase(performance.now())) themedKeypad.erase();
+    if (game.explicitAnswers ? answerUI.erase() : game.erase(performance.now())) themedKeypad.erase();
     render(performance.now());
   } else if (
     event.key === "Escape" &&
@@ -672,7 +688,7 @@ function renderResults(now: number): void {
     const won=game.solved===game.totalQuestions;
     const s=trainingData.settings;
     let recordText='Une séance pour progresser à ton rythme.';
-    if (won && s.duration!==null && s.lives!==null) {
+    if (won && !studySkill && s.duration!==null && s.lives!==null) {
       const key=trainingRecordKey(s), score={timeMs:game.elapsed(now),mistakes:game.mistakes};
       const best=trainingData.records[key];
       if (!best || score.timeMs<best.timeMs) { trainingData.records[key]=score; persistTraining(); }
@@ -883,14 +899,17 @@ function render(now: number): void {
       .map((_, i) => i)
       .filter((i) => i !== lastPosition);
     lastPosition = candidates[Math.floor(Math.random() * candidates.length)];
-    get("equation").innerHTML =
+    get("equation").innerHTML = game.current.exercise ? escapeHtml(expression(game.current)) :
       `<span>${game.current.a}</span><span class="multiply-sign">${symbols[game.current.operation]}</span><span>${game.current.b}</span>`;
+    answerUI.root.hidden=!game.explicitAnswers;
+    get("board").classList.toggle("is-study",game.explicitAnswers);
+    if(game.explicitAnswers)answerUI.show(game.current);
     get("equation").setAttribute(
       "aria-label",
       spokenExpression(game.current),
     );
     get("question-announcement").textContent =
-      `${spokenExpression(game.current)}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
+      game.explicitAnswers ? `${spokenExpression(game.current)}. Saisis ta réponse, puis valide.` : `${spokenExpression(game.current)}. ${String(game.current.result).length} chiffre${game.current.result < 10 ? "" : "s"} à saisir.`;
     get("answer").innerHTML = [...String(game.current.result)]
       .map((_, i) => `<span class="answer-slot" data-slot="${i}"></span>`)
       .join("");
@@ -904,9 +923,11 @@ function render(now: number): void {
     get("feedback").className = "feedback-line";
     get("question-caption").textContent = "À toi de trouver !";
     positionQuestion();
+    if(game.explicitAnswers)get<HTMLInputElement>('study-input-0').focus({preventScroll:true});
     speakCurrentQuestion();
     prepareUpcomingQuestions();
   }
+  if(game.explicitAnswers)answerUI.sync(game.answer,phase==='question');
   if (renderedAnswer !== game.answer) {
     get("answer")
       .querySelectorAll<HTMLElement>("[data-slot]")
@@ -952,11 +973,11 @@ function render(now: number): void {
     } else {
       surprises.clear();
       get("feedback").textContent =
-        `${timeout ? "Temps écoulé !" : "Oups !"} ${expression(pair)} = ${pair.result} · On le reverra.`;
-      get("correct-result").textContent = `${pair.result} !`;
+        `${timeout ? "Temps écoulé !" : "Oups !"} ${expression(pair)} = ${resultLabel(pair)} · On le reverra.`;
+      get("correct-result").textContent = `${resultLabel(pair)} !`;
       get("correction-card").setAttribute(
         "aria-label",
-        `Désolé, mais c’était ${pair.result} !`,
+        `Désolé, mais c’était ${resultLabel(pair)} !`,
       );
       get("correction-card").hidden = false;
       get("question-area").classList.add("has-correction");

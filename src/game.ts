@@ -1,4 +1,5 @@
 import type {Evidence} from './curriculum';
+import {answerMatches} from './questions';
 import { selectQuestions, questionCount, validateSettings } from "./calculations";
 import type { Calculation, GameSettings } from "./calculations";
 export type { Duration } from "./calculations";
@@ -30,6 +31,7 @@ export interface PracticeRules {
   unlimitedLives: boolean;
   victoryDurationMs?: number;
   onAnswer?: (question:Calculation,evidence:Evidence)=>void;
+  explicitAnswers?: boolean;
 }
 
 /** Pure clock-driven state machine. Only active answering time counts toward records. */
@@ -71,6 +73,7 @@ export class Game {
   get startingLives() { return this.settings.lives; }
   get totalQuestions(): number { return this.practice?.questions.length ?? questionCount(this.settings); }
   get untimed(): boolean { return !!this.practice?.untimed; }
+  get explicitAnswers():boolean {return !!this.practice?.explicitAnswers || !!this.current?.exercise;}
   get unlimitedLives(): boolean { return !!this.practice?.unlimitedLives; }
   get victoryDuration(): number { return this.practice?.victoryDurationMs ?? VICTORY_DURATION_MS; }
   victoryElapsed(now: number): number { return Math.max(0, this.victoryDuration - (this.deadline - (this.celebrationSuspendedAt ?? now))); }
@@ -146,11 +149,21 @@ export class Game {
     this.tick(now);
     // An expired question cannot accept a racing click or key press.
     if (this.phase !== "question" || !this.current) return false;
+    if(this.explicitAnswers && this.answer.length>=100)return false;
     this.answer += digit;
     const expected = String(this.current.result);
-    if (this.answer.length === expected.length)
+    if (!this.explicitAnswers && this.answer.length === expected.length)
       this.resolve(this.answer === expected, false, now);
     return true;
+  }
+
+  setAnswer(value:string,now:number):boolean {
+    if(this.phase!=='question'||!this.explicitAnswers||value.length>100)return false;
+    this.tick(now);if(this.phase!=='question')return false;this.answer=value;return true;
+  }
+  submitAnswer(value:string,now:number):boolean {
+    if(!this.setAnswer(value,now)||!value.trim()||!this.current)return false;
+    this.resolve(this.current.exercise?answerMatches(this.current.exercise.answer,value):answerMatches({kind:'integer',value:this.current.result},value),false,now);return true;
   }
 
   erase(now: number): boolean {

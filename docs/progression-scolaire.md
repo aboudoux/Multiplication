@@ -14,7 +14,7 @@ Le champ de numération ne constitue pas une banque d’opérations aléatoires 
 ## Lots
 
 1. Profils, reprise des sauvegardes, catalogue sourcé et suivi : livré.
-2. Questions et réponses extensibles : à réaliser.
+2. Questions et réponses extensibles : livré.
 3. Collections, division exacte et grandes multiplications : à réaliser.
 4. Fractions, décimaux et quotient/reste : à réaliser.
 5. Relatifs, priorités, puissances et racines : à réaliser.
