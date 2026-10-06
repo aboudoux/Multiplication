@@ -4,6 +4,7 @@ import { voiceProfiles, voiceRates, type VoiceStyle } from "./voice-profiles";
 export { voiceRates, type VoiceStyle } from "./voice-profiles";
 export type VoiceStatus = "idle" | "loading" | "speaking" | "unavailable";
 export const VOICE_LOAD_TIMEOUT_MS = 5000;
+const STUDY_TOKEN_REVISION='2';
 interface VoiceClip {
   state: "loading" | "ready" | "unavailable";
   buffer?: AudioBuffer;
@@ -90,8 +91,12 @@ export class QuestionVoice {
     return this.composeTokens([a,operation,b]);
   }
   private async composeTokens(tokens:string[]):Promise<AudioBuffer> {
-    if(!tokens.length||tokens.length>120||tokens.some(token=>!/^([a-zA-Z]+|\d{1,3})$/.test(token)))throw new Error('Invalid narration');
-    const parts = await Promise.all(tokens.map(token=>this.load(`/voice/fr/tokens/${token}.wav`,true).pending));
+    if(!tokens.length||tokens.length>120||tokens.some(token=>!/^([a-zA-Z]+|\d{1,9}(d\d{1,9})?)$/.test(token)))throw new Error('Invalid narration');
+    // Changed word recordings need new cache keys; existing table/number clips keep theirs.
+    const parts = await Promise.all(tokens.map(token=>{
+      const revised=/^[a-zA-Z]+$/.test(token)&&!['add','subtract','multiply'].includes(token);
+      return this.load(`/voice/fr/tokens/${token}.wav${revised?`?v=${STUDY_TOKEN_REVISION}`:''}`,true).pending;
+    }));
     const rate=parts[0].sampleRate;
     const gap=Math.round(rate*.085);
     const buffer=this.context.createBuffer(1,parts.reduce((n,p)=>n+p.length,0)+gap*(parts.length-1),rate);

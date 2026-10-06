@@ -13,4 +13,6 @@ try {
   $studySpeaker.SetOutputToWaveFile($studyDestination,$studyFormat);$studySpeaker.Speak($studyToken.Value);$studySpeaker.SetOutputToNull()
  }
 } finally {$studySpeaker.Dispose()}
+python (Join-Path $PSScriptRoot 'trim-voice-tokens.py') $studyVoiceDirectory
+if($LASTEXITCODE -ne 0){throw 'Ajustement des silences impossible'}
 Write-Output 'Voix locales des nouveaux exercices générées.'

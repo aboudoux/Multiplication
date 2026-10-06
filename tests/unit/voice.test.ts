@@ -32,6 +32,16 @@ function setup() {
 }
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 describe("French question narration", () => {
+  it('assembles complete hundreds and decimals without splitting their syllables',async()=>{
+    const {voice,context,fetchMock,source}=setup();
+    const samples=new Float32Array([.1,.2,.3]);
+    context.decodeAudioData.mockResolvedValue({duration:.3,sampleRate:10,length:3,getChannelData:()=>samples} as any);
+    Object.assign(context,{createBuffer:vi.fn(()=>({duration:1.1,sampleRate:10,length:11,getChannelData:()=>new Float32Array(11)}))});
+    const question={...q(5,7),exercise:{voiceTokens:['500','divide','0d5']} as any};
+    await voice.speak(question);
+    expect(fetchMock.mock.calls.map(call=>call[0])).toEqual(['/voice/fr/tokens/500.wav','/voice/fr/tokens/divide.wav?v=2','/voice/fr/tokens/0d5.wav']);
+    expect(source.start).toHaveBeenCalledOnce();
+  });
   it('assembles three local tokens before playback and cancels a late composed question',async()=>{
     const {voice,context,fetchMock,source}=setup();
     const samples=new Float32Array([.1,.2,.3]);

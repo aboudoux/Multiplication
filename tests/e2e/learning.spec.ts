@@ -23,7 +23,7 @@ test('les opérateurs ont une voix locale prête, réécoutable et annulable',as
  await player(page,'8');await page.locator('#sound').click();await launch(page,'divide');
  await expect.poll(async()=>{await page.clock.runFor(16);return page.locator('#study-input-0').isEnabled();}).toBe(true);
  const label=await page.locator('#equation').getAttribute('aria-label');await expect.poll(()=>page.evaluate(label=>(window as any).studySpeechProbe.clips.filter((c:{label:string})=>c.label===label).length,label)).toBeGreaterThan(0);
- expect(requests.some(url=>url.endsWith('/divide.wav'))).toBe(true);await page.locator('#repeat-question').click();await page.locator('#pause').click();expect(await page.evaluate(()=>(window as any).studySpeechProbe.stops)).toBeGreaterThan(0);
+ expect(requests.some(url=>new URL(url).pathname.endsWith('/divide.wav')&&new URL(url).searchParams.get('v')==='2')).toBe(true);await page.locator('#repeat-question').click();await page.locator('#pause').click();expect(await page.evaluate(()=>(window as any).studySpeechProbe.stops)).toBeGreaterThan(0);
 });
 test('une difficulté propose un prérequis sans compter la correction comme première réussite',async({page})=>{
  await player(page,'6');await launch(page,'add');

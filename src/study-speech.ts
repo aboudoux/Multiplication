@@ -1,12 +1,17 @@
+import numberRecordings from './voice-numbers.json' with {type:'json'};
+const recordedNumbers=new Set(Object.keys(numberRecordings));
 export const speechWords:Record<string,string>={compare:'Quelle fraction est la plus grande ?',or:'ou',add:'plus',subtract:'moins',multiply:'fois',divide:'divisé par',over:'sur',point:'virgule',hundred:'cent',thousand:'mille',million:'million',power:'puissance',square:'au carré',cube:'au cube',root:'racine carrée de',equals:'égale',unknown:'nombre mystère',x:'x',open:'ouvrir la parenthèse',close:'fermer la parenthèse',of:'de',percent:'pour cent',half:'la moitié de',double:'le double de',picture:'Quelle fraction est colorée ?',all:'Trouve toutes les solutions',reduce:'Simplifie la fraction',less:'inférieur ou égal à',greater:'supérieur ou égal à',lessStrict:'strictement inférieur à',greaterStrict:'strictement supérieur à',function:'Calcule la valeur de la fonction pour',program:'Programme de calcul :',then:'puis',addTo:'ajouter',times:'multiplier par',price:'Prix de',objects:'objets',euros:'euros',howMany:'Quel prix pour',change:'Après une variation de',successive:'puis une variation de',identity:'Calcule ce carré en utilisant une identité remarquable',collectionAdd:'Combien d’objets en tout ?',collectionSubtract:'Combien d’objets restent ?'};
 export function numberTokens(value:number|string):string[] {
  const raw=String(value).replace(',','.');if(!/^-?\d+(\.\d+)?$/.test(raw))throw new RangeError('Nombre vocal invalide');
  const [whole,fraction]=raw.replace('-','').split('.');const n=Number(whole);if(!Number.isSafeInteger(n)||n>999999999)throw new RangeError('Nombre vocal trop grand');
- const integer=(v:number):string[]=>v<=100?[String(v)]:v<1000?[...(Math.floor(v/100)===1?[]:[String(Math.floor(v/100))]),'hundred',...(v%100?[String(v%100)]:[])]:v<1000000?[...(Math.floor(v/1000)===1?[]:integer(Math.floor(v/1000))),'thousand',...(v%1000?integer(v%1000):[])]:[...integer(Math.floor(v/1000000)),'million',...(v%1000000?integer(v%1000000):[])];
- return [...(raw.startsWith('-')?['subtract']:[]),...integer(n),...(fraction?['point',...fraction.split('')]:[])];
+ const integer=(v:number):string[]=>v<=100||recordedNumbers.has(String(v))?[String(v)]:v<1000?[...(Math.floor(v/100)===1?[]:[String(Math.floor(v/100))]),'hundred',...(v%100?[String(v%100)]:[])]:v<1000000?[...(Math.floor(v/1000)===1?[]:integer(Math.floor(v/1000))),'thousand',...(v%1000?integer(v%1000):[])]:[...integer(Math.floor(v/1000000)),'million',...(v%1000000?integer(v%1000000):[])];
+ const sign=raw.startsWith('-')?['subtract']:[],digits=fraction?.replace(/0+$/,'');
+ const recorded=digits?`${n}d${digits}`:String(n);
+ if(recordedNumbers.has(recorded))return [...sign,recorded];
+ return [...sign,...integer(n),...(digits?['point',...digits.split('')]:[])];
 }
 export function mathTokens(prompt:string):string[] {
  const dictionary:Record<string,string>={'+':'add','−':'subtract','-':'subtract','×':'multiply','÷':'divide','/':'over','=':'equals','?':'unknown','x':'x','(':'open',')':'close','²':'square','³':'cube','^':'power','√':'root','%':'percent','≤':'less','≥':'greater','<':'lessStrict','>':'greaterStrict'};
  return (prompt.match(/\d+(?:[.,]\d+)?|[+−\-×÷/=x?()²³^√%≤≥<>]/g)??[]).flatMap(token=>dictionary[token]?[dictionary[token]]:numberTokens(token));
 }
-export const tokensText=(tokens:string[])=>tokens.map(t=>speechWords[t]??t).join(' ');
+export const tokensText=(tokens:string[])=>tokens.map(t=>speechWords[t]??(/^[0-9]+d[0-9]+$/.test(t)?t.replace('d',','):t)).join(' ');
