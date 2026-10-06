@@ -67,6 +67,28 @@ export function candidate(id:string,n:number,grade:Grade,level:number):StudyQues
  } else if(id==='decimal-multiply') {
   const a=n%99+1,b=Math.floor(n/99)%9+2,scaleA=level===2?2:1,scaleB=level>0?1:0;
   prompt=`${rationalLabel(decimal(a,scaleA),true)} × ${rationalLabel(decimal(b,scaleB),true)}`;answer={kind:'decimal',value:decimal(a*b,scaleA+scaleB)};
+ } else if(id==='signed-add') {
+  const limit=level===0?10:20,a=n%(limit*2+1)-limit,b=Math.floor(n/(limit*2+1))%(limit*2+1)-limit,minus=level>0&&n%2===1;
+  prompt=`${a} ${minus?'−':'+'} ${b<0?`(${b})`:b}`;whole(a+(minus?-b:b));
+ } else if(id==='signed-multiply') {
+  const a=n%21-10,b=Math.floor(n/21)%21-10,divide=n%2===1;if(divide&&b===0)return null;
+  prompt=divide?`(${a*b}) ÷ (${b})`:`(${a}) × (${b})`;whole(divide?a:a*b);
+ } else if(id==='priority') {
+  const a=n%15+1,b=Math.floor(n/15)%9+1,c=Math.floor(n/135)%9+1;
+  prompt=level===0?`${a} + ${b} × ${c}`:level===1?`(${a} + ${b}) × ${c}`:`${a} − ${b} × ${c}`;whole(level===0?a+b*c:level===1?(a+b)*c:a-b*c);
+ } else if(id==='square'||id==='cube') {
+  const bases=id==='cube'?[0,1,2,3,4,5,10]:level===0?Array.from({length:13},(_,i)=>i):[0,1,2,3,4,5,6,7,8,9,10,11,12,15,20,25];
+  const base=bases[n%bases.length];kind='power';
+  if(id==='square'&&level===2&&index>=8&&n%2===1){prompt=n%4===1?`(-${base})²`:`−${base}²`;whole(n%4===1?base*base:-base*base);}
+  else {prompt=`${base}${id==='square'?'²':'³'}`;whole(base**(id==='square'?2:3));if(base>0&&base<=4)visual={kind:id==='square'?'square':'cube',a:base,b:base};}
+ } else if(id==='root') {
+  const base=n%13;prompt=`√${base*base}`;whole(base);kind='power';
+ } else if(id==='power-ten') {
+  const coefficient=n%9+1,exponent=level===0?Math.floor(n/9)%6+1:Math.floor(n/9)%7-3;
+  prompt=`${coefficient} × 10^(${exponent})`;kind='power';answer=exponent>=0?{kind:'integer',value:coefficient*10**exponent}:{kind:'decimal',value:rational(coefficient,10**-exponent)};
+ } else if(id==='negative-power') {
+  const base=[2,3,4,5,10][n%5],exponent=Math.floor(n/5)%4+1;
+  prompt=`${base}^(−${exponent})`;kind='power';answer={kind:'fraction',value:rational(1,base**exponent)};
  } else return null;
  voice??=mathTokens(prompt);
  return {kind,skillId:id,prompt,spoken:tokensText(voice),voiceTokens:voice,hint:skill.strategy,answer,visual} as StudyQuestion;

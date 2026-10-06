@@ -14,16 +14,19 @@ describe('exercices structurés',()=>{
   const deck=generateStudyQuestions('large-multiply','CE2',1,100);expect(deck.some(q=>Number(q.exercise!.prompt.split(' ')[0])>100)).toBe(true);
   for(const q of deck){const [a,b]=q.exercise!.prompt.match(/\d+/g)!.map(Number);expect(q.exercise!.answer).toEqual({kind:'integer',value:a*b});}
  });
- it('chaque famille livrée dispose de questions, de réponses acceptées et de tous ses sons',()=>{
-  for(const skill of curriculum('2de'))for(const level of [0,1,2]) {
+ it.each(curriculum('2de').flatMap(skill=>[0,1,2].map(level=>({skill,level}))))('$skill.id palier $level : banque unique, réponses et voix locales',({skill,level})=>{
    const deck=generateStudyQuestions(skill.id,'2de',level,20);expect(deck.length).toBeGreaterThan(0);expect(new Set(deck.map(q=>q.id)).size).toBe(deck.length);
    for(const q of deck){const exercise=q.exercise!;const raw=exercise.answer.kind==='remainder'?`${exercise.answer.quotient};${exercise.answer.remainder}`:answerLabel(exercise.answer);expect(answerMatches(exercise.answer,raw),exercise.prompt).toBe(true);for(const token of exercise.voiceTokens!){const path=`public/voice/fr/tokens/${token}.wav`;expect(existsSync(path),path).toBe(true);const wav=readFileSync(path);expect(wav.subarray(0,4).toString()).toBe('RIFF');expect(wav.length).toBeGreaterThan(100);}}
-  }
  });
  it('les voix décomposent correctement les milliers et les décimaux',()=>{expect(numberTokens(1250)).toEqual(['thousand','2','hundred','50']);expect(numberTokens('0.075')).toEqual(['0','point','0','7','5']);expect(numberTokens(-300)).toEqual(['subtract','3','hundred']);});
  it('refuse une longueur invalide au lieu de boucler',()=>{expect(()=>generateStudyQuestions('divide','CE2',0,0)).toThrow();expect(()=>generateStudyQuestions('unknown','CP')).toThrow();});
  it('construit les divisions décimales et les restes par des identités exactes',()=>{
   for(const q of generateStudyQuestions('decimal-divide','CM2',1,100)){const [a,b]=q.exercise!.prompt.replace(',','.').match(/\d+(?:\.\d+)?/g)!.map(Number);const answer=q.exercise!.answer;expect(answer.kind).toBe('decimal');if(answer.kind==='decimal')expect(a/b).toBeCloseTo(answer.value.numerator/answer.value.denominator,10);}
   for(const q of generateStudyQuestions('remainder','CM1',1,100)){const [a,b]=q.exercise!.prompt.match(/\d+/g)!.map(Number);const answer=q.exercise!.answer;if(answer.kind==='remainder'){expect(b*answer.quotient+answer.remainder).toBe(a);expect(answer.remainder).toBeLessThan(b);}}
+ });
+ it('les racines sont positives et les signes des carrés sont distincts',()=>{
+  for(const q of generateStudyQuestions('root','4e',0,100)){const squared=Number(q.exercise!.prompt.slice(1));const answer=q.exercise!.answer;if(answer.kind==='integer'){expect(answer.value).toBeGreaterThanOrEqual(0);expect(answer.value**2).toBe(squared);}}
+  const deck=generateStudyQuestions('square','4e',2,100);expect(deck.some(q=>q.exercise!.prompt.startsWith('(-'))).toBe(true);expect(deck.some(q=>q.exercise!.prompt.startsWith('−'))).toBe(true);
+  for(const q of deck){const prompt=q.exercise!.prompt,base=Number(prompt.match(/\d+/)![0]);expect(q.exercise!.answer).toEqual({kind:'integer',value:prompt.startsWith('−')?-base*base:base*base});}
  });
 });

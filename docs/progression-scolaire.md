@@ -17,7 +17,7 @@ Le champ de numération ne constitue pas une banque d’opérations aléatoires 
 2. Questions et réponses extensibles : livré.
 3. Collections, division exacte et grandes multiplications : livré.
 4. Fractions, décimaux et quotient/reste : livré.
-5. Relatifs, priorités, puissances et racines : à réaliser.
+5. Relatifs, priorités, puissances et racines : livré.
 6. Nombres manquants et équations : à réaliser.
 7. Pourcentages, problèmes, fonctions et prolongement seconde : à réaliser.
 8. Missions adaptatives des deux aventures : à réaliser.
