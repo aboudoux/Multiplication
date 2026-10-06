@@ -2,11 +2,13 @@ import {test,expect} from '@playwright/test';
 import {studyBank} from '../../src/study-generator';
 
 for(const example of [
- {skill:'large-multiply',level:1,prompt:'500 × 4',parts:['500','multiply','4']},
- {skill:'decimal-add',level:2,prompt:'0,25 + 0,25',parts:['0d25','add','0d25']},
+ {skill:'large-multiply',grade:'CM1',level:1,prompt:'500 × 4',parts:['500','multiply','4']},
+ {skill:'decimal-add',grade:'CM1',level:2,prompt:'0,25 + 0,25',parts:['0d25','add','0d25']},
+ {skill:'signed-multiply',grade:'4e',level:1,prompt:'(5) × (-9)',parts:['5','multiply','subtract','9']},
+ {skill:'priority',grade:'5e',level:2,prompt:'(3 + 2) × 4',parts:['3','add','2','multiply','4']},
 ])test(`annonce continue : ${example.prompt}`,async({page})=>{
- await page.addInitScript(()=>{
-  localStorage.setItem('calcul-party:players:v1',JSON.stringify({version:1,active:'voice',players:[{id:'voice',name:'Voix',avatar:'🐱',grade:'CM1',adaptive:true,mastery:{},data:{'multipli-party:v1':JSON.stringify({muted:false,voiceEnabled:true})}}]}));
+ await page.addInitScript(grade=>{
+  localStorage.setItem('calcul-party:players:v1',JSON.stringify({version:1,active:'voice',players:[{id:'voice',name:'Voix',avatar:'🐱',grade,adaptive:true,mastery:{},data:{'multipli-party:v1':JSON.stringify({muted:false,voiceEnabled:true})}}]}));
   const probe={draws:[] as number[],starts:[] as {parts:string[];label:string|null}[],stops:0};Object.assign(window,{numberVoiceProbe:probe});
   const random=Math.random;Math.random=()=>probe.draws.length?probe.draws.shift()!:random();
   const encoded=new WeakMap<ArrayBuffer,string>(),decoded=new WeakMap<AudioBuffer,string>(),composites=new WeakMap<AudioBuffer,string[]>();let joining:AudioBuffer;
@@ -17,10 +19,10 @@ for(const example of [
   const start=AudioBufferSourceNode.prototype.start,stop=AudioBufferSourceNode.prototype.stop;
   AudioBufferSourceNode.prototype.start=function(...args){const parts=this.buffer&&composites.get(this.buffer);if(parts?.length)probe.starts.push({parts:[...parts],label:document.getElementById('equation')?.textContent??null});return start.apply(this,args);};
   AudioBufferSourceNode.prototype.stop=function(...args){if(this.buffer&&composites.get(this.buffer)?.length)probe.stops++;return stop.apply(this,args);};
- });
+ },example.grade);
  await page.clock.install({time:new Date('2026-10-06T12:00:00Z')});await page.goto('/');await page.clock.pauseAt(new Date('2026-10-06T12:00:10Z'));
  await page.locator('#open-training').click();await page.locator('#learning-level').selectOption(String(example.level));
- const bank=[...studyBank(example.skill,'CM1',example.level)],target=bank.find(q=>q.exercise!.prompt===example.prompt)!;
+ const bank=[...studyBank(example.skill,example.grade as 'CM1'|'4e'|'5e',example.level)],target=bank.find(q=>q.exercise!.prompt===example.prompt)!;
  expect(target).toBeTruthy();const ordered=[target,...bank.filter(q=>q.id!==target.id)],pool=[...bank],draws:number[]=[];
  for(let i=pool.length-1;i>0;i--){const j=pool.findIndex(q=>q.id===ordered[i].id);draws.push((j+.5)/(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
  await page.evaluate(draws=>{(window as any).numberVoiceProbe.draws=draws;},draws);

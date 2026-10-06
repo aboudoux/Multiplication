@@ -11,7 +11,8 @@ export function numberTokens(value:number|string):string[] {
  return [...sign,...integer(n),...(digits?['point',...digits.split('')]:[])];
 }
 export function mathTokens(prompt:string):string[] {
- const dictionary:Record<string,string>={'+':'add','−':'subtract','-':'subtract','×':'multiply','÷':'divide','/':'over','=':'equals','?':'unknown','x':'x','(':'open',')':'close','²':'square','³':'cube','^':'power','√':'root','%':'percent','≤':'less','≥':'greater','<':'lessStrict','>':'greaterStrict'};
- return (prompt.match(/\d+(?:[.,]\d+)?|[+−\-×÷/=x?()²³^√%≤≥<>]/g)??[]).flatMap(token=>dictionary[token]?[dictionary[token]]:numberTokens(token));
+ // Parentheses remain on the board; reading them aloud slows each mental calculation.
+ const dictionary:Record<string,string>={'+':'add','−':'subtract','-':'subtract','×':'multiply','÷':'divide','/':'over','=':'equals','?':'unknown','x':'x','²':'square','³':'cube','^':'power','√':'root','%':'percent','≤':'less','≥':'greater','<':'lessStrict','>':'greaterStrict'};
+ return (prompt.match(/\d+(?:[.,]\d+)?|[+−\-×÷/=x?²³^√%≤≥<>]/g)??[]).flatMap(token=>dictionary[token]?[dictionary[token]]:numberTokens(token));
 }
 export const tokensText=(tokens:string[])=>tokens.map(t=>speechWords[t]??(/^[0-9]+d[0-9]+$/.test(t)?t.replace('d',','):t)).join(' ');
