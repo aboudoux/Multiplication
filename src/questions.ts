@@ -48,7 +48,8 @@ export function answerMatches(answer:Answer,raw:string):boolean {
  if(answer.kind==='integer')return value.denominator===1&&value.numerator===answer.value;
  if(answer.kind==='fraction'&&answer.irreducible) {
   const parts=raw.trim().replaceAll('−','-').match(/^([+-]?\d+)\s*\/\s*(\d+)$/);
-  if(!parts||gcd(Number(parts[1]),Number(parts[2]))!==1)return false;
+  if(!parts){if(answer.value.denominator!==1||!/^[-+]?\d+$/.test(raw.trim()))return false;}
+  else if(gcd(Number(parts[1]),Number(parts[2]))!==1)return false;
  }
  return sameRational(value,answer.value);
 }

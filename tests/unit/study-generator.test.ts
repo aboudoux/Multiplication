@@ -17,9 +17,13 @@ describe('exercices structurés',()=>{
  it('chaque famille livrée dispose de questions, de réponses acceptées et de tous ses sons',()=>{
   for(const skill of curriculum('2de'))for(const level of [0,1,2]) {
    const deck=generateStudyQuestions(skill.id,'2de',level,20);expect(deck.length).toBeGreaterThan(0);expect(new Set(deck.map(q=>q.id)).size).toBe(deck.length);
-   for(const q of deck){const exercise=q.exercise!;expect(answerMatches(exercise.answer,answerLabel(exercise.answer))).toBe(true);for(const token of exercise.voiceTokens!){const path=`public/voice/fr/tokens/${token}.wav`;expect(existsSync(path),path).toBe(true);const wav=readFileSync(path);expect(wav.subarray(0,4).toString()).toBe('RIFF');expect(wav.length).toBeGreaterThan(100);}}
+   for(const q of deck){const exercise=q.exercise!;const raw=exercise.answer.kind==='remainder'?`${exercise.answer.quotient};${exercise.answer.remainder}`:answerLabel(exercise.answer);expect(answerMatches(exercise.answer,raw),exercise.prompt).toBe(true);for(const token of exercise.voiceTokens!){const path=`public/voice/fr/tokens/${token}.wav`;expect(existsSync(path),path).toBe(true);const wav=readFileSync(path);expect(wav.subarray(0,4).toString()).toBe('RIFF');expect(wav.length).toBeGreaterThan(100);}}
   }
  });
  it('les voix décomposent correctement les milliers et les décimaux',()=>{expect(numberTokens(1250)).toEqual(['thousand','2','hundred','50']);expect(numberTokens('0.075')).toEqual(['0','point','0','7','5']);expect(numberTokens(-300)).toEqual(['subtract','3','hundred']);});
- it('refuse une longueur invalide au lieu de boucler',()=>{expect(()=>generateStudyQuestions('divide','CE2',0,0)).toThrow();expect(()=>generateStudyQuestions('missing','CP')).toThrow();});
+ it('refuse une longueur invalide au lieu de boucler',()=>{expect(()=>generateStudyQuestions('divide','CE2',0,0)).toThrow();expect(()=>generateStudyQuestions('unknown','CP')).toThrow();});
+ it('construit les divisions décimales et les restes par des identités exactes',()=>{
+  for(const q of generateStudyQuestions('decimal-divide','CM2',1,100)){const [a,b]=q.exercise!.prompt.replace(',','.').match(/\d+(?:\.\d+)?/g)!.map(Number);const answer=q.exercise!.answer;expect(answer.kind).toBe('decimal');if(answer.kind==='decimal')expect(a/b).toBeCloseTo(answer.value.numerator/answer.value.denominator,10);}
+  for(const q of generateStudyQuestions('remainder','CM1',1,100)){const [a,b]=q.exercise!.prompt.match(/\d+/g)!.map(Number);const answer=q.exercise!.answer;if(answer.kind==='remainder'){expect(b*answer.quotient+answer.remainder).toBe(a);expect(answer.remainder).toBeLessThan(b);}}
+ });
 });

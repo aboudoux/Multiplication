@@ -29,3 +29,11 @@ test('division et grands produits sont jouables sans chrono',async({page})=>{
  await page.locator('#pause').click();await page.locator('#camp-exit').click();await page.locator('[data-skill=large-multiply]').click();await page.clock.runFor(4050);
  const [a,b]=(await page.locator('#equation').innerText()).match(/\d+/g)!.map(Number);await page.locator('#study-input-0').fill(String(a*b));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
 });
+test('fractions illustrées, virgule et quotient/reste ont leurs réponses dédiées',async({page})=>{
+ await player(page,'10');await page.locator('[data-skill=fraction-picture]').click();await page.clock.runFor(4050);
+ const label=(await page.locator('.study-fraction').getAttribute('aria-label'))!;const [a,b]=label.match(/\d+/g)!.map(Number);await page.locator('#study-input-0').fill(`${a}/${b}`);await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');
+ await page.locator('#pause').click();await page.locator('#camp-exit').click();await page.locator('[data-skill=decimal-divide]').click();await page.clock.runFor(4050);
+ const values=(await page.locator('#equation').innerText()).replace(',','.').match(/\d+(?:\.\d+)?/g)!.map(Number);await page.locator('#study-input-0').fill((values[0]/values[1]).toFixed(2).replace('.',','));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');
+ await page.locator('#pause').click();await page.locator('#camp-exit').click();await page.locator('[data-skill=remainder]').click();await page.clock.runFor(4050);
+ const [dividend,divisor]=(await page.locator('#equation').innerText()).match(/\d+/g)!.map(Number);await page.getByLabel('Quotient',{exact:true}).fill(String(Math.floor(dividend/divisor)));await page.getByLabel('Reste',{exact:true}).fill(String(dividend%divisor));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');
+});

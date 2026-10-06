@@ -33,6 +33,7 @@ export const skills: readonly Skill[] = [
   skill('large-subtract','Soustraire des centaines','CE1',3,['subtract'],'Retirer des centaines et des dizaines.','750 − 200'),
   skill('times-ten','Multiplier par 10','CE1',3,['tables'],'Chaque unité devient une dizaine.','72 × 10'),
   skill('fraction-picture','Reconnaître les fractions','CE1',4,[],'Partager le tout en parts égales et compter les parts choisies.','3/4 d’une bande'),
+  skill('fraction-compare','Comparer des fractions','CE1',4,['fraction-picture'],'Comparer des parts du même tout ; utiliser une même unité.','Comparer 1/2 et 1/4'),
   skill('divide','Divisions exactes','CE2',3,['tables'],'Retrouver la multiplication correspondante.','42 ÷ 6'),
   skill('large-multiply','Produits de dizaines et centaines','CE2',3,['tables'],'Décomposer ou doubler deux fois.','125 × 4'),
   skill('times-hundred','Multiplier par 100','CE2',3,['times-ten'],'Chaque unité devient une centaine.','84 × 100'),
@@ -68,7 +69,7 @@ export const skills: readonly Skill[] = [
   skill('successive','Évolutions successives','2de',7,['evolution'],'Multiplier les coefficients successifs, sans additionner les taux.','100 €, puis +10 % et −10 %'),
   skill('program','Programmes de calcul','CM2',7,['tables','add'],'Suivre les étapes dans l’ordre et conserver le résultat intermédiaire.','Ajouter 3 à 5, puis multiplier par 2'),
 ];
-export const AVAILABLE_LOT = 3;
+export const AVAILABLE_LOT = 4;
 export const skillById = (id: string) => skills.find(s=>s.id===id);
 export function curriculum(grade: Grade, available = AVAILABLE_LOT): Skill[] {
   return skills.filter(s=>grades.indexOf(s.grade)<=grades.indexOf(grade) && s.lot<=available);
