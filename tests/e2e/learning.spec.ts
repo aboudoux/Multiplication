@@ -111,14 +111,17 @@ test('relatifs, équations simples et petits cubes se jouent de tête',async({pa
  await leave(page);await launch(page,'equation-one');const [coefficient,result]=await numbers(page);const prompt=await page.locator('#equation').innerText();await answer(page,prompt.includes('x +')?result-coefficient:result/coefficient);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
  await leave(page);await launch(page,'cube');const [base]=await numbers(page);expect([0,1,2,3,10]).toContain(base);await answer(page,base**3);await expect(page.locator('#progress-caption')).toHaveText('1 / 5');
 });
-test('le chrono facultatif a cinq vies, respecte la pause et suit le joueur dans les aventures',async({page})=>{
- await player(page,'9');await page.locator('#learning-rhythm').selectOption('15');await launch(page,'divide');await expect(page.locator('#time-left')).toBeVisible();await expect(page.locator('#hearts [data-heart]')).toHaveCount(5);await expect(page.locator('#difficulty-label')).toContainText('15 s · 5 vies');
- await page.locator('#pause').click();await page.clock.runFor(30000);await page.locator('#camp-exit').click();await expect(page.locator('#learning-rhythm')).toHaveValue('15');
- await page.locator('#camp-home').click();await page.locator('#open-adventure').click();await page.locator('[data-adventure=chaton]').click();await expect(page.locator('[data-stage=kitten-1]')).toContainText('15 s par calcul');await page.locator('[data-stage=kitten-1]').click();await page.clock.runFor(4050);await expect(page.locator('#time-left')).toBeVisible();await expect(page.locator('#difficulty-label')).toContainText('15 s · 5 vies');
- await page.reload();await page.locator('#player-picker').click();await expect(page.locator('[name=mentalDuration]')).toHaveValue('15');
+test('le camp lie le chrono à la difficulté et le profil ne propose aucun rythme',async({page})=>{
+ await player(page,'9');await expect(page.locator('#learning-rhythm')).toHaveCount(0);
+ await page.locator('#learning-level').selectOption('1');await launch(page,'divide');await expect(page.locator('#time-left')).toBeVisible();await expect(page.locator('#hearts [data-heart]')).toHaveCount(5);await expect(page.locator('#difficulty-label')).toContainText('15 s · 5 vies');
+ await page.locator('#pause').click();await page.clock.runFor(30000);await page.locator('#camp-exit').click();
+ await page.locator('#learning-level').selectOption('2');await launch(page,'divide');await expect(page.locator('#hearts [data-heart]')).toHaveCount(3);await expect(page.locator('#difficulty-label')).toContainText('10 s · 3 vies');await leave(page);
+ await launch(page,'divide');await expect(page.locator('#time-left')).toBeHidden();await leave(page);
+ await page.locator('#camp-home').click();await page.locator('#open-adventure').click();await page.locator('[data-adventure=chaton]').click();await expect(page.locator('[data-stage=kitten-1]')).toContainText('Sans chrono');await page.locator('[data-stage=kitten-1]').click();await page.clock.runFor(4050);await expect(page.locator('#time-left')).toBeHidden();
+ await page.reload();await page.locator('#player-picker').click();await expect(page.locator('[name=mentalDuration]')).toHaveCount(0);
 });
-test('le défi chronométré se termine après cinq dépassements',async({page})=>{
- await player(page);await page.locator('#learning-rhythm').selectOption('10');await launch(page,'small-add');for(let i=0;i<5;i++)await page.clock.runFor(12100);await expect(page.locator('#defeat')).toBeVisible();
+test('le défi chronométré se termine après trois dépassements',async({page})=>{
+ await player(page);await page.locator('#learning-level').selectOption('2');await launch(page,'small-add');for(let i=0;i<3;i++)await page.clock.runFor(12100);await expect(page.locator('#defeat')).toBeVisible();
 });
 for(const viewport of [{width:390,height:844},{width:768,height:1024},{width:1365,height:900}])test(`saisie et calcul restent lisibles à ${viewport.width}px`,async({page})=>{
  await page.setViewportSize(viewport);await player(page,'9');await launch(page,'large-multiply');const [left,right]=await numbers(page);await expect(page.locator('.study-chalk-slots .answer-slot')).toHaveCount(String(left*right).length);await expect(page.locator('#study-input-0')).toHaveCSS('opacity','0');await page.screenshot({path:`artifacts/chalk-${viewport.width}.png`,fullPage:true});await leave(page);await launch(page,'decimal-add');const form=await page.locator('#study-answer').boundingBox(),keypad=await page.locator('.keypad').boundingBox();expect(form!.x+form!.width<=keypad!.x||form!.y+form!.height<=keypad!.y).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`artifacts/mental-${viewport.width}.png`,fullPage:true});

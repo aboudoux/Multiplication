@@ -17,7 +17,7 @@ export function recommendedSkill(grade:Grade,mastery:MentalMasteries):string {
 const bank=(id:string,grade:Grade,mastery:MentalMasteries)=>studyBank(id,grade,mastery[id]?.level??0);
 const factKeys=new WeakMap<Calculation,string>();
 const factKey=(q:Calculation)=>{let key=factKeys.get(q);if(!key){key=`${q.exercise!.prompt}:${answerLabel(q.exercise!.answer)}:${JSON.stringify(q.exercise!.visual??null)}`;factKeys.set(q,key);}return key;};
-export function adaptedAdventure(original:AdventureDefinition,grade:Grade,mastery:MentalMasteries,duration:10|15|null=null):AdventureDefinition {
+export function adaptedAdventure(original:AdventureDefinition,grade:Grade,mastery:MentalMasteries):AdventureDefinition {
  const ids=mentalPaths[grade].map(id=>supportedSkill(id,mastery));
  const available=new Set(mentalCurriculum(grade).map(p=>p.id));
  const practiced=[...new Set(ids)].filter(id=>available.has(id)&&((mastery[id]?.samples.length??0)+(mastery[id]?.series.length??0)>0));
@@ -33,7 +33,7 @@ export function adaptedAdventure(original:AdventureDefinition,grade:Grade,master
   const phase=['On s’échauffe','On s’entraîne','Petit mélange'][stage.index];
   return {...stage,count,lesson:`${phase} · ${mixed?'Les calculs pratiqués':mentalPatternById(primary)!.title} · ${grade}`,quotas:undefined,study:{grade,skills,phase:stage.index,mixed}};
  });
- return {...original,adaptive:true,mentalDuration:duration,stages,regions:original.regions.map(s=>s.replace('et des tables','et des défis'))};
+ return {...original,adaptive:true,stages,regions:original.regions.map(s=>s.replace('et des tables','et des défis'))};
 }
 export function adaptiveQuestions(stage:AdventureStage,mastery:MentalMasteries,random=Math.random):Calculation[] {
  if(!stage.study)throw new RangeError('Mission classique');

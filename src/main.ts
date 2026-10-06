@@ -1,3 +1,4 @@
+import {mentalTrainingRhythm} from './mental-rhythm';
 import {studyVisual} from './study-visual';
 import {adaptedAdventure,adaptiveQuestions} from './adaptive-adventure';
 import {generateStudyQuestions} from './study-generator';
@@ -275,8 +276,10 @@ get('camp-results-exit').addEventListener('click',()=>openCamp());
 get('camp-colony-ready').addEventListener('click',()=>openCamp('colony'));
 function createGame(): Game {
   if(trainingActive && studySkill) {
-    studyQuestions=generateStudyQuestions(studySkill,studyGrade,studyLevel??profiles.mental[studySkill]?.level??0,studyGrade==='GS'?5:10);
-    return new Game({...defaults(),duration:profiles.active.mentalDuration??15,lives:5},Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:studyQuestions,untimed:!profiles.active.mentalDuration,unlimitedLives:!profiles.active.mentalDuration,explicitAnswers:true,autoIntegers:true,retryAfter:3,onAnswer:(q,e)=>{recordMentalEvidence(profiles.mental,q.exercise!.patternId!,e,q.exercise!.patternLevel);profiles.save();}});
+    const level=studyLevel??profiles.mental[studySkill]?.level??0;
+    const {duration,lives}=mentalTrainingRhythm(level);
+    studyQuestions=generateStudyQuestions(studySkill,studyGrade,level,studyGrade==='GS'?5:10);
+    return new Game({...defaults(),duration:duration??15,lives:lives??5},Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:studyQuestions,untimed:duration===null,unlimitedLives:lives===null,explicitAnswers:true,autoIntegers:true,retryAfter:3,onAnswer:(q,e)=>{recordMentalEvidence(profiles.mental,q.exercise!.patternId!,e,q.exercise!.patternLevel);profiles.save();}});
   }
   if (trainingActive) {
     const s=trainingData.settings;
@@ -288,7 +291,8 @@ function createGame(): Game {
       }});
   }
   if(activeStage?.study) {
-    return new Game({...defaults(),duration:profiles.active.mentalDuration??15,lives:5},Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:adaptiveQuestions(activeStage,profiles.mental),untimed:!profiles.active.mentalDuration,unlimitedLives:!profiles.active.mentalDuration,explicitAnswers:true,autoIntegers:true,retryAfter:3,victoryDurationMs:MISSION_REWARD_MS,onAnswer:(q,e)=>{recordMentalEvidence(profiles.mental,q.exercise!.patternId!,e,q.exercise!.patternLevel);profiles.save();}});
+    const duration=adventureDurations[activeStage.world.id],lives=adventureLives[activeStage.world.id];
+    return new Game({...defaults(),duration:duration??15,lives:lives??5},Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:adaptiveQuestions(activeStage,profiles.mental),untimed:duration===null,unlimitedLives:lives===null,explicitAnswers:true,autoIntegers:true,retryAfter:3,victoryDurationMs:MISSION_REWARD_MS,onAnswer:(q,e)=>{recordMentalEvidence(profiles.mental,q.exercise!.patternId!,e,q.exercise!.patternLevel);profiles.save();}});
   }
   const duration = activeStage ? adventureDurations[activeStage.world.id] : null;
   const lives = activeStage ? adventureLives[activeStage.world.id] : null;
@@ -373,7 +377,7 @@ let clearUnlockReveal = () => {};
 function showMap(): void {
   clearUnlockReveal();
   const original=adventures.find(a=>a.id===activeAdventure.id)!;
-  activeAdventure=profiles.active.adaptive?adaptedAdventure(original,profiles.active.grade,profiles.mental,profiles.active.mentalDuration??null):original;
+  activeAdventure=profiles.active.adaptive?adaptedAdventure(original,profiles.active.grade,profiles.mental):original;
   worlds=activeAdventure.worlds;stages=activeAdventure.stages;
   activeStage = null; mapOpen = true; chooserOpen=false; previewVictory = false; campOpen=false; trainingActive=false;
   audio.stopSpeech(); surprises.clear();
@@ -496,7 +500,7 @@ function start(): void {
   lastWarning = -1;
   recordProcessed = false;
   get("difficulty-label").textContent =
-    trainingActive&&studySkill ? `${studyGrade} · ${mentalPatternById(studySkill)?.title} · ${game.untimed?'Sans chrono · Essais illimités':`${game.duration} s · 5 vies`}` : trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${activeStage.study?(game.untimed?'Sans chrono · Essais illimités':`${game.duration} s · 5 vies`):`${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}`}` : '';
+    trainingActive&&studySkill ? `${studyGrade} · ${mentalPatternById(studySkill)?.title} · ${game.untimed?'Sans chrono · Essais illimités':`${game.duration} s · ${game.startingLives} vies`}` : trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${activeStage.study?(game.untimed?'Sans chrono · Essais illimités':`${game.duration} s · ${game.startingLives} vies`):`${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}`}` : '';
   get("time-progress").setAttribute("aria-valuemax", String(game.duration));
   get("progress").setAttribute("aria-valuemax", String(game.totalQuestions));
   get("progress-goal").textContent = String(game.totalQuestions);

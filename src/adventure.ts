@@ -67,7 +67,6 @@ export const picoStages = createStages(picoWorlds);
 export type AdventureId = 'chaton'|'pico';
 export interface AdventureDefinition {
  adaptive?:boolean;
- mentalDuration?:10|15|null;
  id:AdventureId; title:string; heading:string; description:string; hero:ThemeId; storageKey:string;
  worlds:readonly AdventureWorld[]; stages:readonly AdventureStage[]; rewards:Readonly<Record<string,Reward>>; regions:readonly string[];
  endingTitle:string; endingDescription:string; celebrateLabel:string; finale:'birthday'|'lighthouse';

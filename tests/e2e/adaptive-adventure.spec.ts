@@ -1,5 +1,5 @@
 import {test,expect,type Page} from '@playwright/test';
-import {adventures} from '../../src/adventure';
+import {adventures,adventureDurations} from '../../src/adventure';
 import {grades,gradeAge,type Grade} from '../../src/curriculum';
 import {adaptedAdventure,adaptiveQuestions} from '../../src/adaptive-adventure';
 import {type MentalMasteries} from '../../src/mental-patterns';
@@ -13,7 +13,7 @@ async function solveStage(page:Page,adventure:typeof adventures[number],id:strin
  const mastery=await page.evaluate(()=>{const state=JSON.parse(localStorage.getItem('calcul-party:players:v1')!);return state.players.find((p:{id:string})=>p.id===state.active).mentalMastery?.skills as MentalMasteries??{};});
  const stage=adaptedAdventure(adventure,grade,mastery).stages.find(s=>s.id===id)!;
  const questions=adaptiveQuestions(stage,mastery,()=>.5);
- await page.locator(`[data-stage="${id}"]`).click();await page.clock.runFor(4050);await expect(page.locator('#time-left')).toBeHidden();
+ await page.locator(`[data-stage="${id}"]`).click();await page.clock.runFor(4050);if(adventureDurations[stage.world.id]===null)await expect(page.locator('#time-left')).toBeHidden();else await expect(page.locator('#time-left')).toBeVisible();
  for(const q of questions){
   await expect(page.locator('#equation')).toHaveText(q.exercise!.prompt);const answer=q.exercise!.answer;
   if(answer.kind==='remainder'){await page.locator('#study-input-0').fill(String(answer.quotient));await page.locator('#study-input-1').fill(String(answer.remainder));}

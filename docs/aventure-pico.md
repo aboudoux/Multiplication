@@ -2,7 +2,7 @@
 
 Aventure coopérative jouable à côté de [l’aventure du chaton](creation-aventure.md), avec huit personnages principaux, huit mondes et 24 missions. Cette fiche applique les trois modèles du guide et décrit le contenu livré.
 
-Les lignes « Calculs » ci-dessous décrivent le mode classique. Les profils scolaires adaptent compétences et quantités selon [la progression de 5 à 15 ans](progression-scolaire.md), sans chrono et à essais illimités par défaut ; le défi facultatif propose 10 ou 15 secondes et cinq vies. Histoire, personnages, missions acquises, animations, sons et récompenses restent ceux de cette fiche.
+Les lignes « Calculs » ci-dessous décrivent le mode classique. Les profils scolaires adaptent compétences et quantités selon [la progression de 5 à 15 ans](progression-scolaire.md), avec les mêmes chronos et vies progressifs que le mode classique : départ libre, puis 30 s / 7 vies, 15 s / 5 vies et 10 s / 3 vies. Histoire, personnages, missions acquises, animations, sons et récompenses restent ceux de cette fiche.
 
 ## Brief d’aventure
 
