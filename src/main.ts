@@ -1,3 +1,8 @@
+import {LearningUI,basicSettings} from './learning-ui';
+import {openProfiles} from './profiles';
+import {ProfileUI} from './profile-ui';
+import {recordEvidence} from './curriculum';
+import './learning.css';
 import { ant, campScene } from './ants';
 import { TrainingUI } from './training-ui';
 import { readTraining, saveTraining, awardMaterials, colonyStatus, trainingQuestions, trainingLabel, trainingRecordKey, inspectTraining, type TrainingData } from './training';
@@ -138,9 +143,11 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 function get<T extends HTMLElement = HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
 }
+const profiles=openProfiles();
+const playerStorage=profiles.storage;
 let saved = defaults();
 try {
-  saved = readSaved(localStorage);
+  saved = readSaved(playerStorage);
 } catch {
   /* Storage may be disabled entirely. */
 }
@@ -149,7 +156,7 @@ let trainingActive = false;
 let creditedMaterials = 0;
 let trainingStored = true;
 let trainingData: TrainingData = { settings: readTraining({getItem:()=>null}).settings, materials:0, records:{} };
-try { trainingData = readTraining(localStorage,localStorage.getItem('multipli-party:v1') ? saved : undefined); } catch { trainingStored=false; }
+try { trainingData = readTraining(playerStorage,playerStorage.getItem('multipli-party:v1') ? saved : undefined); } catch { trainingStored=false; }
 const audio = new GameAudio();
 let activeStage: AdventureStage | null = null;
 let mapOpen = false;
@@ -159,7 +166,7 @@ let worlds=activeAdventure.worlds, stages=activeAdventure.stages;
 const adventureSaves=new Map<AdventureId,{progress:AdventureProgress;stored:boolean}>();
 for(const adventure of adventures) {
   let stored=true, progress:AdventureProgress={completed:[]};
-  try { localStorage.getItem(adventure.storageKey); progress=readAdventure(localStorage,adventure); } catch {stored=false;}
+  try { playerStorage.getItem(adventure.storageKey); progress=readAdventure(playerStorage,adventure); } catch {stored=false;}
   adventureSaves.set(adventure.id,{progress,stored});
 }
 let adventureProgress=adventureSaves.get(activeAdventure.id)!.progress;
@@ -210,7 +217,7 @@ get('menu-audio-enable').addEventListener('click',()=>{
   saved.muted=false;audio.setMuted(false);void audio.navigation();persist();renderPreferences();
 });
 function persistTraining(): boolean {
-  try { trainingStored=saveTraining(localStorage,trainingData); } catch { trainingStored=false; }
+  try { trainingStored=saveTraining(playerStorage,trainingData); } catch { trainingStored=false; }
   return trainingStored;
 }
 const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); audio.voiceStyle=trainingData.settings.voice; return stored; },()=>{ trainingActive=true; start(); },()=>showLanding(),()=>{
@@ -222,6 +229,18 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
 });
 get('home').before(camp.root);
+const profileUI=new ProfileUI(profiles,()=>{
+  cacheAdventure(); saved=readSaved(playerStorage);
+  Object.assign(trainingData,readTraining(playerStorage,playerStorage.getItem('multipli-party:v1')?saved:undefined));
+  if(profiles.active.adaptive&&!playerStorage.getItem('calcul-party:training:v1'))trainingData.settings=basicSettings(profiles.active.grade);
+  trainingStored=profiles.stored;
+  for(const adventure of adventures)adventureSaves.set(adventure.id,{progress:readAdventure(playerStorage,adventure),stored:profiles.stored});
+  adventureProgress=adventureSaves.get(activeAdventure.id)!.progress;adventureStored=profiles.stored;
+  audio.setMuted(saved.muted);showLanding();renderPreferences();
+});
+document.querySelector('.header-right')!.prepend(profileUI.button);
+const learningUI=new LearningUI(profiles,(skill,grade)=>{trainingData.settings=basicSettings(grade,skill.id);persistTraining();camp.open('workshop',trainingStored);learningUI.open();});
+camp.root.before(learningUI.root);
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
 get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
@@ -231,7 +250,7 @@ function openCamp(tab: 'workshop'|'colony' = 'workshop'): void {
   trainingActive=false; activeStage=null; mapOpen=false; chooserOpen=false; campOpen=true; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
-  persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored);
+  persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored); camp.root.before(learningUI.root); learningUI.open();
 }
 function showLanding(): void {
   campOpen=false; trainingActive=false; activeStage=null; mapOpen=false; chooserOpen=false; previewVictory=false;
@@ -248,7 +267,10 @@ function createGame(): Game {
     const s=trainingData.settings;
     return new Game({...defaults(),duration:s.duration??10,lives:s.lives??3},Math.random,
       question=>!saved.voiceEnabled || saved.muted || audio.questionPrepared(question),
-      {questions:trainingQuestions(s),untimed:s.duration===null,unlimitedLives:s.lives===null});
+      {questions:trainingQuestions(s),untimed:s.duration===null,unlimitedLives:s.lives===null,onAnswer:(q,e)=>{
+        const id=q.operation==='multiply'?'tables':q.operation==='add'?s.add.max<=10?'small-add':'add':s.subtract.max<=10?'small-subtract':'subtract';
+        recordEvidence(profiles.active.mastery,id,e);profiles.save();
+      }});
   }
   const duration = activeStage ? adventureDurations[activeStage.world.id] : null;
   const lives = activeStage ? adventureLives[activeStage.world.id] : null;
@@ -305,7 +327,7 @@ new ResizeObserver(positionQuestion).observe(get("question-area"));
 
 function persist(): boolean {
   try {
-    return saveData(localStorage, saved);
+    return saveData(playerStorage, saved);
   } catch {
     return false;
   }
@@ -366,7 +388,7 @@ adventureMap.addEventListener('click', event => {
   if (button.id === 'reset-adventure') {
     if (!window.confirm('Recommencer l’aventure depuis le début ?\n\nToutes les missions accomplies et les amis débloqués seront effacés sur cet appareil. Les réglages du camp, ses matériaux et les anciens records seront conservés.\n\nCette action ne peut pas être annulée.')) return;
     let reset = false;
-    try { reset = resetAdventure(localStorage,activeAdventure); } catch { /* Access to storage can itself be blocked. */ }
+    try { reset = resetAdventure(playerStorage,activeAdventure); } catch { /* Access to storage can itself be blocked. */ }
     if (!reset) {
       adventureMap.querySelector('.adventure-save')!.textContent = 'Impossible d’effacer la sauvegarde : le navigateur bloque le stockage. Ta progression est conservée. Tu peux réessayer.';
       return;
@@ -723,6 +745,7 @@ function render(now: number): void {
   );
   get("home").hidden = phase !== "welcome" || mapOpen || campOpen || chooserOpen;
   camp.root.hidden = phase !== 'welcome' || !campOpen;
+  learningUI.root.hidden=camp.root.hidden || !profiles.active.adaptive;
   get('camp-cargo').hidden=!trainingActive || !isPlaying;
   get('camp-victory').hidden=!trainingActive || phase!=='victory';
   get('camp-results-exit').hidden=!trainingActive;
@@ -750,6 +773,7 @@ function render(now: number): void {
           ? "Mettre la partie en pause"
           : "Calcul’Party, accueil",
     );
+  profileUI.button.disabled=isPlaying || phase==='victory' || phase==='defeat' || activeFinale.active;
   if (phase !== previousPhase) {
     if (phase !== 'victory') { missionReward.clear(); get('victory').classList.remove('mission-victory'); }
     if (!["question", "feedback"].includes(phase)) surprises.clear();
@@ -770,7 +794,7 @@ function render(now: number): void {
       const availableBefore = new Set(stages.filter(stage => stageUnlocked(adventureProgress, stage,activeAdventure)).map(stage => stage.id));
       if (activeStage && !previewVictory && completeStage(adventureProgress,activeStage,activeAdventure)) {
         newlyUnlockedMissions = stages.filter(stage => !availableBefore.has(stage.id) && stageUnlocked(adventureProgress, stage,activeAdventure)).map(stage => stage.id);
-        try { adventureStored = saveAdventure(localStorage,adventureProgress,activeAdventure); } catch { adventureStored = false; } cacheAdventure();
+        try { adventureStored = saveAdventure(playerStorage,adventureProgress,activeAdventure); } catch { adventureStored = false; } cacheAdventure();
       }
       get("board").classList.remove("reaction-correct", "reaction-error");
       const mission = activeStage && !previewVictory;

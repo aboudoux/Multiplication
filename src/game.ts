@@ -1,3 +1,4 @@
+import type {Evidence} from './curriculum';
 import { selectQuestions, questionCount, validateSettings } from "./calculations";
 import type { Calculation, GameSettings } from "./calculations";
 export type { Duration } from "./calculations";
@@ -28,6 +29,7 @@ export interface PracticeRules {
   untimed: boolean;
   unlimitedLives: boolean;
   victoryDurationMs?: number;
+  onAnswer?: (question:Calculation,evidence:Evidence)=>void;
 }
 
 /** Pure clock-driven state machine. Only active answering time counts toward records. */
@@ -43,6 +45,9 @@ export class Game {
   answer = "";
   feedback: Feedback | null = null;
   private queue: Calculation[] = [];
+  private observed=new Set<string>();
+  private helped=false;
+  useHint():void {if(this.phase==='question')this.helped=true;}
   private deadline = 0;
   private questionStarted = 0;
   private activeMs = 0;
@@ -186,6 +191,7 @@ export class Game {
     if (!this.current) return;
     this.questionNumber++;
     this.answer = "";
+    this.helped=false;
     this.feedback = null;
     this.phase = "question";
     this.questionStarted = now;
@@ -209,6 +215,10 @@ export class Game {
       0,
       Math.min(now, this.deadline) - this.questionStarted,
     );
+    if(!this.observed.has(this.current.id)) {
+      this.observed.add(this.current.id);
+      this.practice?.onAnswer?.(this.current,{first:correct,helped:this.helped,timeMs:Math.max(0,Math.min(now,this.deadline)-this.questionStarted)});
+    }
     this.feedback = {
       correct,
       timeout,

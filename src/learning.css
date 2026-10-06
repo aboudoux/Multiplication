@@ -1,0 +1,14 @@
+#player-picker{font-size:.85rem;min-height:44px;max-width:240px;white-space:normal}
+#player-dialog{max-width:min(620px,calc(100vw - 32px));max-height:85dvh;overflow:auto;border:2px solid #d3c2a4;border-radius:22px;padding:24px;background:#fff9ec;color:#233c36}
+#player-dialog::backdrop{background:#152d29aa}
+#player-dialog form{display:grid;gap:12px;border-top:1px solid #d3c2a4;margin-top:18px;padding-top:12px}
+#player-dialog label{display:grid;gap:6px;font-weight:600}
+#player-dialog input,#player-dialog select,.learning-controls select{min-height:44px;border:1px solid #aa9f89;border-radius:8px;padding:8px;font:inherit;background:white;color:#233c36;max-width:100%}
+#player-dialog .player-check{display:flex;align-items:center}#player-dialog .player-check input{min-height:20px}
+.player-list{display:flex;flex-wrap:wrap;gap:8px}.player-list [aria-pressed=true]{outline:3px solid #366f60}
+.learning-panel{background:#fff8e7;border:1px solid #d2c09a;border-radius:18px;padding:18px;margin-bottom:24px;color:#233c36}
+.learning-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.learning-controls label{display:grid;gap:6px;max-width:100%}
+.learning-skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px;margin:16px 0}
+.learning-skill{border:1px solid #cabd9f;border-radius:12px;background:#fffdf5;text-align:left;padding:14px;color:#233c36;font:inherit;min-height:100px}
+.learning-skill strong,.learning-skill small{display:block}.learning-skill small{margin-top:6px}.learning-skill[aria-pressed=true]{outline:3px solid #366f60}
+@media(max-width:600px){#player-picker{max-width:150px;padding:8px;font-size:.75rem}#player-dialog{padding:16px}.header-right{flex-wrap:wrap}}
