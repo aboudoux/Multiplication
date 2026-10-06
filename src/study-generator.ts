@@ -7,6 +7,7 @@ export function candidate(id:string,n:number,grade:Grade,level:number):StudyQues
  const index=grades.indexOf(grade);
  let prompt='',answer:Answer={kind:'integer',value:0},kind:StudyQuestion['kind']='arithmetic',visual:StudyQuestion['visual'],voice:string[]|undefined;
  const whole=(value:number)=>{answer={kind:'integer',value};};
+ let hint=skill.strategy;
  if(['small-add','small-subtract','add','subtract','tables'].includes(id)) {
   const small=id.startsWith('small-');const limit=small?(level===0?5:10):id==='tables'?100:level===0?20:100;
   const a=id==='tables'?n%10+1:n%(limit+1),b=id==='tables'?Math.floor(n/10)%10+1:Math.floor(n/(limit+1))%(limit+1),operation=id==='tables'?'multiply':id.includes('subtract')?'subtract':'add';
@@ -111,9 +112,41 @@ export function candidate(id:string,n:number,grade:Grade,level:number):StudyQues
   if(level===0){prompt=`x² = ${a*a}`;answer={kind:'set',values:[rational(-a),rational(a)]};}
   else {if(a===b)return null;prompt=`(x − ${a}) × (x + ${b}) = 0`;answer={kind:'set',values:[rational(a),rational(-b)]};}
   voice=['all',...mathTokens(prompt)];
+ } else if(id==='percent') {
+  const rate=[10,20,25,50,75][n%5],quantity=(Math.floor(n/5)%30+1)*20;
+  prompt=`${rate} % de ${quantity}`;answer={kind:'decimal',value:rational(rate*quantity,100)};
+ } else if(id==='proportion') {
+  const unit=n%12+1,initial=Math.floor(n/12)%6+2,target=Math.floor(n/72)%8+2;
+  if(initial===target)return null;
+  prompt=`${initial} objets coûtent ${initial*unit} €. Quel prix pour ${target} objets ?`;whole(target*unit);kind='problem';
+  hint=`1. Trouve le prix d’un objet : ${initial*unit} ÷ ${initial}. 2. Multiplie ce prix par ${target}.`;
+  voice=['price',...numberTokens(initial),'objects',...numberTokens(initial*unit),'euros','howMany',...numberTokens(target),'objects'];
+ } else if(id==='program') {
+  const start=n%20+1,add=Math.floor(n/20)%9+1,factor=Math.floor(n/180)%8+2;
+  prompt=`Pars de ${start}, ajoute ${add}, puis multiplie par ${factor}.`;whole((start+add)*factor);kind='problem';
+  hint=`1. Calcule ${start} + ${add}. 2. Multiplie le résultat par ${factor}.`;
+  voice=['program',...numberTokens(start),'addTo',...numberTokens(add),'then','times',...numberTokens(factor)];
+ } else if(id==='evolution'||id==='successive') {
+  const start=(n%30+1)*10,first=[-25,-20,-10,10,20,25][Math.floor(n/30)%6],second=[-20,-10,10,20][Math.floor(n/180)%4];
+  prompt=`${start} €, puis ${first>0?'+':''}${first} %${id==='successive'?`, puis ${second>0?'+':''}${second} %`:''} : prix final ?`;kind='problem';
+  answer={kind:'decimal',value:id==='successive'?rational(start*(100+first)*(100+second),10000):rational(start*(100+first),100)};
+  hint=id==='successive'?`Multiplie le prix par ${rationalLabel(rational(100+first,100),true)}, puis le nouveau prix par ${rationalLabel(rational(100+second,100),true)}.`:skill.strategy;
+  voice=[...numberTokens(start),'euros','change',...numberTokens(first),'percent',...(id==='successive'?['successive',...numberTokens(second),'percent']:[])];
+ } else if(id==='function') {
+  const x=n%21-10,a=Math.floor(n/21)%8+2,b=Math.floor(n/168)%11-5;
+  prompt=`f(${x}), avec f(x) = ${a}x + (${b})`;whole(a*x+b);kind='problem';voice=['function',...numberTokens(x),...mathTokens(`${a}x + (${b})`)];
+ } else if(id==='identity') {
+  const a=(n%9+1)*10,b=Math.floor(n/9)%9+1,minus=n%2===1;
+  prompt=`(${a} ${minus?'−':'+'} ${b})², par décomposition`;whole((a+(minus?-b:b))**2);kind='power';
+  hint=`(${a} ${minus?'−':'+'} ${b})² = ${a}² ${minus?'−':'+'} 2 × ${a} × ${b} + ${b}².`;
+  voice=['identity',...mathTokens(`(${a} ${minus?'−':'+'} ${b})²`)];
+ } else if(id==='inequality') {
+  const a=(n%8+2)*(level>0&&n%2===1?-1:1),b=Math.floor(n/8)%11-5,bound=Math.floor(n/88)%21-10;
+  const operator=(['≤','≥','<','>'] as const)[Math.floor(n/8)%4],reverse={'≤':'≥','≥':'≤','<':'>','>':'<'} as const;
+  prompt=`${a}x + (${b}) ${operator} ${a*bound+b}`;kind='equation';answer={kind:'inequality',operator:a<0?reverse[operator]:operator,bound:rational(bound)};
  } else return null;
  voice??=mathTokens(prompt);
- return {kind,skillId:id,prompt,spoken:tokensText(voice),voiceTokens:voice,hint:skill.strategy,answer,visual} as StudyQuestion;
+ return {kind,skillId:id,prompt,spoken:tokensText(voice),voiceTokens:voice,hint,answer,visual} as StudyQuestion;
 }
 /** Bounded candidates: never enumerate all pairs in the school's numeration range. */
 export function generateStudyQuestions(id:string,grade:Grade,level=0,count=10,random=Math.random):Calculation[] {

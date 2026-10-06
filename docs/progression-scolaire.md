@@ -19,7 +19,7 @@ Le champ de numération ne constitue pas une banque d’opérations aléatoires 
 4. Fractions, décimaux et quotient/reste : livré.
 5. Relatifs, priorités, puissances et racines : livré.
 6. Nombres manquants et équations : livré. Solutions choisies avant construction ; produits nuls et carrés demandent toutes les solutions.
-7. Pourcentages, problèmes, fonctions et prolongement seconde : à réaliser.
+7. Pourcentages, problèmes, fonctions et prolongement seconde : livré. Les identités remarquables sont travaillées par décomposition numérique ; les inéquations attendent une réponse de la forme x ≤ 4.
 8. Missions adaptatives des deux aventures : à réaliser.
 
 Chaque lot requiert ses tests unitaires et navigateur pertinents, compilation, commit français et publication sur l’hébergement existant. Le pavé et ses animations demandent `npm run test:keypad`.

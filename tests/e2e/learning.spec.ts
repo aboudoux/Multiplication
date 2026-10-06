@@ -17,6 +17,14 @@ test('une séance explicite attend Valider et crédite le profil actif',async({p
  await expect(page.locator('#learning-panel')).toContainText('En entraînement');
  const data=await page.evaluate(()=>JSON.parse(localStorage.getItem('calcul-party:players:v1')!));const active=data.players.find((p:{id:string})=>p.id===data.active);expect(JSON.parse(active.data['calcul-party:training:v1']).materials).toBe(5);
 });
+test('les problèmes guidés et inéquations sont jouables en seconde',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await player(page,'15');await page.locator('[data-skill=proportion]').click();await page.clock.runFor(4050);
+ const [initial,price,target]=(await page.locator('#equation').innerText()).match(/\d+/g)!.map(Number);await page.locator('#study-hint summary').click();await expect(page.locator('#study-hint')).toContainText('1.');await page.locator('#study-input-0').fill(String(price/initial*target));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.locator('#pause').click();await page.locator('#camp-exit').click();await page.locator('[data-skill=inequality]').click();await page.clock.runFor(4050);
+ const prompt=await page.locator('#equation').innerText();const [a,b,c]=prompt.match(/-?\d+/g)!.map(Number);const op=prompt.match(/[≤≥<>]/)![0];await page.locator('#study-input-0').fill(`x${op}${(c-b)/a}`);await page.locator('#study-input-0').press('Enter');await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');
+ await page.screenshot({path:'artifacts/learning-mobile.png',fullPage:true});
+});
 test('les équations demandent une valeur et les carrés toutes les solutions',async({page})=>{
  await player(page,'14');await page.locator('[data-skill=equation-two]').click();await page.clock.runFor(4050);
  const [a,b,c]=(await page.locator('#equation').innerText()).match(/-?\d+/g)!.map(Number);await page.locator('#study-input-0').fill(String((c-b)/a));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 15');

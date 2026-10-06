@@ -27,7 +27,7 @@ export class AnswerUI {
   const answer=q.exercise?.answer,format=answer?.kind;
   this.root.hidden=false;
   const labels=format==='remainder'?['Quotient','Reste']:['Ta réponse'];
-  const note=format==='set'?'Toutes les solutions, séparées par ;':format==='inequality'?'Écris par exemple x ≤ 4':format==='fraction'?'Écris une fraction, par exemple 3/4':format==='decimal'?'Virgule ou point sont acceptés':'';
+  const note=format==='set'?'Toutes les solutions, séparées par ;':format==='inequality'?'Écris par exemple x ≤ 4':format==='fraction'?(answer?.kind==='fraction'&&answer.irreducible?'Écris une fraction irréductible, par exemple 3/4':'Écris une fraction, par exemple 3/4'):format==='decimal'?'Virgule ou point sont acceptés':'';
   this.root.innerHTML=`<div class="study-fields">${labels.map((label,i)=>`<label>${label}<input id="study-input-${i}" autocomplete="off" spellcheck="false" maxlength="40" inputmode="${format==='integer'||format==='remainder'?'numeric':format==='decimal'?'decimal':'text'}" aria-describedby="study-format" required></label>`).join('')}</div><small id="study-format">${note}</small><div class="study-symbols">${['−',',','/',';','≤','≥','x'].filter(c=>format==='inequality'||format==='set'?true:format==='fraction'?['−','/'].includes(c):format==='decimal'?['−',','].includes(c):c==='−').map(c=>`<button type="button" class="secondary-button" data-char="${c}">${c}</button>`).join('')}<button id="study-submit" type="submit" class="play-button">Valider</button></div><details id="study-hint"><summary>Un indice</summary><p>${escapeHtml(q.exercise?.hint??'Décompose le calcul.')}</p></details>`;
   this.text=this.root.querySelector('input')!;
   this.focused=this.text;
@@ -38,3 +38,4 @@ export class AnswerUI {
   this.root.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.disabled=!enabled);
  }
 }
+

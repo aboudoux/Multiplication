@@ -42,4 +42,15 @@ describe('exercices structurés',()=>{
    expect(answerMatches(answer,String(answer.values[0].numerator))).toBe(false);
   }
  });
+ it('les inéquations inversent le sens et les évolutions composent les taux',()=>{
+  for(const q of generateStudyQuestions('inequality','2de',1,100)){
+   const [a,b,c]=q.exercise!.prompt.match(/-?\d+/g)!.map(Number);const answer=q.exercise!.answer;if(answer.kind!=='inequality')throw Error('Inéquation attendue');
+   expect(a*answer.bound.numerator/answer.bound.denominator+b).toBe(c);
+   const op=q.exercise!.prompt.match(/[≤≥<>]/)![0];expect(answer.operator).toBe(a<0?({'≤':'≥','≥':'≤','<':'>','>':'<'} as Record<string,string>)[op]:op);
+  }
+  for(const q of generateStudyQuestions('successive','2de',0,100)){
+   const [price,a,b]=q.exercise!.prompt.match(/-?\d+/g)!.map(Number);const answer=q.exercise!.answer;if(answer.kind!=='decimal')throw Error('Décimal attendu');
+   expect(answer.value.numerator*10000).toBe(price*(100+a)*(100+b)*answer.value.denominator);
+  }
+ });
 });
