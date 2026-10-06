@@ -1,3 +1,4 @@
+import {prepareCamp,enterCamp,ready} from './helpers';
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
@@ -22,17 +23,12 @@ async function prepare(page: Page) {
       return tone.apply(this, args);
     };
   });
-  await page.clock.install({ time: new Date("2026-09-27T12:00:00Z") });
-  await page.goto("/");
-  await page.evaluate(() => document.fonts.ready);
-  await page.clock.pauseAt(new Date("2026-09-27T12:00:10Z"));
-  await page.locator('[data-mode="multiply"]').click();
-  await page.locator("#length-select").selectOption("all");
+  await prepareCamp(page,{operations:['multiply'],tables:[1,2,3,4,5,6,7,8,9,10],length:'all',duration:10,lives:3},true);
 }
 async function begin(page: Page) {
-  await page.getByRole("button", { name: /C’est parti/ }).click();
+  await page.locator("#camp-start").click();
   await page.clock.runFor(4050);
-  await expect(page.locator("#overlay")).toBeHidden();
+  await ready(page);
 }
 async function clipCount(page: Page) {
   return page.evaluate(() => (window as any).speechProbe.clips.length);
@@ -88,7 +84,7 @@ test("the voice preference persists and global mute also silences narration", as
 }) => {
   await prepare(page);
   await page.getByRole("button", { name: "Couper la voix" }).click();
-  await page.reload();
+  await page.reload();await enterCamp(page);
   await expect(
     page.getByRole("button", { name: "Activer la voix" }),
   ).toBeVisible();

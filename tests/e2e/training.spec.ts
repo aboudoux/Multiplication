@@ -30,7 +30,7 @@ test('guided setup, exact tables, completion, materials, replay and independent 
  await page.locator('#pause').click();await page.locator('#camp-exit').click();
  await page.locator('[data-tab="colony"]').click();await expect(page.locator('.camp-materials')).toContainText('6 matériaux');
  await page.reload();await page.locator('#open-training').click();await expect(page.locator('.camp-materials')).toContainText('6 matériaux');
- await page.locator('#camp-home').click();await page.locator('#open-adventure').click();await page.locator('[data-stage="kitten-1"]').click();await page.clock.runFor(4050);await solve(page);
+ await page.locator('#camp-home').click();await page.locator('#open-adventure').click();await page.locator('[data-adventure="chaton"]').click();await page.locator('[data-stage="kitten-1"]').click();await page.clock.runFor(4050);await solve(page);
  await page.locator('#pause').click();await page.locator('#adventure-exit').click();
  expect(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).materials,TRAINING_KEY)).toBe(6);
  expect(await page.evaluate(key=>localStorage.getItem(key),ADVENTURE_KEY)).toBeNull();expect(errors).toEqual([]);

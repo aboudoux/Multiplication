@@ -1,5 +1,6 @@
+import { themes, type ThemeId } from "./themes";
 import type { Calculation } from "./calculations";
-import { QuestionVoice } from "./voice";
+import { QuestionVoice, type VoiceStyle } from "./voice";
 
 /** Original synthesized arcade sounds and bundled French voice prompts. */
 export class GameAudio {
@@ -11,13 +12,44 @@ export class GameAudio {
   private voice: QuestionVoice | null = null;
   private percussionBuffer: AudioBuffer | null = null;
   muted = false;
+  voiceStyle: VoiceStyle = "classic";
+  private theme: ThemeId = "star";
+  private sources = new Set<AudioScheduledSourceNode>();
+  setTheme(theme: ThemeId): void {
+    if (theme === this.theme) return;
+    for (const source of this.sources) { try { source.stop(); } catch { /* Already ended. */ } }
+    this.sources.clear();
+    this.stopSpeech();
+    this.theme = theme;
+    this.beat = 0;
+    this.playing = false;
+  }
+  transform(): void {
+    themes[this.theme].danceNotes.slice(0, 4).forEach((n,i) => this.tone(n, i * .07, .2, .15));
+    if (this.theme === "kitten") this.meow(.06);
+  }
 
+  surprise(): void {
+    const notes = themes[this.theme].danceNotes;
+    [0, 2, 4, 7].forEach((index,i) => this.tone(notes[index], i * .055, .16, .08, themes[this.theme].music.timbre));
+    if (this.theme === "kitten") this.meow();
+  }
   get speechStatus() {
     return this.voice?.status ?? "idle";
   }
 
-  speakQuestion(question: Calculation): void {
-    if (!this.muted) void this.voice?.speak(question);
+  prepareQuestions(questions: readonly Calculation[]): void {
+    this.voice?.prepare(questions);
+  }
+
+  questionPrepared(question: Calculation): boolean {
+    return this.voice?.isPrepared(question) ?? true;
+  }
+
+  speakQuestion(question: Calculation, retry = false): void {
+    if (this.muted) return;
+    if (retry) void this.voice?.speak(question, this.voiceStyle);
+    else this.voice?.speakPrepared(question, this.voiceStyle);
   }
 
   stopSpeech(): void {
@@ -62,6 +94,10 @@ export class GameAudio {
         this.context.currentTime,
         0.025,
       );
+  }
+
+  missionUnlocked(): void {
+    [784, 988, 1319].forEach((note, i) => this.tone(note, i * .09, .18, .12, 'triangle'));
   }
 
   /** Three soft notes for menu navigation, unlocked by the user's click. */
@@ -118,18 +154,54 @@ export class GameAudio {
     oscillator.connect(envelope);
     envelope.connect(this.master);
     if (menu) this.menuSources.add(oscillator);
+    else this.sources.add(oscillator);
     oscillator.start(start);
     oscillator.stop(start + length + 0.02);
     oscillator.onended = () => {
       this.menuSources.delete(oscillator);
+      this.sources.delete(oscillator);
       oscillator.disconnect();
       envelope.disconnect();
     };
   }
 
+  /** A short, gentle cartoon miaow: a rising pitch and a closing vowel. */
+  private meow(delay = 0): void {
+    const ctx = this.context;
+    if (!ctx || !this.master || ctx.state !== "running" || this.muted) return;
+    const voice = ctx.createOscillator();
+    const vowel = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    const at = ctx.currentTime + delay;
+    voice.type = "sawtooth";
+    voice.frequency.setValueAtTime(520, at);
+    voice.frequency.exponentialRampToValueAtTime(820, at + .08);
+    voice.frequency.exponentialRampToValueAtTime(630, at + .19);
+    voice.frequency.exponentialRampToValueAtTime(390, at + .42);
+    vowel.type = "lowpass";
+    vowel.Q.value = 1.5;
+    vowel.frequency.setValueAtTime(2100, at);
+    vowel.frequency.exponentialRampToValueAtTime(700, at + .42);
+    gain.gain.setValueAtTime(0, at);
+    gain.gain.linearRampToValueAtTime(.14, at + .025);
+    gain.gain.exponentialRampToValueAtTime(.001, at + .44);
+    voice.connect(vowel);
+    vowel.connect(gain);
+    gain.connect(this.master);
+    this.sources.add(voice);
+    voice.start(at);
+    voice.stop(at + .46);
+    voice.onended = () => {
+      this.sources.delete(voice);
+      voice.disconnect();
+      vowel.disconnect();
+      gain.disconnect();
+    };
+  }
+
   countdown(value: number): void {
     this.tone(
-      value === 0 ? 880 : 440,
+      value === 0 ? (this.theme === "halloween" ? 1175 : 880) : (this.theme === "halloween" ? 587 : 440),
       0,
       value === 0 ? 0.3 : 0.15,
       0.32,
@@ -138,15 +210,16 @@ export class GameAudio {
     if (value === 0) this.tone(1320, 0.07, 0.25, 0.15);
   }
   key(): void {
-    this.tone(650, 0, 0.045, 0.06);
+    const theme = themes[this.theme];
+    this.tone(theme.danceNotes[2], 0, 0.055, 0.045, theme.music.timbre);
   }
   warning(): void {
     this.tone(740, 0, 0.08, 0.16, "triangle");
   }
   success(milestone = false): void {
-    (milestone ? [523, 659, 784, 1047] : [659, 880]).forEach((note, i) =>
-      this.tone(note, i * 0.08, 0.24, 0.2, "triangle"),
-    );
+    const notes = themes[this.theme].danceNotes;
+    (milestone ? notes.slice(0,4) : [notes[1], notes[3]]).forEach((note,i) =>
+      this.tone(note, i*.08, .24, .18, themes[this.theme].music.timbre));
   }
   error(): void {
     // A long, low double buzzer with a square-wave growl, not a piercing beep.
@@ -155,26 +228,33 @@ export class GameAudio {
     this.tone(46.5, 0.17, 0.44, 0.28, "sine");
   }
   victory(): void {
-    [523, 659, 784, 1047, 784, 1047, 1319].forEach((note, i) =>
+    (this.theme === "halloween" ? [587,698,880,1175,880,1175,1397] : [523, 659, 784, 1047, 784, 1047, 1319]).forEach((note, i) =>
       this.tone(note, i * 0.15, 0.35, 0.25, "triangle"),
     );
   }
-  victoryDance(): void {
-    const beat = 60 / 126;
-    const melody = [523, 659, 784, 1047, 880, 784, 659, 784, 1047, 1175, 1319, 1047];
-    melody.forEach((note, i) => {
+  suspendReward(paused: boolean): void {
+    if (!this.context) return;
+    if (paused) void this.context.suspend().catch(() => {});
+    else void this.context.resume().catch(() => {});
+  }
+  victoryDance(durationMs?: number): void {
+    if (this.theme === "kitten") { this.meow(.05); this.meow(3.4); }
+    const beat = 60 / themes[this.theme].music.bpm;
+    const melody = themes[this.theme].danceNotes;
+    const notes = durationMs ? Array.from({length:Math.max(1,Math.floor((durationMs/1000-.6)/beat))},(_,i)=>melody[i%melody.length]) : melody;
+    notes.forEach((note, i) => {
       const at = i * beat;
-      this.tone(note, at, beat * 0.78, 0.26, "triangle");
+      this.tone(note, at, beat * 0.78, .2, themes[this.theme].music.timbre);
       this.tone(note / 2, at, beat * 0.68, 0.07, "sine");
-      this.tone(i < 4 ? 131 : i < 8 ? 175 : 196, at, beat * 0.7, 0.16);
+      this.tone(themes[this.theme].music.bass[Math.floor(i / 4) % 4], at, beat * 0.7, 0.16);
       this.tone(68, at, 0.11, 0.27, "sine");
       this.percussion(i % 2 ? 0.15 : 0.07, i % 2 === 1, at);
       this.percussion(0.045, false, at + beat / 2);
     });
-    this.tone(523, 11 * beat, beat * 1.15, 0.16, "triangle");
+    this.tone(melody[0], (durationMs ? notes.length : 11) * beat, durationMs ? .45 : beat * 1.15, 0.16, "triangle");
   }
   end(): void {
-    [330, 294, 220].forEach((note, i) =>
+    (this.theme === "halloween" ? [349,294,220] : [330, 294, 220]).forEach((note, i) =>
       this.tone(note, 0.65 + i * 0.18, 0.3, 0.18, "triangle"),
     );
   }
@@ -206,15 +286,17 @@ export class GameAudio {
     source.connect(filter);
     filter.connect(gain);
     gain.connect(this.master);
+    this.sources.add(source);
     source.start(start);
     source.onended = () => {
+      this.sources.delete(source);
       source.disconnect();
       filter.disconnect();
       gain.disconnect();
     };
   }
 
-  ambience(active: boolean, solved: number, urgent: boolean): void {
+  ambience(active: boolean, progress: number, urgent: boolean): void {
     const ctx = this.context;
     if (!active || !ctx || this.muted || ctx.state !== "running") {
       this.playing = false;
@@ -225,10 +307,8 @@ export class GameAudio {
       this.playing = true;
     }
     if (ctx.currentTime < this.nextBeat) return;
-    this.nextBeat = ctx.currentTime + 60 / 126 / 2;
-    const notes = [
-      523, 0, 659, 784, 0, 659, 880, 784, 587, 0, 698, 880, 784, 698, 659, 0,
-    ];
+    this.nextBeat = ctx.currentTime + 60 / themes[this.theme].music.bpm / 2;
+    const notes = themes[this.theme].melody;
     const note = notes[this.beat % notes.length];
     // Bouncy 126 BPM backing, ducked while the question is being read aloud.
     const duck =
@@ -236,23 +316,26 @@ export class GameAudio {
         ? 0.12
         : 1;
     if (!urgent) {
-      if (note) this.tone(note, 0, 0.16, 0.09 * duck, "triangle");
+      if (note) {
+        this.tone(note, 0, .16, .065 * duck, themes[this.theme].music.timbre);
+        if (themes[this.theme].music.sparkle) this.tone(note * themes[this.theme].music.sparkle, .045, .24, .025 * duck);
+      }
       if (this.beat % 2 === 0) this.tone(70, 0, 0.11, 0.24 * duck);
       this.percussion(
         (this.beat % 4 === 2 ? 0.11 : 0.045) * duck,
         this.beat % 4 === 2,
       );
-      if (solved >= 25 && this.beat % 2 === 0)
+      if (progress >= 25 && this.beat % 2 === 0)
         this.tone(
-          [131, 147, 175, 165][Math.floor(this.beat / 4) % 4],
+          themes[this.theme].music.bass[Math.floor(this.beat / 4) % 4],
           0,
           0.2,
           0.15 * duck,
           "triangle",
         );
-      if (solved >= 50 && note && this.beat % 4 === 3)
+      if (progress >= 50 && note && this.beat % 4 === 3)
         this.tone(note * 2, 0.12, 0.13, 0.065 * duck);
-      if (solved >= 75 && note) this.tone(note * 1.5, 0, 0.15, 0.04 * duck);
+      if (progress >= 75 && note) this.tone(note * 1.5, 0, 0.15, 0.04 * duck);
     }
     this.beat++;
   }

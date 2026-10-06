@@ -5,6 +5,7 @@ export { createDeck, shuffle } from "./calculations";
 export type Phase =
   | "welcome"
   | "countdown"
+  | "preparing"
   | "question"
   | "feedback"
   | "paused"
@@ -22,6 +23,12 @@ export interface Feedback {
   submitted: string;
 }
 type CountdownAction = "next" | "resume-question" | "resume-feedback";
+export interface PracticeRules {
+  questions: readonly Calculation[];
+  untimed: boolean;
+  unlimitedLives: boolean;
+  victoryDurationMs?: number;
+}
 
 /** Pure clock-driven state machine. Only active answering time counts toward records. */
 export class Game {
@@ -41,9 +48,15 @@ export class Game {
   private activeMs = 0;
   private remainingMs = 0;
   private countdownAction: CountdownAction = "next";
+  private celebrationSuspendedAt: number | null = null;
 
   readonly settings: Readonly<GameSettings>;
-  constructor(settings: GameSettings, private readonly random = Math.random) {
+  constructor(
+    settings: GameSettings,
+    private readonly random = Math.random,
+    private readonly canPresent: (question: Calculation) => boolean = () => true,
+    private readonly practice?: PracticeRules,
+  ) {
     validateSettings(settings);
     this.settings = Object.freeze({ ...settings });
     this.lives = settings.lives;
@@ -51,11 +64,24 @@ export class Game {
   get duration() { return this.settings.duration; }
   get tables() { return this.settings.tables; }
   get startingLives() { return this.settings.lives; }
-  get totalQuestions(): number { return questionCount(this.settings); }
+  get totalQuestions(): number { return this.practice?.questions.length ?? questionCount(this.settings); }
+  get untimed(): boolean { return !!this.practice?.untimed; }
+  get unlimitedLives(): boolean { return !!this.practice?.unlimitedLives; }
+  get victoryDuration(): number { return this.practice?.victoryDurationMs ?? VICTORY_DURATION_MS; }
+  victoryElapsed(now: number): number { return Math.max(0, this.victoryDuration - (this.deadline - (this.celebrationSuspendedAt ?? now))); }
+  suspendCelebration(now: number): void {
+    if (this.phase === 'victory' && this.celebrationSuspendedAt === null) this.celebrationSuspendedAt = now;
+  }
+  resumeCelebration(now: number): void {
+    if (this.celebrationSuspendedAt === null) return;
+    this.deadline += Math.max(0, now - this.celebrationSuspendedAt);
+    this.celebrationSuspendedAt = null;
+  }
+  get upcomingQuestions(): readonly Calculation[] { return this.queue.slice(0, 3); }
 
   start(now: number): void {
     if (this.phase !== "welcome") return;
-    this.queue = selectQuestions(this.settings, this.random);
+    this.queue = this.practice ? this.practice.questions.map(q => ({ ...q })) : selectQuestions(this.settings, this.random);
     this.phase = "countdown";
     this.deadline = now + 4000;
   }
@@ -69,7 +95,7 @@ export class Game {
 
   timeLeft(now: number): number {
     if (this.phase === "question") return Math.max(0, this.deadline - now);
-    if (this.phase === "paused" || this.phase === "countdown") {
+    if (this.phase === "paused" || this.phase === "countdown" || this.phase === "preparing") {
       return this.countdownAction === "resume-question"
         ? this.remainingMs
         : this.duration * 1000;
@@ -87,17 +113,19 @@ export class Game {
   }
 
   tick(now: number): void {
+    if (this.celebrationSuspendedAt !== null) return;
     if (now < this.deadline) return;
-    if (this.phase === "countdown") {
+    if (this.phase === "preparing") {
+      if (this.countdownAction === "resume-question") this.resumeQuestion(now);
+      else this.nextQuestion(now);
+    } else if (this.phase === "countdown") {
       if (this.countdownAction === "resume-question") {
-        this.phase = "question";
-        this.questionStarted = now;
-        this.deadline = now + this.remainingMs;
+        this.resumeQuestion(now);
       } else if (this.countdownAction === "resume-feedback") {
         this.phase = "feedback";
         this.deadline = now + this.remainingMs;
       } else this.nextQuestion(now);
-    } else if (this.phase === "question") this.resolve(false, true, now);
+    } else if (this.phase === "question" && !this.untimed) this.resolve(false, true, now);
     else if (this.phase === "feedback") {
       if (this.lives === 0) {
         this.phase = "defeat";
@@ -108,21 +136,24 @@ export class Game {
       this.phase = "finished";
   }
 
-  digit(digit: string, now: number): void {
-    if (this.phase !== "question" || !/^\d$/.test(digit)) return;
+  digit(digit: string, now: number): boolean {
+    if (this.phase !== "question" || !/^\d$/.test(digit)) return false;
     this.tick(now);
     // An expired question cannot accept a racing click or key press.
-    if (this.phase !== "question" || !this.current) return;
+    if (this.phase !== "question" || !this.current) return false;
     this.answer += digit;
     const expected = String(this.current.result);
     if (this.answer.length === expected.length)
       this.resolve(this.answer === expected, false, now);
+    return true;
   }
 
-  erase(now: number): void {
-    if (this.phase !== "question") return;
+  erase(now: number): boolean {
+    if (this.phase !== "question") return false;
     this.tick(now);
-    if (this.phase === "question") this.answer = this.answer.slice(0, -1);
+    if (this.phase !== "question" || !this.answer) return false;
+    this.answer = this.answer.slice(0, -1);
+    return true;
   }
 
   pause(now: number): void {
@@ -134,7 +165,7 @@ export class Game {
     } else if (this.phase === "feedback") {
       this.remainingMs = this.deadline - now;
       this.countdownAction = "resume-feedback";
-    } else if (this.phase !== "countdown") return;
+    } else if (this.phase !== "countdown" && this.phase !== "preparing") return;
     this.phase = "paused";
   }
 
@@ -145,6 +176,12 @@ export class Game {
   }
 
   private nextQuestion(now: number): void {
+    this.countdownAction = "next";
+    const next = this.queue[0];
+    if (next && !this.canPresent(next)) {
+      this.phase = "preparing";
+      return;
+    }
     this.current = this.queue.shift() ?? null;
     if (!this.current) return;
     this.questionNumber++;
@@ -152,8 +189,18 @@ export class Game {
     this.feedback = null;
     this.phase = "question";
     this.questionStarted = now;
-    this.deadline = now + this.duration * 1000;
+    this.deadline = this.untimed ? Infinity : now + this.duration * 1000;
     this.countdownAction = "next";
+  }
+
+  private resumeQuestion(now: number): void {
+    if (this.current && !this.canPresent(this.current)) {
+      this.phase = "preparing";
+      return;
+    }
+    this.phase = "question";
+    this.questionStarted = now;
+    this.deadline = now + this.remainingMs;
   }
 
   private resolve(correct: boolean, timeout: boolean, now: number): void {
@@ -173,7 +220,7 @@ export class Game {
       this.streak++;
       this.bestStreak = Math.max(this.bestStreak, this.streak);
     } else {
-      this.lives--;
+      if (!this.practice?.unlimitedLives) this.lives--;
       this.mistakes++;
       this.streak = 0;
       this.queue.push(this.current);
@@ -183,7 +230,7 @@ export class Game {
     this.deadline =
       now +
       (this.phase === "victory"
-          ? VICTORY_DURATION_MS
+          ? this.victoryDuration
           : correct
             ? 650
             : ERROR_FEEDBACK_MS);

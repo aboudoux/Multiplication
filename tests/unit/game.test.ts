@@ -57,6 +57,25 @@ describe("the multiplication deck", () => {
 });
 
 describe("the game rules", () => {
+  it("reports accepted digits and erasures without accepting a racing timeout or transition", () => {
+    const game = started();
+    expect(game.digit('x', 4001)).toBe(false);
+    expect(game.erase(4001)).toBe(false);
+    expect(game.digit('1', 4002)).toBe(true);
+    expect(game.digit('1', 4002)).toBe(false);
+    const late = started();
+    expect(late.digit('1', 14000)).toBe(false);
+    expect(late.lives).toBe(2);
+    expect(late.digit('1', 14000)).toBe(false);
+    expect(late.lives).toBe(2);
+    const three = started(30);
+    const now = reach(three, '10x10');
+    expect(three.digit('1', now + 1)).toBe(true);
+    expect(three.erase(now + 2)).toBe(true);
+    expect(three.erase(now + 3)).toBe(false);
+    for (const digit of '100') expect(three.digit(digit, now + 4)).toBe(true);
+    expect(three.digit('0', now + 4)).toBe(false);
+  });
   it("finishes after every selected table is solved", () => {
     const game = started(30, 1, 5);
     expect(game.totalQuestions).toBe(10);
@@ -214,6 +233,65 @@ describe("the game rules", () => {
 });
 
 describe("timers and interruption", () => {
+  it.each([5, 10, 15, 30] as const)("waits for presentation readiness without consuming the %s-second clock or accepting input", duration => {
+    let ready = false;
+    const game = new Game({ mode:"add", length:20, duration, tables:10, lives:3 }, () => .999999, () => ready);
+    game.start(0);
+    expect(game.upcomingQuestions[0].id).toBe("1+1");
+    game.tick(4000);
+    expect(game.phase).toBe("preparing");
+    expect(game.current).toBeNull();
+    game.digit("0", 5000);
+    game.tick(12000);
+    expect(game.solved).toBe(0);
+    expect(game.lives).toBe(3);
+    expect(game.elapsed(12000)).toBe(0);
+    expect(game.timeLeft(12000)).toBe(duration * 1000);
+    ready = true;
+    game.tick(13000);
+    expect(game.current?.id).toBe("1+1");
+    game.digit("2", 13500);
+    ready = false;
+    game.tick(14150);
+    expect(game.phase).toBe("preparing");
+    expect(game.questionNumber).toBe(1);
+    expect(game.elapsed(25000)).toBe(500);
+    ready = true;
+    game.tick(25000);
+    expect(game.current?.id).toBe("1+2");
+    expect(game.questionNumber).toBe(2);
+    expect(game.timeLeft(25000)).toBe(duration * 1000);
+  });
+  it("keeps a preparation paused until explicit resume, including a partly answered question", () => {
+    let ready = false;
+    const game = new Game({mode:"multiply", length:"all", tables:1, duration:10, lives:3}, () => .999999, () => ready);
+    game.start(0);
+    game.tick(4000);
+    game.pause(4500);
+    ready = true;
+    game.tick(15000);
+    expect(game.phase).toBe("paused");
+    expect(game.current).toBeNull();
+    game.resume(15000);
+    game.tick(19000);
+    const now = reach(game, "1x10", 19000);
+    game.digit("1", now + 100);
+    game.pause(now + 300);
+    ready = false;
+    game.resume(now + 1000);
+    game.tick(now + 5000);
+    expect(game.phase).toBe("preparing");
+    expect(game.answer).toBe("1");
+    expect(game.timeLeft(now + 6000)).toBe(9700);
+    const elapsed = game.elapsed(now + 6000);
+    ready = true;
+    game.tick(now + 10000);
+    expect(game.phase).toBe("question");
+    expect(game.elapsed(now + 10000)).toBe(elapsed);
+    expect(game.timeLeft(now + 10000)).toBe(9700);
+    game.digit("0", now + 10100);
+    expect(game.phase).toBe("victory");
+  });
   it("keeps the correction visible for two seconds even after a delayed browser frame", () => {
     const game = started(5);
     game.tick(12000);

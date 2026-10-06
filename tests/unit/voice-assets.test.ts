@@ -2,6 +2,7 @@ import { createPool, voicePath } from "../../src/calculations";
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import { DEFEAT_DURATION_MS } from "../../src/game";
+import { voiceRates } from "../../src/voice-profiles";
 
 it("includes the complete crowd reaction with enough time after the buzzer", () => {
   const wav = readFileSync(
@@ -18,7 +19,7 @@ it("includes the complete crowd reaction with enough time after the buzzer", () 
   expect(seconds + 0.55).toBeLessThan(DEFEAT_DURATION_MS / 1000);
 });
 
-it("ships 562 non-silent French WAV prompts usable within the shortest time limit", () => {
+it("ships 480 non-silent French WAV prompts usable within the shortest time limit", () => {
   for (const q of [...createPool("add"), ...createPool("subtract"), ...createPool("multiply")]) {
     const wav = readFileSync(
       new URL(`../../public${voicePath(q)}`, import.meta.url),
@@ -43,9 +44,15 @@ it("ships 562 non-silent French WAV prompts usable within the shortest time limi
     expect(duration).toBeGreaterThan(0.4);
     expect(duration).toBeLessThan(2.5);
     let peak = 0;
-    for (let i = 0; i < data!.length; i += 2)
+    let firstAudibleSample = -1;
+    for (let i = 0; i < data!.length; i += 2) {
       peak = Math.max(peak, Math.abs(data!.readInt16LE(i)));
+      if (firstAudibleSample < 0 && Math.abs(data!.readInt16LE(i)) >= 160) firstAudibleSample = i / 2;
+    }
     expect(peak).toBeGreaterThan(1000);
     expect(peak).toBeLessThan(32767);
+    // Even the slowest theme voice must start audibly within 200 ms.
+    expect(firstAudibleSample, voicePath(q)).toBeGreaterThanOrEqual(0);
+    expect(firstAudibleSample / 22050 / Math.min(...Object.values(voiceRates)), voicePath(q)).toBeLessThan(.2);
   }
 });

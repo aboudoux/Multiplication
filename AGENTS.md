@@ -18,4 +18,4 @@
 ## Vérifications
 
 - Exécuter les tests pertinents pour la modification et compiler le site avant son déploiement.
-- Pour les animations des boîtes du pavé numérique, lancer `npm run test:keypad` : les tests doivent protéger leur visibilité, leur relance et la variété des illustrations dans les huit univers de l’aventure.
+- Pour les animations des boîtes du pavé numérique, lancer `npm run test:keypad` : les tests doivent protéger leur visibilité, leur relance et la variété des illustrations dans les seize mondes des deux aventures.

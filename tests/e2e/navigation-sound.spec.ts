@@ -37,7 +37,7 @@ test('first click, camp menus, adventure and return each play one short chime',a
  await prepare(page);expect(await count(page)).toBe(0);
  await chime(page,'#open-training');await chime(page,'nav [data-tab="workshop"]');
  await chime(page,'nav [data-tab="colony"]');await chime(page,'#camp-home');
- await chime(page,'#open-adventure');await chime(page,'#leave-adventure');
+ await chime(page,'#open-adventure');await chime(page,'[data-adventure="chaton"]');await chime(page,'#leave-adventure');
  await page.locator('#open-training').focus();const before=await count(page);await page.keyboard.press('Enter');
  await expect.poll(()=>count(page)).toBe(before+3);
 });
@@ -92,7 +92,7 @@ test('menu music continues through camp and adventure, stops on launch and resum
  await prepare(page);await page.locator('h1').click();
  const music=()=>page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='sine').length);
  await expect.poll(music).toBeGreaterThan(0);
- for (const selector of ['#open-training','nav [data-tab="workshop"]','nav [data-tab="colony"]','#camp-home','#open-adventure','#leave-adventure']) {
+ for (const selector of ['#open-training','nav [data-tab="workshop"]','nav [data-tab="colony"]','#camp-home','#open-adventure','[data-adventure="chaton"]','#leave-adventure']) {
   const before=await music();await chime(page,selector);await expect.poll(music).toBeGreaterThan(before);
  }
  await chime(page,'#open-training');await chime(page,'nav [data-tab="workshop"]');
@@ -101,7 +101,7 @@ test('menu music continues through camp and adventure, stops on launch and resum
  await expect(page.locator('#countdown-panel')).toBeVisible();
  await page.locator('#pause').click();await page.locator('#camp-exit').click();
  await expect.poll(music).toBeGreaterThan(duringCountdown);
- await page.locator('#camp-home').click();await page.locator('#open-adventure').click();
+ await page.locator('#camp-home').click();await page.locator('#open-adventure').click();await page.locator('[data-adventure="chaton"]').click();
  await page.locator('[data-stage="kitten-1"]').click();const adventureCountdown=await music();
  await page.waitForTimeout(1000);expect(await music()).toBe(adventureCountdown);
 });

@@ -1,3 +1,4 @@
+import { themes, type ThemeId } from "./themes";
 interface Particle {
   x: number;
   y: number;
@@ -10,6 +11,8 @@ interface Particle {
   rotation: number;
 }
 export class Particles {
+  private theme: ThemeId = "star";
+  setTheme(theme: ThemeId): void { this.theme = theme; this.particles = []; }
   private particles: Particle[] = [];
   private ctx: CanvasRenderingContext2D | null;
   private width = 0;
@@ -32,7 +35,7 @@ export class Particles {
   }
   burst(big = false): void {
     if (this.reduced.matches) return;
-    const colors = ["#ffe54b", "#4dffd2", "#ff6d9e", "#ffffff", "#ab8bff"];
+    const colors = themes[this.theme].colors;
     for (let i = 0; i < (big ? 180 : 45); i++) {
       this.particles.push({
         x: this.width * (big ? Math.random() : 0.4),

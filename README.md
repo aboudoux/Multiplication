@@ -1,6 +1,6 @@
 # Calcul’Party
 
-Un jeu de calcul mental en français : une aventure à travers huit mondes et un camp d’entraînement personnalisable avec des fourmis bâtisseuses. Additions, soustractions, multiplications, voix locales et sauvegarde sur l’appareil.
+Un jeu de calcul mental en français : deux aventures de huit mondes chacune et un camp d’entraînement personnalisable avec des fourmis bâtisseuses. Additions, soustractions, multiplications, voix locales et sauvegarde sur l’appareil.
 
 ## Créer une aventure ou une mission
 
@@ -90,7 +90,7 @@ Les tests audio contrôlent les annonces et les 104 fragments locaux, leur forma
 
 ### Univers et illustrations
 
-Les huit univers de l’aventure conservent leurs illustrations, personnages, mélodies, voix, surprises et scènes de récompense. L’univers des fourmis est réservé au camp ; il utilise une mascotte illustrée originale et un décor vectoriel et une musique synthétisée localement. Tous respectent le mode muet et la réduction des animations.
+Les seize mondes des deux aventures conservent leurs illustrations, personnages, mélodies, voix, surprises et scènes de récompense. L’univers des fourmis est réservé au camp ; il utilise une mascotte illustrée originale et un décor vectoriel et une musique synthétisée localement. Tous respectent le mode muet et la réduction des animations.
 
 Les anciens sélecteurs d’univers et les cinq boutons de partie libre sont remplacés par les deux destinations de l’accueil et l’atelier. Les préférences historiques restent conservées pour les voix des univers de l’aventure. Le raccourci de prévisualisation **Ctrl + Alt + V** reste disponible au repos et n’attribue ni record ni matériau.
 
@@ -106,6 +106,13 @@ Les tests navigateur utilisent Edge et un tactile simulé. Ils ne remplacent pas
 
 ### Protection des animations du pavé
 
-`npm run test:keypad` lance les tests du pavé et ceux de la sortie des personnages. `tests/e2e/keypad-pop.spec.ts` vérifie les huit univers de l’aventure sur mobile et ordinateur : image réellement chargée, personnage visible au-dessus de la boîte, saisie par clic et clavier, relance sur la même touche, alternance de six illustrations originales (quatre personnages et deux objets), disparition après l’animation et lors d’une pause. Le mode de réduction des animations conserve la saisie sans faire sortir le personnage. Ces tests sont également inclus dans `npm run test:e2e`.
+`npm run test:keypad` lance les tests du pavé et ceux de la sortie des personnages. `tests/e2e/keypad-pop.spec.ts` vérifie les seize mondes des deux aventures sur mobile et ordinateur : image réellement chargée, personnage visible au-dessus de la boîte, saisie par clic et clavier, relance sur la même touche, alternance de six illustrations originales (quatre personnages et deux objets), disparition après l’animation et lors d’une pause. Le mode de réduction des animations conserve la saisie sans faire sortir le personnage. Ces tests sont également inclus dans `npm run test:e2e`.
 
 Illustration des fourmis : `public/themes/ants.png`, générée avec l’outil intégré Imagegen. Brief : fourmi adorable de style album jeunesse, casque jaune, salopette bleue, corps caramel, grands yeux expressifs, fond transparent ; trois poses du même personnage : accueil souriant, danse joyeuse et petite déception. `src/ants.ts` cadre les poses dans des fenêtres SVG pour conserver la transparence et les animations.
+
+
+### Pico et le phare des îles
+
+L’entrée aventure propose le chaton et **Pico et le phare des îles** : huit animaux amis réparent ensemble le phare de leur archipel, en 24 missions. Les règles pédagogiques restent celles du chaton, avec une progression indépendante dans `calcul-party:adventure:pico:v1`. Une réinitialisation n’efface que l’aventure choisie et conserve l’autre aventure ainsi que le camp. Les huit planches originales, 24 récompenses de dix secondes, deux surprises par île et le film collectif de trente secondes utilisent des animaux de style album jeunesse et une musique maritime originale.
+
+Voir les [fiches complètes de l’aventure Pico](docs/aventure-pico.md) et le [guide de création des aventures](docs/creation-aventure.md). Les sources spécifiques sont `src/pico-content.ts`, `src/pico-themes.ts`, `src/pico-rewards.ts`, `src/pico-art.ts`, `src/lighthouse-party.ts` et `src/pico.css`. Le choix et la progression sont reliés par `src/adventure.ts`, `src/adventure-map.ts` et `src/main.ts`. Les tests de récompenses couvrent maintenant les 48 missions et les contrôles du pavé couvrent les 16 mondes d’aventure. L’anniversaire du chaton et `?fete=1` restent disponibles.

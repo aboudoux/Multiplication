@@ -1,3 +1,5 @@
+import type { VoiceStyle } from "./voice";
+import { themes, themeIds, type ThemeId } from "./themes";
 import { modes, questionCount, usesTables } from "./calculations";
 import type { Duration, GameSettings, Mode } from "./calculations";
 export type { GameSettings } from "./calculations";
@@ -9,12 +11,16 @@ export interface RecordScore {
 }
 
 export interface SavedData extends GameSettings {
+  theme: ThemeId;
+  themeVoices: Record<ThemeId, VoiceStyle>;
   muted: boolean;
   voiceEnabled: boolean;
   records: Record<string, RecordScore>;
 }
 export const STORAGE_KEY = "multipli-party:v1";
 export const defaults = (): SavedData => ({
+  theme: "star",
+  themeVoices: Object.fromEntries(themeIds.map(id => [id, themes[id].voices[0]])) as Record<ThemeId, VoiceStyle>,
   mode: "add",
   length: 20,
   duration: 10,
@@ -43,6 +49,12 @@ export function readSaved(storage: Pick<Storage, "getItem">): SavedData {
     if ([20, 50, 100].includes(data.length)) saved.length = data.length;
     else if (data.length === "all" && saved.mode === "multiply") saved.length = "all";
     if (saved.mode === "multiply" && questionCount(saved) > saved.tables * 10) saved.length = "all";
+    if (["classic", "witch", "monster"].includes(data.halloweenVoice)) saved.themeVoices.halloween = data.halloweenVoice;
+    for (const id of themeIds) {
+      const style = data.themeVoices?.[id];
+      if (themes[id].voices.includes(style)) saved.themeVoices[id] = style;
+    }
+    if (themeIds.includes(data.theme)) saved.theme = data.theme;
     if (typeof data.muted === "boolean") saved.muted = data.muted;
     if (typeof data.voiceEnabled === "boolean")
       saved.voiceEnabled = data.voiceEnabled;

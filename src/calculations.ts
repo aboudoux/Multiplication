@@ -29,18 +29,22 @@ export const usesTables = (mode: Mode) => modes[mode].operations.includes("multi
 export const questionCount = (settings: GameSettings) => settings.length === "all" ? settings.tables * 10 : settings.length;
 export const expression = (q: Calculation) => `${q.a} ${symbols[q.operation]} ${q.b}`;
 export const spokenExpression = (q: Calculation) => `${q.a} ${words[q.operation]} ${q.b}`;
-export const voicePath = (q: Pick<Calculation, "operation" | "a" | "b">) =>
-  `/voice/fr/${q.operation === "multiply" ? "" : q.operation + "/"}${q.a}-${q.b}.wav`;
+export const voicePath = (q: Pick<Calculation, "operation" | "a" | "b">) => {
+  const existing = q.operation === 'multiply' ? q.a>=1 && q.a<=10 && q.b>=1 && q.b<=10
+    : q.a>=0 && q.a<=20 && q.b>=0 && q.b<=20 && (q.operation==='add'?q.a+q.b:q.a-q.b)>=0 && (q.operation==='add'?q.a+q.b:q.a-q.b)<=20;
+  return existing ? `/voice/fr/${q.operation === "multiply" ? "" : q.operation + "/"}${q.a}-${q.b}.wav`
+    : `/voice/fr/composed/${q.operation}/${q.a}-${q.b}`;
+};
 
 export function createPool(operation: Operation, tables = 10): Calculation[] {
   if (!Number.isInteger(tables) || tables < 1 || tables > 10) throw new RangeError("Invalid tables");
   const pool: Calculation[] = [];
-  const minimum = operation === "multiply" ? 1 : 0;
+  const minimum = 1;
   const maximum = operation === "multiply" ? tables : 20;
   for (let a = minimum; a <= maximum; a++) {
     for (let b = minimum; b <= (operation === "multiply" ? 10 : 20); b++) {
       const result = operation === "add" ? a + b : operation === "subtract" ? a - b : a * b;
-      if (operation !== "multiply" && (result < 0 || result > 20)) continue;
+      if (operation !== "multiply" && (result <= 0 || result > 20)) continue;
       pool.push({ operation, a, b, result, id: `${a}${operation === "multiply" ? "x" : symbols[operation]}${b}` });
     }
   }

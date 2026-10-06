@@ -111,3 +111,23 @@ describe("local preferences and records", () => {
     expect(formatTime(125900)).toBe("2:05");
   });
 });
+
+it("persists themes without changing settings or records and defaults legacy/invalid themes", () => {
+  for (const theme of [undefined, null, "unknown", "star", "halloween"]) {
+    const original = { ...defaults(), ...standard, theme, records: { [recordKey(standard)]: score } };
+    const saved = readSaved({ getItem: () => JSON.stringify(original) });
+    expect(saved.theme).toBe(theme === "halloween" ? "halloween" : "star");
+    expect(saved.records).toEqual(original.records);
+    expect(recordKey(saved)).toBe(recordKey(standard));
+    let stored = "";
+    saveData({ setItem: (_key, value) => { stored = value; } }, saved);
+    expect(readSaved({ getItem: () => stored })).toEqual(saved);
+  }
+});
+
+it("persists Halloween voice choice and ignores invalid styles", () => {
+  for (const style of ["classic", "witch", "monster", "invalid", null]) {
+    const saved = readSaved({ getItem: () => JSON.stringify({ ...defaults(), themeVoices: undefined, halloweenVoice: style }) });
+    expect(saved.themeVoices.halloween).toBe(["classic", "witch", "monster"].includes(style!) ? style : "witch");
+  }
+});

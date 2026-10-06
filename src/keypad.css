@@ -1,0 +1,67 @@
+.themed-keypad { position: relative; isolation: isolate; width: min(100%, 252px); margin-inline: auto; }
+.keypad.themed-keypad button { position: relative; overflow: visible; min-height: 44px; height: auto; aspect-ratio: 1; padding: 0; container-type: inline-size; }
+.themed-keypad .key-label { position: relative; z-index: 2; display: inline-grid; place-items: center; }
+.key-sprite { background-image: var(--key-atlas); background-size: 300% 300%; background-repeat: no-repeat; pointer-events: none; }
+.key-art { display: none; position: absolute; width: 100%; height: 100%; left: 0; top: 0; }
+.key-art-ready .key-art { display: block; }
+.key-art-ready button { border-radius: 18px; }
+.key-art-ready button:nth-child(3n + 2) > .key-art { filter: hue-rotate(24deg); }
+.key-art-ready button:nth-child(3n) > .key-art { filter: hue-rotate(-22deg); }
+.key-art-ready button[data-digit] .key-label {
+  position: absolute; left: var(--number-x, 50%); top: var(--number-y, 65%);
+  transform: translate(-50%, -50%); width: 44%; height: 27%;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: clamp(18px, 29cqw, 25px); line-height: 1; font-weight: 800;
+  color: #182c45; background: none; text-shadow: none; box-shadow: none;
+}
+.themed-keypad[data-key-theme="star"] { --number-x: 60%; --number-y: 62%; }
+.themed-keypad[data-key-theme="christmas"] { --number-x: 49%; --number-y: 63%; }
+.themed-keypad[data-key-theme="halloween"] { --number-x: 53%; --number-y: 67%; }
+.themed-keypad[data-key-theme="wizard"] { --number-x: 57%; --number-y: 65%; }
+.themed-keypad[data-key-theme="unicorn"] { --number-x: 50%; --number-y: 74%; }
+.themed-keypad[data-key-theme="dragon"] { --number-x: 49%; --number-y: 62%; }
+.themed-keypad[data-key-theme="alien"] { --number-x: 53%; --number-y: 67%; }
+.themed-keypad[data-key-theme="kitten"] { --number-x: 52%; --number-y: 72%; }
+.themed-keypad .key-pressed { box-shadow: 0 0 0 3px #fff6ae, 0 3px 0 #172d4866; }
+.key-art-ready button[data-digit].key-pressed .key-art { background-position: 50% 0% !important; }
+.key-pop { display:none; position:absolute; width:78%; height:78%; left:11%; top:-45%; z-index:3; }
+.key-art-ready button[data-digit].key-pressed { z-index:5; }
+.key-art-ready button[data-digit].key-pressed .key-pop { display:block; animation:key-box-pop .6s ease-out both; }
+@keyframes key-box-pop {
+  0% { opacity:0; transform:translateY(85%) scale(.35); }
+  25% { opacity:1; transform:translateY(0) scale(1); }
+  65% { opacity:1; transform:translateY(-12%) rotate(-8deg); }
+  100% { opacity:0; transform:translateY(-25%) scale(.85); }
+}
+.key-art-ready .erase .key-art { width: 48%; height: auto; aspect-ratio: 1; top: 26%; left: 2%; opacity: .85; }
+.key-art-ready .erase .key-label { margin-left: 30%; background: var(--board); border-radius: 5px; padding: 3px; }
+/* This grid cell clips every pose, keeping neighbouring keys unobstructed. */
+.key-companion { position: relative; display: grid; place-items: center; aspect-ratio: 1; overflow: hidden; contain: paint; pointer-events: none; }
+.key-companion-motion { display: block; width: 86%; height: 86%; transform-origin: 50% 75%; animation: var(--companion-motion, companion-star) 7s ease-in-out infinite; animation-play-state: paused; }
+.key-companion.is-animated .key-companion-motion { animation-play-state: running; }
+.key-character { display: block; width: 100%; height: 100%; transform-origin: 50% 75%; }
+.key-character[hidden] { display: none; }
+.themed-keypad[data-key-theme="halloween"] { --companion-motion: companion-halloween; }
+.themed-keypad[data-key-theme="christmas"] { --companion-motion: companion-christmas; }
+.themed-keypad[data-key-theme="wizard"] { --companion-motion: companion-wizard; }
+.themed-keypad[data-key-theme="unicorn"] { --companion-motion: companion-unicorn; }
+.themed-keypad[data-key-theme="dragon"] { --companion-motion: companion-dragon; }
+.themed-keypad[data-key-theme="alien"] { --companion-motion: companion-alien; }
+.themed-keypad[data-key-theme="kitten"] { --companion-motion: companion-kitten; }
+.key-character.key-react { animation: companion-react .6s ease-out both; }
+.key-character.key-react-erase { animation: companion-erase .6s ease-out both; }
+@keyframes companion-star { 0%,15%,65%,100% { transform: none; } 23%,39% { transform: rotate(-9deg) scale(.9); } 31% { transform: rotate(9deg) scale(.9); } 47% { transform: translateY(-3%) scale(.85); } 56% { transform: rotate(360deg) scale(.85); } }
+@keyframes companion-halloween { 0%,20%,70%,100% { transform: none; } 30% { transform: rotate(-10deg) scale(.9); } 40% { transform: rotate(10deg) scale(.9); } 50% { transform: scale(1,.85); } 60% { transform: translateY(-5%) scale(.9); } }
+@keyframes companion-christmas { 0%,15%,75%,100% { transform: none; } 25%,45% { transform: rotate(-8deg) scale(.9); } 35%,55% { transform: rotate(8deg) scale(.9); } 63% { transform: scale(1,.85); } 69% { transform: translateY(-5%) scale(.9); } }
+@keyframes companion-wizard { 0%,15%,80%,100% { transform: none; } 30% { transform: translateY(-5%) scale(.9); } 45% { transform: translateY(2%) scale(.9); } 60% { transform: rotate(-180deg) scale(.75); } 72% { transform: rotate(-360deg) scale(.9); } }
+@keyframes companion-unicorn { 0%,15%,75%,100% { transform: none; } 25%,45% { transform: translateX(-3%) rotate(-6deg) scale(.9); } 35%,55% { transform: translateX(3%) rotate(6deg) scale(.9); } 63% { transform: scale(1,.85); } 69% { transform: translateY(-5%) scale(.9); } }
+@keyframes companion-dragon { 0%,15%,80%,100% { transform: none; } 25%,45% { transform: scale(1,.85); } 35%,55% { transform: translateY(-5%) scale(.9); } 65% { transform: rotate(-9deg) scale(.9); } 73% { transform: rotate(9deg) scale(.9); } }
+@keyframes companion-alien { 0%,15%,80%,100% { transform: none; } 28% { transform: translateY(-5%) rotate(-6deg) scale(.9); } 42% { transform: translateY(2%) rotate(6deg) scale(.9); } 58% { transform: rotate(180deg) scale(.75); } 72% { transform: rotate(360deg) scale(.9); } }
+@keyframes companion-kitten { 0%,20%,80%,100% { transform: none; } 30% { transform: rotate(-8deg) scale(.9); } 40% { transform: rotate(8deg) scale(.9); } 52% { transform: scale(1,.8); } 62% { transform: translate(-3%,-5%) rotate(-6deg) scale(.85); } 72% { transform: translateX(3%) rotate(6deg) scale(.9); } }
+@keyframes companion-react { 0%,100% { transform: none; } 25% { transform: scale(.9,.8); } 55% { transform: translateY(-4%) scale(.9); } 75% { transform: rotate(6deg) scale(.9); } }
+@keyframes companion-erase { 0%,100% { transform: none; } 30% { transform: rotate(-8deg) scale(.9); } 65% { transform: rotate(8deg) scale(.9); } }
+@media (max-width: 640px) {
+  .themed-keypad { width: min(100%, clamp(196px, calc(75dvh - 428px), 232px)); }
+}
+@media (prefers-reduced-motion: reduce) { .key-companion-motion, .key-character { animation: none !important; } .key-art-ready button[data-digit].key-pressed .key-art { background-position: 0% 0% !important; } }
+@media (prefers-reduced-motion: reduce) { .key-art-ready button[data-digit].key-pressed .key-pop { display:none; animation:none; } }

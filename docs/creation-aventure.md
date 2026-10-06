@@ -32,7 +32,7 @@ Exemple actuel : « Allume les étoiles », « Répare la soucoupe », puis « I
 
 Dans l’existant, les trois missions d’un monde se débloquent dans l’ordre. Les deux mondes d’un même palier sont accessibles ensemble ; leurs missions peuvent être alternées. Tous les mondes des paliers précédents doivent être terminés pour ouvrir le suivant. Une mission réussie reste rejouable.
 
-La carte présente le nom du monde, son portrait, sa difficulté, ses trois missions, leurs contraintes et leur état : verrouillée, disponible ou réussie. Prévoir également le texte du monde terminé, la représentation du personnage acquis et le signalement des nouvelles missions disponibles. L’interface actuelle parle d’« amis invités » : une aventure de confrontation nécessiterait d’adapter ces textes et états visuels.
+La carte présente le nom du monde, son portrait, sa difficulté, ses trois missions, leurs contraintes et leur état : verrouillée, disponible ou réussie. Prévoir également le texte du monde terminé, la représentation du personnage acquis et le signalement des nouvelles missions disponibles. La carte adapte ses textes aux « amis invités » du chaton ou aux « compagnons retrouvés » de Pico ; une autre aventure devra définir son vocabulaire. L’interface du chaton parle d’« amis invités » : une aventure de confrontation nécessiterait d’adapter ces textes et états visuels.
 
 ## 2. Donner une identité complète à chaque personnage et monde
 
@@ -130,7 +130,7 @@ Distinguer trois résultats :
 2. **Monde terminé** : trois missions réussies, personnage acquis et contribution annoncée.
 3. **Aventure terminée** : huit mondes achevés, objectif commun résolu et huit personnages présents dans le dénouement.
 
-La dernière mission conserve sa scène de dix secondes. Dans l’aventure actuelle, une célébration distincte de **30 secondes** est accessible avec le bouton de fête sur la carte une fois les 24 missions terminées : Ziggy apporte le gâteau, les amis chantent pour le chaton, les bougies sont soufflées et le Père Noël distribue les cadeaux. Elle peut être rejouée depuis la carte. Pour un autre thème, concevoir une conclusion collective liée à l’objectif du héros ; adapter ce module plutôt que supposer une conclusion déjà configurable.
+La dernière mission conserve sa scène de dix secondes. Dans l’aventure actuelle, une célébration distincte de **30 secondes** est accessible avec le bouton de fête sur la carte une fois les 24 missions terminées : Ziggy apporte le gâteau, les amis chantent pour le chaton, les bougies sont soufflées et le Père Noël distribue les cadeaux. Elle peut être rejouée depuis la carte. Pour un autre thème, concevoir une conclusion collective liée à l’objectif du héros ; définir son contrôleur de conclusion. Pico dispose de son propre film de 30 secondes : réunion des huit amis, installation des apports, allumage du phare et passage des bateaux. Les deux films partagent les commandes Son, pause/reprise, rejeu et retour à la carte ; `?fete=1` conserve la prévisualisation de l’anniversaire du chaton.
 
 ## 6. Prévoir le son, les assets et les contraintes de jeu
 
@@ -140,9 +140,9 @@ La dernière mission conserve sa scène de dix secondes. Dans l’aventure actue
 
 **Affichage et accessibilité.** Vérifier téléphone, tablette et ordinateur, les changements d’orientation et l’absence de débordement horizontal. Garder des touches d’au moins 44 px, des libellés accessibles, un focus visible et une zone de calcul dégagée. Avec réduction des animations, le pavé accepte la saisie sans sortie d’élément, les surprises sont supprimées et les récompenses de mission montrent leur état final immobile pendant dix secondes. Les scènes de réussite se suspendent avec leur musique en arrière-plan et reprennent au retour.
 
-**Sauvegarde.** Les missions acquises sont enregistrées sur l’appareil dans `calcul-party:adventure:v1`. Seules les missions réussies sont conservées, pas une tentative interrompue. Une sauvegarde bloquée doit être signalée sans empêcher de jouer ; une sauvegarde corrompue ne doit pas débloquer un monde tardif. La réinitialisation de l’aventure demande confirmation et conserve le camp des fourmis, ses matériaux et ses réglages.
+**Sauvegarde.** Les missions acquises sont enregistrées sur l’appareil dans la clé de l’aventure active : `calcul-party:adventure:v1` pour le chaton et `calcul-party:adventure:pico:v1` pour Pico. Seules les missions réussies sont conservées, pas une tentative interrompue. Une sauvegarde bloquée doit être signalée sans empêcher de jouer ; une sauvegarde corrompue ne doit pas débloquer un monde tardif. La réinitialisation de l’aventure demande confirmation et conserve le camp des fourmis, ses matériaux et ses réglages.
 
-**Plusieurs aventures.** Le code actuel décrit une seule aventure avec des identifiants de mondes et de missions fixes. Remplacer leurs contenus peut faire correspondre une ancienne progression à une nouvelle histoire. Faire coexister plusieurs aventures, ou changer ces identifiants, exige de définir identité d’aventure, sélection et isolation ou migration des sauvegardes avant l’implémentation. Ne pas réutiliser silencieusement les anciens acquis.
+**Plusieurs aventures.** La coexistence est disponible : l’entrée aventure ouvre un choix entre le chaton et [Pico et le phare des îles](aventure-pico.md). Chaque `AdventureDefinition` porte une identité, ses textes, ses mondes, ses missions, ses récompenses et son contrôleur final. Passer cette définition aux fonctions de progression, à la carte et aux sauvegardes ; ne pas assimiler la liste des thèmes à une seule aventure. Les exports historiques `worlds` et `stages` restent ceux du chaton. Conserver sa clé `calcul-party:adventure:v1` ; Pico utilise `calcul-party:adventure:pico:v1`, au même format `completed`. Toute nouvelle aventure doit avoir ses propres identifiants et sa propre clé. Les résumés des deux aventures sont lus au choix ; seule la progression active est écrite et réinitialisée. Le changement conserve les acquis de chacune, même dans la mémoire de visite lorsque le stockage est bloqué. Ne pas réutiliser silencieusement les anciens acquis.
 
 ## 7. Utiliser ce guide lors d’une demande
 
@@ -210,7 +210,7 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 - [ ] Sauvegarde, rejeu, abandon, réinitialisation et indépendance du camp vérifiés.
 - [ ] Choix créatifs et extensions du moteur explicitement distingués.
 - [ ] Tests unitaires pertinents avec `npm test`, puis compilation avec `npm run build`.
-- [ ] Pour toute modification des animations du pavé, **`npm run test:keypad` obligatoire** sur les huit univers : visibilité réelle, relance et variété des illustrations.
+- [ ] Pour toute modification des animations du pavé, **`npm run test:keypad` obligatoire** sur les **16 mondes des deux aventures** : visibilité réelle, relance et variété des illustrations.
 - [ ] Pour les changements de parcours ou de récompenses, tests navigateur pertinents avec `npm run test:e2e -- <fichiers concernés>` ; un test simulé ne remplace pas un essai sur tablette physique.
 - [ ] Commit limité à la demande, message court en français, déploiement sur le site existant avec ses accès conservés et succès confirmé, conformément à `AGENTS.md`.
 
@@ -224,8 +224,10 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 | Couleurs du tableau et décors | [`src/style.css`](../src/style.css) |
 | Touches et compagnon | [`src/keypad.ts`](../src/keypad.ts), [`src/keypad.css`](../src/keypad.css) |
 | Surprises après les bonnes réponses | [`src/surprises.ts`](../src/surprises.ts) |
-| Scènes des 24 missions | [`src/mission-rewards.ts`](../src/mission-rewards.ts) |
+| Scènes des 48 missions | [`src/mission-rewards.ts`](../src/mission-rewards.ts), [`src/pico-rewards.ts`](../src/pico-rewards.ts) |
 | Célébration finale de l’anniversaire | [`src/birthday-party.ts`](../src/birthday-party.ts) |
+| Pico : distribution, palettes et musique | [`src/pico-content.ts`](../src/pico-content.ts), [`src/pico-themes.ts`](../src/pico-themes.ts), [`src/pico.css`](../src/pico.css) |
+| Conclusion du phare | [`src/lighthouse-party.ts`](../src/lighthouse-party.ts) |
 | Moteur de calcul et branchement des écrans | [`src/game.ts`](../src/game.ts), [`src/main.ts`](../src/main.ts) |
 
 Lire ces sources avant de modifier les règles : ce guide décrit la référence actuelle et doit être mis à jour lorsqu’elle évolue.

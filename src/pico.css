@@ -1,0 +1,72 @@
+.pico-sprite { background-size:300% 300%; }
+.adventure-choice { padding:30px 0; }
+.adventure-choice h1 { font-size:clamp(32px,5vw,52px); margin:14px 0; line-height:1.2; text-wrap:balance; }
+.adventure-choice > p { color:var(--muted); line-height:1.6; }
+.adventure-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin:28px 0; }
+.adventure-choice-card { min-width:0; padding:24px; border:2px solid var(--world-edge); border-radius:25px; background:var(--world-panel); display:flex; flex-direction:column; align-items:center; text-align:center; }
+.adventure-choice-card .choice-portrait { width:150px; aspect-ratio:1; }
+.adventure-choice-card h2 { color:var(--world-ink); font-size:26px; margin:15px 0 8px; }
+.adventure-choice-card p { line-height:1.6; font-size:14px; color:var(--muted); }
+.adventure-choice-card .choice-progress { color:var(--world-ink); margin-top:auto; }
+.adventure-choice-card button { margin-top:15px; }
+.map-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.friend-invited .pico-sprite { animation:pico-greeting 4s ease-in-out infinite !important; }
+@keyframes pico-greeting { 0%,15%,65%,100%{transform:none} 25%,45%{transform:rotate(-6deg) translateY(-3px)}35%,55%{transform:rotate(6deg) translateY(-5px)} }
+
+[data-theme="pico"], [data-theme="tika"], [data-theme="mistral"], [data-theme="octave"], [data-theme="brico"], [data-theme="corail"], [data-theme="nami"], [data-theme="alba"] {
+ --world-bg:color-mix(in srgb,var(--world-board) 80%,#08121F);
+ --world-panel:color-mix(in srgb,var(--world-board) 75%,#08121F);
+ --world-light:color-mix(in srgb,var(--world-accent) 60%,var(--world-board));
+ --world-edge:color-mix(in srgb,var(--world-accent) 70%,var(--world-board));
+ --world-frame:var(--world-accent); --world-ink:#182C45; --world-secondary:#A6EEEA;
+ --world-muted:#E5EBE8; --world-page-ink:#FFF6E6;
+}
+[data-theme="pico"] { --world-board:#234B52; --world-accent:#FFC878; }
+[data-theme="tika"] { --world-board:#205B57; --world-accent:#9AE0C4; }
+[data-theme="mistral"] { --world-board:#244F77; --world-accent:#A6DFFF; }
+[data-theme="octave"] { --world-board:#42366F; --world-accent:#C7B5FF; }
+[data-theme="brico"] { --world-board:#514830; --world-accent:#E4CA8B; }
+[data-theme="corail"] { --world-board:#683C40; --world-accent:#FFB19B; }
+[data-theme="nami"] { --world-board:#164F69; --world-accent:#83E5ED; }
+[data-theme="alba"] { --world-board:#303655; --world-accent:#FFE49A; }
+.themed-keypad[data-key-theme="pico"] { --number-x:48%; --number-y:64%; --companion-motion:companion-pico; }
+.themed-keypad[data-key-theme="tika"] { --number-x:50%; --number-y:48%; --companion-motion:companion-tika; }
+.themed-keypad[data-key-theme="mistral"] { --number-x:57%; --number-y:68%; --companion-motion:companion-mistral; }
+.themed-keypad[data-key-theme="octave"] { --number-x:51%; --number-y:69%; --companion-motion:companion-octave; }
+.themed-keypad[data-key-theme="brico"] { --number-x:51%; --number-y:70%; --companion-motion:companion-brico; }
+.themed-keypad[data-key-theme="corail"] { --number-x:51%; --number-y:67%; --companion-motion:companion-corail; }
+.themed-keypad[data-key-theme="nami"] { --number-x:51%; --number-y:69%; --companion-motion:companion-nami; }
+.themed-keypad[data-key-theme="alba"] { --number-x:50%; --number-y:65%; --companion-motion:companion-alba; }
+@keyframes companion-pico { 0%,20%,80%,100%{transform:none}30%,50%{transform:rotate(-8deg) scale(.9)}40%,60%{transform:rotate(8deg) scale(.9)}70%{transform:translateY(-4%) scale(.9)} }
+@keyframes companion-tika { 0%,20%,80%,100%{transform:none}35%{transform:translateX(-3%) rotate(-5deg) scale(.9)}60%{transform:translateX(3%) rotate(5deg) scale(.9)} }
+@keyframes companion-mistral { 0%,20%,80%,100%{transform:none}35%,60%{transform:translateY(-5%) rotate(-8deg) scale(.85)}45%,70%{transform:rotate(8deg) scale(.9)} }
+@keyframes companion-octave { 0%,20%,80%,100%{transform:none}35%{transform:scale(.9,.8)}55%{transform:translateY(-4%) rotate(7deg) scale(.9)}70%{transform:rotate(-7deg) scale(.9)} }
+@keyframes companion-brico { 0%,20%,80%,100%{transform:none}35%,65%{transform:rotate(-8deg) scale(.9)}50%{transform:translateY(-3%) rotate(8deg) scale(.9)} }
+@keyframes companion-corail { 0%,20%,80%,100%{transform:none}30%,50%{transform:translateX(-3%) scale(.9)}40%,60%{transform:translateX(3%) scale(.9)} }
+@keyframes companion-nami { 0%,20%,80%,100%{transform:none}35%{transform:translateY(-5%) rotate(-10deg) scale(.85)}60%{transform:translateY(3%) rotate(10deg) scale(.9)} }
+@keyframes companion-alba { 0%,20%,80%,100%{transform:none}35%{transform:rotate(-10deg) scale(.9)}55%{transform:rotate(10deg) scale(.9)}70%{transform:translateY(-3%) scale(.9)} }
+.reward-actor .pico-sprite { animation:none; }
+.lighthouse-cinema { position:relative; isolation:isolate; overflow:hidden; aspect-ratio:12/7; border-radius:24px; border:2px solid #FFE49A66; background:radial-gradient(ellipse at 50% 24%,#7797BA,#303655 60%); }
+.lighthouse-cinema::before { content:''; position:absolute; inset:75% 0 0; background:repeating-linear-gradient(175deg,#164F69 0 15px,#386C8633 16px 19px); }
+.lighthouse-island { position:absolute; width:98%; height:26%; left:1%; top:59%; border-radius:50%; background:linear-gradient(#7CA8A1,#305C69); box-shadow:0 10px 0 #B5C1A755; }
+.lighthouse-tower { position:absolute; width:43%; height:63%; left:29%; top:0; }
+.lighthouse-tower svg,.lighthouse-beam svg,.lighthouse-boat svg,.lighthouse-element svg { width:100%; height:100%; }
+.lighthouse-beam { position:absolute; width:56%; height:32%; left:44%; top:1%; transform-origin:12% 46.875%; opacity:0; mix-blend-mode:screen; pointer-events:none; }
+.lighthouse-friend { position:absolute; width:17%; aspect-ratio:1; transform:translate(-50%,-50%); }
+.lighthouse-friend .pico-sprite { width:100%; height:100%; animation:none; }
+.lighthouse-element { position:absolute; width:12%; aspect-ratio:1; opacity:0; transform:translate(-50%,-50%); }
+.lighthouse-element .pico-sprite { width:100%; height:100%; }
+.lighthouse-boat { position:absolute; width:17%; aspect-ratio:1.4; opacity:0; transform:translate(-50%,-50%); }
+.lighthouse-applause { position:absolute; top:4%; left:5%; color:#FFF6E6; font-family:Kalam,cursive; font-weight:bold; font-size:clamp(16px,3vw,30px); opacity:0; text-shadow:0 2px 5px #303655; }
+.pico-playing .question-content { isolation:isolate; }
+.pico-playing .question-content::before { content:""; position:absolute; inset:-8px -12px; z-index:-1; border-radius:24px; background:var(--world-board); filter:blur(8px); pointer-events:none; }
+@media(max-width:640px) { .adventure-choice-grid { grid-template-columns:minmax(0,1fr); gap:16px; } .adventure-choice-card { padding:20px; } }
+@media(prefers-reduced-motion:reduce) { .friend-invited .pico-sprite { animation:none !important; } }
+
+.lighthouse-audio-notice { font-size:12px; color:#ffe0a7; text-align:center; }
+
+.pico-map-fragment-0 { clip-path:inset(0 66.666% 0 0); }
+.pico-map-fragment-1 { clip-path:inset(0 33.333% 0 33.333%); }
+.pico-map-fragment-2 { clip-path:inset(0 0 0 66.666%); }
+
+.adventure-choice > .eyebrow { color:var(--world-ink); }

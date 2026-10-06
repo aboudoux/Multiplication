@@ -9,7 +9,7 @@ async function openParty(page: Page, completed = stages.map(s=>s.id)) {
   },{completed,key:ADVENTURE_KEY,savedKey:STORAGE_KEY,saved:{...defaults(),muted:true,voiceEnabled:false}});
   await page.clock.install({time:new Date('2026-10-01T12:00:00Z')});
   await page.goto('/');await page.clock.pauseAt(new Date('2026-10-01T12:00:05Z'));
-  await page.locator('#open-adventure').click();
+  await page.locator('#open-adventure').click();await page.locator('[data-adventure="chaton"]').click();
   if(completed.length===stages.length)await page.locator('#celebrate-adventure').click();
 }
 
@@ -126,7 +126,7 @@ for(const returnWith of ['button','escape'] as const)test(`the direct preview st
     localStorage.setItem(savedKey,JSON.stringify(saved));
   },{key:ADVENTURE_KEY,savedKey:STORAGE_KEY,saved:{...defaults(),muted:true,voiceEnabled:false}});
   await page.clock.install({time:new Date('2026-10-01T12:00:00Z')});
-  await page.goto('/?fete=1');await page.clock.pauseAt(new Date('2026-10-01T12:00:01Z'));
+  await page.clock.pauseAt(new Date('2026-10-01T12:00:00Z'));await page.goto('/?fete=1');await page.clock.runFor(1000);
   const party=page.locator('#birthday-party');
   await expect(party).toBeVisible();await expect(page.locator('#home')).toBeHidden();
   await expect(party).toHaveAttribute('data-chapter','cake');

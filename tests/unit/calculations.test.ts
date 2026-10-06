@@ -6,21 +6,21 @@ import { defaults, readSaved, recordKey, saveRecord } from "../../src/storage";
 
 const config = (mode: Mode, length: GameSettings["length"] = 20, tables = 10): GameSettings => ({ mode, length, tables, duration: 10, lives: 3 });
 describe("arithmetic question banks", () => {
-  it.each(["add", "subtract"] as const)("contains all valid ordered %s calculations from zero to twenty", operation => {
+  it.each(["add", "subtract"] as const)("contains all valid ordered %s calculations without zero operands or results", operation => {
     const pool = createPool(operation);
-    expect(pool).toHaveLength(231);
-    expect(new Set(pool.map(q => q.id)).size).toBe(231);
+    expect(pool).toHaveLength(190);
+    expect(new Set(pool.map(q => q.id)).size).toBe(190);
     for (const q of pool) {
       expect(q.result).toBe(operation === "add" ? q.a + q.b : q.a - q.b);
-      expect(q.result).toBeGreaterThanOrEqual(0);
+      expect(q.a).toBeGreaterThan(0); expect(q.b).toBeGreaterThan(0); expect(q.result).toBeGreaterThan(0);
       expect(q.result).toBeLessThanOrEqual(20);
     }
-    expect(pool.some(q => q.a === 0 && q.b === 0 && q.result === 0)).toBe(true);
-    expect(pool.some(q => q.a === 20 && q.b === 0 && q.result === 20)).toBe(true);
+    expect(pool.some(q => q.a === 0 && q.b === 0 && q.result === 0)).toBe(false);
+    expect(pool.some(q => q.a === 20 && q.b === 0 && q.result === 20)).toBe(false);
   });
   it("keeps inverse additions and distinct operations", () => {
     const pool = [...createPool("add"), ...createPool("subtract"), ...createPool("multiply")];
-    expect(new Set(pool.map(q => q.id)).size).toBe(562);
+    expect(new Set(pool.map(q => q.id)).size).toBe(480);
     expect(pool.some(q => q.id === "3+7")).toBe(true);
     expect(pool.some(q => q.id === "7+3")).toBe(true);
   });
@@ -69,12 +69,13 @@ describe("arithmetic question banks", () => {
     expect(game.solved).toBe(20);
     expect(game.mistakes).toBe(1);
   });
-  it("accepts zero as a one-digit answer", () => {
+  it("rejects zero as an answer while keeping the zero key for numbers like 10", () => {
     const game = new Game(config("subtract"), () => 0.999999);
     game.start(0); game.tick(4000);
-    expect(game.current!.result).toBe(0);
+    expect(game.current!.result).toBeGreaterThan(0);
     game.digit("0", 4100);
-    expect(game.solved).toBe(1);
+    expect(game.solved).toBe(0);
+    expect(game.mistakes).toBe(1);
   });
   it("routes narration by operation while preserving multiplication recordings", () => {
     expect(voicePath({ operation: "add", a: 0, b: 20 })).toBe("/voice/fr/add/0-20.wav");
