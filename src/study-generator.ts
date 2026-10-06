@@ -2,7 +2,10 @@ import {grades,skillById,type Grade} from './curriculum';
 import {shuffle,type Calculation} from './calculations';
 import {studyCalculation,answerLabel,rational,decimal,rationalLabel,type StudyQuestion,type Answer} from './questions';
 import {mathTokens,tokensText,numberTokens} from './study-speech';
+import {mentalPatternById} from './mental-patterns';
+import {mentalCandidate,mentalFacts} from './mental-generator';
 export function candidate(id:string,n:number,grade:Grade,level:number):StudyQuestion|null {
+ if(mentalPatternById(id))return mentalCandidate(id,n,grade,level);
  const skill=skillById(id);if(!skill)throw new RangeError('Compétence inconnue');
  const index=grades.indexOf(grade);
  let prompt='',answer:Answer={kind:'integer',value:0},kind:StudyQuestion['kind']='arithmetic',visual:StudyQuestion['visual'],voice:string[]|undefined;
@@ -150,7 +153,7 @@ export function candidate(id:string,n:number,grade:Grade,level:number):StudyQues
 }
 /** Bounded candidates: never enumerate all pairs in the school's numeration range. */
 export function generateStudyQuestions(id:string,grade:Grade,level=0,count=10,random=Math.random):Calculation[] {
- if(!skillById(id)||!grades.includes(grade)||!Number.isInteger(count)||count<1||count>100||![0,1,2].includes(level))throw new RangeError('Séance invalide');
+ if(!(skillById(id)||mentalPatternById(id))||!grades.includes(grade)||!Number.isInteger(count)||count<1||count>100||![0,1,2].includes(level))throw new RangeError('Séance invalide');
  return shuffle([...studyBank(id,grade,level)],random).slice(0,count);
 }
 const banks=new Map<string,Calculation[]>();
@@ -158,7 +161,7 @@ const banks=new Map<string,Calculation[]>();
 export function studyBank(id:string,grade:Grade,level=0):readonly Calculation[] {
  const cacheKey=`${id}:${grade}:${level}`;const cached=banks.get(cacheKey);if(cached)return cached;
  const pool=new Map<string,Calculation>();
- const candidates=id==='tables'?100:id.startsWith('small-')?121:id==='add'||id==='subtract'?10201:2048;
+ const candidates=mentalPatternById(id)?mentalFacts(id,grade,level).length:id==='tables'?100:id.startsWith('small-')?121:id==='add'||id==='subtract'?10201:2048;
  for(let n=0;n<candidates;n++) {
   const q=candidate(id,n,grade,level);if(!q)continue;
   const key=`${id}:${q.prompt}:${answerLabel(q.answer)}:${q.visual?JSON.stringify(q.visual):''}`;

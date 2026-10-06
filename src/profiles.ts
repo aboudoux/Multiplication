@@ -1,7 +1,8 @@
 import { grades, skillById, type Grade, type Masteries } from './curriculum';
+import {emptyMental,validateMental,type MentalRegistry} from './mental-patterns';
 export const PROFILES_KEY='calcul-party:players:v1';
 export const scopedKeys=['multipli-party:v1','calcul-party:training:v1','calcul-party:adventure:v1','calcul-party:adventure:pico:v1'];
-export interface Player {id:string;name:string;avatar:string;grade:Grade;adaptive:boolean;data:Record<string,string>;mastery:Masteries}
+export interface Player {id:string;name:string;avatar:string;grade:Grade;adaptive:boolean;data:Record<string,string>;mastery:Masteries;mentalMastery?:MentalRegistry;mentalDuration?:10|15|null}
 export interface Players {version:1;active:string;players:Player[]}
 type Disk=Pick<Storage,'getItem'|'setItem'|'removeItem'>;
 const avatars=['🐱','🐜','🦊','🐉','⭐','🚀'];
@@ -17,7 +18,7 @@ export class Profiles {
       const saved=value as Players|null;
       if(saved?.version===1 && Array.isArray(saved.players) && saved.players.length>0 && saved.players.length<=50) {
         const valid:Player[]=saved.players.filter((p:Player)=>p && typeof p.id==='string' && /^[a-zA-Z0-9-]{1,80}$/.test(p.id) && typeof p.name==='string' && p.name.length>0 && p.name.length<=40 && grades.includes(p.grade) && typeof p.adaptive==='boolean' && p.data && typeof p.data==='object' && !Array.isArray(p.data)).map((p:Player)=>({
-          ...p,avatar:avatars.includes(p.avatar)?p.avatar:avatars[0],data:Object.fromEntries(scopedKeys.filter(k=>typeof p.data[k]==='string').map(k=>[k,p.data[k]])),mastery:validateMastery(p.mastery),
+          ...p,avatar:avatars.includes(p.avatar)?p.avatar:avatars[0],data:Object.fromEntries(scopedKeys.filter(k=>typeof p.data[k]==='string').map(k=>[k,p.data[k]])),mastery:validateMastery(p.mastery),mentalMastery:validateMental(p.mentalMastery),mentalDuration:p.mentalDuration===10||p.mentalDuration===15?p.mentalDuration:null,
         }));
         if(valid.length && new Set(valid.map(p=>p.id)).size===valid.length) {
           this.state={version:1,active:valid.some(p=>p.id===saved.active)?saved.active:valid[0].id,players:valid}; return;
@@ -28,6 +29,7 @@ export class Profiles {
     } catch {this.stored=false;}
   }
   get active():Player {return this.state.players.find(p=>p.id===this.state.active)!;}
+  get mental(){return (this.active.mentalMastery??=emptyMental()).skills;}
   add(name:string,grade:Grade,avatar=avatars[0]):Player {
     if(!name.trim() || name.trim().length>40 || !grades.includes(grade) || this.state.players.length>=50)throw new RangeError('Profil invalide');
     const p:Player={id:crypto.randomUUID(),name:name.trim(),avatar:avatars.includes(avatar)?avatar:avatars[0],grade,adaptive:true,data:{},mastery:{}};

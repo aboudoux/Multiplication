@@ -2,13 +2,13 @@
 
 Aventure coopérative jouable à côté de [l’aventure du chaton](creation-aventure.md), avec huit personnages principaux, huit mondes et 24 missions. Cette fiche applique les trois modèles du guide et décrit le contenu livré.
 
-Les lignes « Calculs » ci-dessous décrivent le mode classique. Les profils scolaires adaptent compétences et quantités selon [la progression de 5 à 15 ans](progression-scolaire.md), sans chrono et à essais illimités. Histoire, personnages, missions acquises, animations, sons et récompenses restent ceux de cette fiche.
+Les lignes « Calculs » ci-dessous décrivent le mode classique. Les profils scolaires adaptent compétences et quantités selon [la progression de 5 à 15 ans](progression-scolaire.md), sans chrono et à essais illimités par défaut ; le défi facultatif propose 10 ou 15 secondes et cinq vies. Histoire, personnages, missions acquises, animations, sons et récompenses restent ceux de cette fiche.
 
 ## Brief d’aventure
 
 Après une tempête, le phare magique de l’archipel s’est éteint. Pico, petit renard curieux au foulard turquoise, quitte son port pour retrouver ses sept amis dispersés. Aider chacun permet de préparer un élément du phare. L’objectif commun est de rendre aux bateaux leur chemin dans la nuit.
 
-Le parcours respecte les paliers **0 → deux mondes de palier 1 → deux de palier 2 → deux de palier 3 → monde final**. Les deux îles d’un palier peuvent être explorées dans l’ordre choisi ; les deux doivent être terminées pour avancer. Chaque monde comporte découverte, action et accomplissement. Aucune division ni nouvelle règle pédagogique n’est introduite.
+Le parcours respecte les paliers **0 → deux mondes de palier 1 → deux de palier 2 → deux de palier 3 → monde final**. Les deux îles d’un palier peuvent être explorées dans l’ordre choisi ; les deux doivent être terminées pour avancer. Chaque monde comporte découverte, action et accomplissement. Cette fiche conserve la progression classique ; les profils adaptés utilisent les patterns de calcul mental du guide commun.
 
 Le style est celui d’un album jeunesse : silhouettes rondes, contours doux, animaux expressifs et accessoires constants. Les huit planches originales ont été produites avec Imagegen, en PNG RGBA transparent de 1254 × 1254 pixels. Les personnages et les deux objets de chaque planche sont réutilisés dans la carte, le pavé, les surprises et les scènes de réussite. Les accessoires de construction et le phare sont des illustrations vectorielles locales.
 

@@ -32,6 +32,8 @@ export interface PracticeRules {
   victoryDurationMs?: number;
   onAnswer?: (question:Calculation,evidence:Evidence)=>void;
   explicitAnswers?: boolean;
+  autoIntegers?:boolean;
+  retryAfter?:number;
 }
 
 /** Pure clock-driven state machine. Only active answering time counts toward records. */
@@ -75,6 +77,8 @@ export class Game {
   get totalQuestions(): number { return this.practice?.questions.length ?? questionCount(this.settings); }
   get untimed(): boolean { return !!this.practice?.untimed; }
   get explicitAnswers():boolean {return !!this.practice?.explicitAnswers || !!this.current?.exercise;}
+  get autoInteger():boolean {return !!this.practice?.autoIntegers&&this.current?.exercise?.answer.kind==='integer';}
+  get hasNegativeIntegers():boolean {return !!this.practice?.questions.some(q=>q.exercise?.answer.kind==='integer'&&q.exercise.answer.value<0);}
   get unlimitedLives(): boolean { return !!this.practice?.unlimitedLives; }
   get victoryDuration(): number { return this.practice?.victoryDurationMs ?? VICTORY_DURATION_MS; }
   victoryElapsed(now: number): number { return Math.max(0, this.victoryDuration - (this.deadline - (this.celebrationSuspendedAt ?? now))); }
@@ -160,10 +164,16 @@ export class Game {
 
   setAnswer(value:string,now:number):boolean {
     if(this.phase!=='question'||!this.explicitAnswers||value.length>100)return false;
-    this.tick(now);if(this.phase!=='question')return false;this.answer=value;return true;
+    this.tick(now);if(this.phase!=='question')return false;this.answer=value;
+    if(this.autoInteger&&this.current?.exercise?.answer.kind==='integer'){
+      const normalized=value.replace('−','-');
+      if(/^-?\d+$/.test(normalized)&&normalized.replace('-','').length===String(Math.abs(this.current.exercise.answer.value)).length)this.resolve(answerMatches(this.current.exercise.answer,value),false,now);
+    }
+    return true;
   }
   submitAnswer(value:string,now:number):boolean {
-    if(!this.setAnswer(value,now)||!value.trim()||!this.current)return false;
+    if(!value.trim()||!this.setAnswer(value,now)||!this.current)return false;
+    if(this.phase!=='question')return true;
     this.resolve(this.current.exercise?answerMatches(this.current.exercise.answer,value):answerMatches({kind:'integer',value:this.current.result},value),false,now);return true;
   }
 
@@ -249,7 +259,13 @@ export class Game {
       if (!this.practice?.unlimitedLives) this.lives--;
       this.mistakes++;
       this.streak = 0;
-      this.queue.push(this.current);
+      let position=this.queue.length;
+      if(this.practice?.retryAfter!==undefined){
+        // A retry must not trap the player among the same first four failures.
+        let fresh=0;position=0;
+        while(position<this.queue.length&&fresh<this.practice.retryAfter){if(!this.observed.has(this.queue[position].id))fresh++;position++;}
+      }
+      this.queue.splice(position,0,this.current);
     }
     this.phase =
       this.solved === this.totalQuestions ? "victory" : "feedback";

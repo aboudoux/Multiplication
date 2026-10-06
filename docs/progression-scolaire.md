@@ -1,27 +1,65 @@
-# Progression scolaire de Calcul’Party
+# Calcul mental de 5 à 15 ans
 
-Référence : année scolaire 2026–2027. L’âge (5 à 15 ans) propose GS à seconde GT ; la classe est modifiable. Les compétences, sources officielles, exemples et prérequis se trouvent dans `src/curriculum.ts`. Les programmes de 4e et 3e antérieurs restent applicables en 2026 ; les nouveaux programmes entrent en vigueur en 2027 et 2028. Le catalogue est à réexaminer à ces rentrées.
+Calcul’Party entraîne des automatismes courts et répétables. Chaque calcul vise **10–15 secondes, lecture et saisie comprises**, sans papier ni crayon. Cette cible est un choix de conception, à observer avec les joueurs ; elle ne garantit pas le temps de réponse de chacun. La classe conseille des patterns, sans chercher à couvrir tout son programme.
 
-Le champ de numération ne constitue pas une banque d’opérations aléatoires : CP jusqu’à 100, CE1 1 000, CE2 10 000, CM1 999 999 et CM2 999 999 999. Les calculs sont choisis selon les procédures mentales. Carrés, cubes et équations formelles commencent dans le parcours 5e ; les nombres manquants préparent l’algèbre au primaire. La géométrie générale, les statistiques et un atelier complet d’opérations posées sont hors périmètre.
+Les références scolaires 2026–2027 restent dans `src/curriculum.ts` : maternelle et cycle 2 depuis 2025, CM1/6e depuis 2025, CM2/5e depuis 2026. Les anciens attendus de 4e/3e restent les références en vigueur en 2026–2027 ; réexaminer leurs références aux rentrées 2027 et 2028. Connaître de grands nombres ne signifie pas devoir effectuer mentalement des opérations quelconques sur eux.
 
-## Choix propres au jeu
+## Patterns proposés
 
-- Profils locaux sous `calcul-party:players:v1`, sans compte distant. Les quatre anciennes sauvegardes sont copiées dans « Joueur actuel », initialement en mode classique. Les anciens fichiers restent des sauvegardes de compatibilité ; un nouveau joueur ne les hérite pas.
-- Chaque profil conserve réglages, records, matériaux, constructions, missions de chaque aventure et maîtrise. Changer de classe ne supprime aucun acquis. Stockage bloqué : mémoire de visite et avertissement ; une réinitialisation non sauvegardée ne supprime pas les missions.
-- Trois états : à découvrir, en entraînement, à l’aise. Dix observations originales forment une série. Deux séries à au moins 8/10, sans aide au premier essai, confirment l’aisance ; moins de 6/10 propose un palier inférieur. Une correction suivie d’une réponse mémorisée ne fournit pas une nouvelle observation. Vitesse et exactitude sont séparées.
-- Les séries sont générées au lancement : leur difficulté ne change jamais pendant la tentative. Les nouveaux apprentissages commencent sans chrono et avec essais illimités. Les exercices et niveaux restent sélectionnables manuellement.
+`src/mental-patterns.ts` sélectionne les compétences visibles, leurs prérequis et leurs paliers. `src/mental-generator.ts` construit des faits bornés, sans tirage dans toute la plage de numération. `src/study-generator.ts` sert ces banques et conserve les anciens générateurs pour compatibilité et vérification mathématique ; les familles retirées ne sont accessibles ni au camp, ni dans les profils, ni dans les aventures.
 
-## Lots
+| Famille | Bornes et stratégies |
+| --- | --- |
+| Collections GS | Résultats jusqu’à 5 → 8 → 10 ; ajouter/retirer 1 ou 2, petits compléments, voix et objets. |
+| Additions/soustractions | Jusqu’à 10 → 20 → 100. Au dernier palier, le deuxième nombre est un chiffre ou une dizaine entière ; pas de paires arbitraires à deux chiffres. |
+| Doubles/moitiés | Faits de 1 à 10, dizaines puis centaines usuelles. En CP, rester jusqu’à 100. |
+| Nombres ronds | Dizaines, centaines, puis centaines avec dizaines ; résultats ≤1 000. Le pattern CP « dizaines » reste une banque fixe ≤100. |
+| Tables/divisions | 2/5/10 → ajout de 3/4 → tables 1–10 ; multiplicateur/quotient 0–10, jamais de diviseur nul. |
+| Produits structurés | Faits de tables ×10/100 ; produits simples par 2/4/5/10 ; 25 ×2/4/8/10 et 125 ×2/4/8. Aucun 125 ×7. |
+| Fractions usuelles | Dénominateurs 2/4/10 → ajout de 3/5 → ajout de 6/8. Reconnaissance, comparaison même dénominateur ou fractions unitaires, opérations de même dénominateur. |
+| Fractions d’une quantité | Demi/quart/dixième, puis tiers/deux tiers/trois quarts, puis cinquièmes ; quantité construite depuis un quotient entier de 1 à 10. |
+| Fractions au collège | Produits de fractions unitaires usuelles ; division de parts de même taille ; simplification immédiate dans a/b × b/c. Réductions construites depuis une fraction usuelle multipliée par 2/10, puis 3/5, puis 4. |
+| Décimaux | Demis, dixièmes, quarts ; additions/soustractions ≤20. Produits et divisions construits depuis des faits courts ; une seule opérande décimale. Changements de rang ×/÷10/100/1 000. |
+| Relatifs/priorités | Additions/soustractions dans −20…20, produits et quotients des tables. Deux opérations maximum, sans parenthèses imbriquées. |
+| Carrés/cubes/racines | Carrés 0–10 puis 11/12 ; racines correspondantes. Cubes fixes 0, 1, 2, 3, 10 ; pas d’inflation après maîtrise. |
+| Inconnues | Une seule opération inverse : complément, table inverse, x+b=c ou ax=c. Solutions formelles dans −10…10. |
+| Expressions/fonctions | ax+b avec |a|, |x|, |b| ≤5 ; deux opérations au maximum, petits nombres. |
+| Pourcentages | 10/50 %, puis 20/25 %, puis mélange ; multiples de 20 jusqu’à 200. Une seule évolution, résultat entier et énoncé bref. |
+| Puissances de 10 | Coefficient 1–9 ; exposants 0/1/2, puis 3/4, puis −1/−2/−3. |
 
-1. Profils, reprise des sauvegardes, catalogue sourcé et suivi : livré.
-2. Questions et réponses extensibles : livré.
-3. Collections, division exacte et grandes multiplications : livré.
-4. Fractions, décimaux et quotient/reste : livré.
-5. Relatifs, priorités, puissances et racines : livré.
-6. Nombres manquants et équations : livré. Solutions choisies avant construction ; produits nuls et carrés demandent toutes les solutions.
-7. Pourcentages, problèmes, fonctions et prolongement seconde : livré. Les identités remarquables sont travaillées par décomposition numérique ; les inéquations attendent une réponse de la forme x ≤ 4.
-8. Missions adaptatives des deux aventures : livré. Identifiants narratifs et récompenses conservés. Le dernier monde mélange les compétences pratiquées dans le parcours actuel et les notions récentes (à défaut, celles du parcours proposé). Changer de classe conserve les acquis et adapte également le final. Les banques et les missions sont figées au lancement.
+Retirés des accès : nombres mystères imbriqués, quotient/reste, problèmes de proportionnalité, programmes de calcul, équations à plusieurs étapes ou solutions, identités remarquables, inéquations, évolutions successives et autres puissances négatives. Aucun atelier séparé. Leurs identifiants et anciennes données restent conservés.
 
-Les volumes GS sont 5/6/8, puis 10 au final ; CP–CE2 8/10/12, puis 15 ; CM1–seconde 10/12/15, puis 20. Une banque plus courte plafonne la quantité, par exemple sept cubes distincts. Le camp propose un défi conseillé, les notions de la classe et des révisions repliées ; classe et difficulté peuvent être choisies manuellement. Une difficulté observée sur un prérequis propose de le retravailler. Une classe élevée sert de départ sans marquer artificiellement les prérequis comme maîtrisés.
+## Les sept mondes avant le mélange final
 
-Chaque lot requiert ses tests unitaires et navigateur pertinents, compilation, commit français et publication sur l’hébergement existant. Le pavé et ses animations demandent `npm run test:keypad`.
+| Classe | Patterns dans l’ordre |
+| --- | --- |
+| GS | Collections +, collections −, ajouter 1, retirer 1, ajouter 2, retirer 2, petits compléments |
+| CP | Additions, soustractions, compléments, doubles, moitiés, dizaines +, dizaines − |
+| CE1 | Tables, nombres ronds +, nombres ronds −, ×10, doubles, fractions illustrées, compléments |
+| CE2 | Tables, divisions exactes, produits ronds, ×100, centaines +, fractions illustrées, fractions de même dénominateur |
+| CM1 | Divisions exactes, produits ronds, ×1 000, décimaux simples, inconnue à une opération, comparaison de fractions, fractions de même dénominateur |
+| CM2 | Décimaux simples, changements de rang, divisions décimales simples, fraction d’une quantité, produits ronds, fractions de même dénominateur, divisions exactes |
+| 6e | Produits décimaux simples, changements de rang, fraction d’une quantité, pourcentages, divisions décimales simples, fractions de même dénominateur, produits ronds |
+| 5e | Relatifs +/−, priorités simples, carrés, cubes, équations à une étape, fractions de même dénominateur, pourcentages |
+| 4e | Produits de relatifs, fractions usuelles, racines, puissances de 10, équations à une étape, relatifs +/−, priorités |
+| 3e | Réduction de fractions, puissances de 10, évolution unique, fonction simple, pourcentages, racines, équations à une étape |
+| Seconde | Produits de relatifs, fractions usuelles, puissances de 10, carrés, produits décimaux simples, évolution unique, fonction simple |
+
+Le camp montre ces patterns et propose des révisions repliées. Seconde réutilise des automatismes avancés courts, sans inventer un nouvel exercice long pour chaque âge. Les notions et paliers restent sélectionnables manuellement.
+
+## Parties et suivi
+
+- Camp : 5 questions en GS, 10 ensuite. Missions GS : 5/6/8 puis 10 au final ; autres classes : 8/10/12 puis 15. Plafonner à la banque unique ; cinq cubes font un petit défi.
+- Les deux premières missions d’un monde répètent son pattern. La troisième réserve environ 20 % aux rappels pratiqués dans les mondes précédents ; le final répartit les familles pratiquées. Après un changement de classe sans observations pertinentes, il commence avec les patterns conseillés au palier 0.
+- Un fait réussi ne revient pas dans la même tentative. Une erreur revient après trois variantes inédites ou plus tôt lorsque la file est courte, pour éviter une boucle sur les premiers échecs. Rejouer les missions ou les séries répète les faits sans dupliquer les acquis narratifs.
+- Sans chrono et essais illimités par défaut. Préférence par joueur : sans chrono, 10 s ou 15 s ; le défi chronométré utilise cinq vies. Il s’applique au camp adapté et aux aventures adaptées. Le mode classique et les séances personnalisées historiques conservent leurs réglages.
+- Entiers : auto-validation à la longueur des chiffres, signe indépendant, signe seul ignoré. Décimaux et fractions : Valider/Entrée ; virgule et point acceptés, fractions équivalentes acceptées sauf si réduction irréductible demandée. Comparaisons : deux boutons. Le pavé reste utilisable sans ouvrir le clavier logiciel du téléphone.
+- Réussite : transition de 650 ms. Erreur : correction de deux secondes et une phrase de stratégie. Indice disponible à la demande ; réglages figés durant la tentative.
+- `mentalMastery` version 1, distinct de l’ancienne maîtrise : dix premières présentations par pattern forment un bloc. Deux blocs du même palier à ≥8/10 sans aide et médiane des bonnes premières réponses ≤15 s permettent une montée. Chaque observation conserve le palier de sa question ; un bloc mêlant des paliers ne permet pas de monter. Sous 6/10 au palier courant, simplifier ; une réponse juste mais lente maintient le palier. Les banques fixes ne gagnent pas de complexité.
+- Correction, aide et réessai restent distingués ; une correction ne crée aucune preuve supplémentaire. Le temps actif exclut les pauses et la préparation des annonces.
+
+## Sauvegarde et validation
+
+Le registre `calcul-party:players:v1` garde chaque joueur, camp, matériaux, constructions, aventures, anciens records et ancienne maîtrise. Sans `mentalMastery`, commencer vide au premier palier ; ne rien déduire des missions acquises. Changer de classe ou de rythme ne supprime rien. Stockage bloqué : visite jouable avec avertissement ; données corrompues : repli validé. Réinitialiser une aventure ne touche ni le camp, ni les autres joueurs, ni les compétences.
+
+Vérifier banques autorisées, exactitude, paliers distincts lorsqu’ils existent, volumes, petits paquets, rappels et absence de double crédit. Le cas `7 × (? + 1) = 91` doit rester impossible en parcours mental. Tester saisie, voix, pause, chrono, formats téléphone/tablette/ordinateur et les deux aventures pour onze classes. Exécuter tests unitaires, navigateur pertinents, `npm run test:keypad` et compilation ; mettre à jour les guides, créer un commit français limité à la demande, publier sur l’hébergement existant et confirmer le déploiement. Les contrôles automatisés ne remplacent pas un essai avec des enfants ni sur tablette physique.

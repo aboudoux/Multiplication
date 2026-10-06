@@ -6,7 +6,7 @@ import {numberTokens} from '../../src/study-speech';
 import {existsSync,readFileSync} from 'node:fs';
 describe('exercices structurés',()=>{
  it('les divisions sont exactes, non nulles et reproductibles',()=>{
-  const deck=generateStudyQuestions('divide','CE2',0,100,()=>.5);expect(deck).toHaveLength(90);expect(new Set(deck.map(q=>q.id)).size).toBe(90);
+  const deck=generateStudyQuestions('divide','CE2',0,100,()=>.5);expect(deck).toHaveLength(33);expect(new Set(deck.map(q=>q.id)).size).toBe(33);
   for(const q of deck){const [a,b]=q.exercise!.prompt.match(/\d+/g)!.map(Number);expect(b).toBeGreaterThan(0);expect(a%b).toBe(0);expect(q.exercise!.answer).toEqual({kind:'integer',value:a/b});}
   expect(generateStudyQuestions('divide','CE2',0,100,()=>.5)).toEqual(deck);
  });
@@ -24,9 +24,9 @@ describe('exercices structurés',()=>{
   for(const q of generateStudyQuestions('decimal-divide','CM2',1,100)){const [a,b]=q.exercise!.prompt.replace(',','.').match(/\d+(?:\.\d+)?/g)!.map(Number);const answer=q.exercise!.answer;expect(answer.kind).toBe('decimal');if(answer.kind==='decimal')expect(a/b).toBeCloseTo(answer.value.numerator/answer.value.denominator,10);}
   for(const q of generateStudyQuestions('remainder','CM1',1,100)){const [a,b]=q.exercise!.prompt.match(/\d+/g)!.map(Number);const answer=q.exercise!.answer;if(answer.kind==='remainder'){expect(b*answer.quotient+answer.remainder).toBe(a);expect(answer.remainder).toBeLessThan(b);}}
  });
- it('les racines sont positives et les signes des carrés sont distincts',()=>{
+ it('les racines sont positives et les carrés restent des faits usuels',()=>{
   for(const q of generateStudyQuestions('root','4e',0,100)){const squared=Number(q.exercise!.prompt.slice(1));const answer=q.exercise!.answer;if(answer.kind==='integer'){expect(answer.value).toBeGreaterThanOrEqual(0);expect(answer.value**2).toBe(squared);}}
-  const deck=generateStudyQuestions('square','4e',2,100);expect(deck.some(q=>q.exercise!.prompt.startsWith('(-'))).toBe(true);expect(deck.some(q=>q.exercise!.prompt.startsWith('−'))).toBe(true);
+  const deck=generateStudyQuestions('square','4e',2,100);expect(deck).toHaveLength(13);expect(deck.some(q=>q.exercise!.prompt.startsWith('(-'))).toBe(false);expect(deck.some(q=>q.exercise!.prompt.startsWith('−'))).toBe(false);
   for(const q of deck){const prompt=q.exercise!.prompt,base=Number(prompt.match(/\d+/)![0]);expect(q.exercise!.answer).toEqual({kind:'integer',value:prompt.startsWith('−')?-base*base:base*base});}
  });
  it('les équations construites ont les solutions annoncées dans les deux membres',()=>{
