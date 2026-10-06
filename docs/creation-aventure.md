@@ -105,11 +105,11 @@ Une mission associe un objectif narratif à un défi de calcul explicite : titre
 
 Les bornes concernent les opérandes **et** le résultat des additions et soustractions. Les multiplications utilisent les tables indiquées, avec des multiplicateurs de 1 à 10. Le dernier défi contient les 100 multiplications ordonnées des dix tables, 20 additions et 20 soustractions ; `2 × 3` et `3 × 2` sont deux questions distinctes.
 
-Ces nombres et opérations constituent le **mode classique**, conservé pour « Joueur actuel » à la migration et disponible en décochant l’adaptation dans le profil. Les chronos et budgets de vies de ce tableau s’appliquent aussi aux aventures adaptées. Toute modification pédagogique doit rester progressive et être vérifiée sur les banques de calculs.
+Ces nombres et opérations constituent le **mode classique**, conservé pour « Joueur actuel » à la migration et disponible en choisissant « Classique (sans adaptation) » dans le profil. Les chronos et budgets de vies de ce tableau s’appliquent aussi aux aventures adaptées. Toute modification pédagogique doit rester progressive et être vérifiée sur les banques de calculs.
 
 ### Parcours scolaires disponibles
 
-Les profils locaux proposent GS à seconde GT (âges indicatifs 5–15 ans), avec compétences et références dans [la progression scolaire](progression-scolaire.md). `src/adaptive-adventure.ts` adapte les deux histoires existantes sans changer leurs mondes, titres narratifs, identifiants, dépendances, scènes, sons ou récompenses. Changer de classe conserve toutes les missions acquises ; rejouer utilise la classe actuelle.
+Les profils locaux proposent GS à seconde GT (âges indicatifs 5–15 ans), avec compétences et références dans [la progression scolaire](progression-scolaire.md). `src/adaptive-adventure.ts` adapte les deux histoires existantes sans changer leurs mondes, titres narratifs, identifiants, dépendances, scènes, sons ou récompenses. Choisir une classe dans « Mon parcours » active directement l’adaptation. Changer de classe conserve toutes les missions acquises ; rejouer utilise la classe actuelle.
 
 Chaque monde travaille un pattern de calcul mental : échauffement → entraînement → petit mélange. La troisième mission réserve 80 % au pattern courant et 20 % aux rappels déjà pratiqués dans les mondes précédents ; sans rappel disponible elle reste homogène. Le final répartit les familles pratiquées. Les parcours exacts se trouvent dans `src/mental-patterns.ts` et leurs faits bornés dans `src/mental-generator.ts`.
 
