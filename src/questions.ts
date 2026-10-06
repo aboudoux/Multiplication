@@ -7,7 +7,7 @@ export type Answer =
  | {kind:'remainder';quotient:number;remainder:number}
  | {kind:'set';values:Rational[]}
  | {kind:'inequality';operator:'≤'|'≥'|'<'|'>';bound:Rational};
-interface ExerciseBase {skillId:string;prompt:string;spoken:string;hint:string;answer:Answer;visual?:{kind:'collection'|'fraction'|'square'|'cube';a:number;b:number}}
+interface ExerciseBase {skillId:string;prompt:string;spoken:string;hint:string;answer:Answer;voiceTokens?:string[];visual?:{kind:'collection'|'fraction'|'square'|'cube'|'share';a:number;b:number;subtract?:boolean}}
 export type StudyQuestion = ExerciseBase & (
  | {kind:'arithmetic'} | {kind:'missing'} | {kind:'power'} | {kind:'equation'} | {kind:'problem'}
 );

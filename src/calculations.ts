@@ -30,7 +30,8 @@ export const usesTables = (mode: Mode) => modes[mode].operations.includes("multi
 export const questionCount = (settings: GameSettings) => settings.length === "all" ? settings.tables * 10 : settings.length;
 export const expression = (q: Calculation) => q.exercise?.prompt ?? `${q.a} ${symbols[q.operation]} ${q.b}`;
 export const spokenExpression = (q: Calculation) => q.exercise?.spoken ?? `${q.a} ${words[q.operation]} ${q.b}`;
-export const voicePath = (q: Pick<Calculation, "operation" | "a" | "b">) => {
+export const voicePath = (q: Pick<Calculation, "operation" | "a" | "b" | "exercise">) => {
+  if(q.exercise?.voiceTokens)return `/voice/fr/study/${q.exercise.voiceTokens.join('~')}`;
   const existing = q.operation === 'multiply' ? q.a>=1 && q.a<=10 && q.b>=1 && q.b<=10
     : q.a>=0 && q.a<=20 && q.b>=0 && q.b<=20 && (q.operation==='add'?q.a+q.b:q.a-q.b)>=0 && (q.operation==='add'?q.a+q.b:q.a-q.b)<=20;
   return existing ? `/voice/fr/${q.operation === "multiply" ? "" : q.operation + "/"}${q.a}-${q.b}.wav`

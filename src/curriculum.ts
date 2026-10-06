@@ -68,7 +68,7 @@ export const skills: readonly Skill[] = [
   skill('successive','Évolutions successives','2de',7,['evolution'],'Multiplier les coefficients successifs, sans additionner les taux.','100 €, puis +10 % et −10 %'),
   skill('program','Programmes de calcul','CM2',7,['tables','add'],'Suivre les étapes dans l’ordre et conserver le résultat intermédiaire.','Ajouter 3 à 5, puis multiplier par 2'),
 ];
-export const AVAILABLE_LOT = 1;
+export const AVAILABLE_LOT = 3;
 export const skillById = (id: string) => skills.find(s=>s.id===id);
 export function curriculum(grade: Grade, available = AVAILABLE_LOT): Skill[] {
   return skills.filter(s=>grades.indexOf(s.grade)<=grades.indexOf(grade) && s.lot<=available);

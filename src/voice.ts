@@ -66,7 +66,8 @@ export class QuestionVoice {
       }, VOICE_LOAD_TIMEOUT_MS);
     });
     const composed = url.match(/^\/voice\/fr\/composed\/(add|subtract|multiply)\/(\d+)-(\d+)$/);
-    const download = composed ? this.compose(composed[1],composed[2],composed[3]) : fetch(url, { signal: controller.signal }).then(async response => {
+    const study=url.startsWith('/voice/fr/study/')?url.slice('/voice/fr/study/'.length).split('~'):null;
+    const download = study ? this.composeTokens(study) : composed ? this.compose(composed[1],composed[2],composed[3]) : fetch(url, { signal: controller.signal }).then(async response => {
       if (!response.ok) throw new Error("Voice unavailable");
       return this.context.decodeAudioData(await response.arrayBuffer());
     });
@@ -86,15 +87,19 @@ export class QuestionVoice {
   }
 
   private async compose(operation: string, a: string, b: string): Promise<AudioBuffer> {
-    const parts = await Promise.all([a,operation,b].map(token=>this.load(`/voice/fr/tokens/${token}.wav`,true).pending));
+    return this.composeTokens([a,operation,b]);
+  }
+  private async composeTokens(tokens:string[]):Promise<AudioBuffer> {
+    if(!tokens.length||tokens.length>120||tokens.some(token=>!/^([a-zA-Z]+|\d{1,3})$/.test(token)))throw new Error('Invalid narration');
+    const parts = await Promise.all(tokens.map(token=>this.load(`/voice/fr/tokens/${token}.wav`,true).pending));
     const rate=parts[0].sampleRate;
     const gap=Math.round(rate*.085);
-    const buffer=this.context.createBuffer(1,parts.reduce((n,p)=>n+p.length,0)+gap*2,rate);
+    const buffer=this.context.createBuffer(1,parts.reduce((n,p)=>n+p.length,0)+gap*(parts.length-1),rate);
     const output=buffer.getChannelData(0);
     let offset=0;
     for (const part of parts) { output.set(part.getChannelData(0),offset); offset+=part.length+gap; }
     // Large sessions must not retain thousands of decoded composed announcements.
-    const completed=[...this.cache].filter(([key,clip])=>key.includes('/composed/') && clip.state!=='loading');
+    const completed=[...this.cache].filter(([key,clip])=>(key.includes('/composed/')||key.includes('/study/')) && clip.state!=='loading');
     for (const [key] of completed.slice(0,Math.max(0,completed.length-24))) this.cache.delete(key);
     return buffer;
   }

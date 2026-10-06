@@ -1,3 +1,4 @@
+import {studyVisual} from './study-visual';
 import {generateStudyQuestions} from './study-generator';
 import {AnswerUI} from './answer-ui';
 import {resultLabel} from './questions';
@@ -903,7 +904,7 @@ function render(now: number): void {
       `<span>${game.current.a}</span><span class="multiply-sign">${symbols[game.current.operation]}</span><span>${game.current.b}</span>`;
     answerUI.root.hidden=!game.explicitAnswers;
     get("board").classList.toggle("is-study",game.explicitAnswers);
-    if(game.explicitAnswers)answerUI.show(game.current);
+    if(game.explicitAnswers){answerUI.show(game.current);const visual=game.current.exercise?studyVisual(game.current.exercise):'';answerUI.root.insertAdjacentHTML('afterbegin',visual);}
     get("equation").setAttribute(
       "aria-label",
       spokenExpression(game.current),

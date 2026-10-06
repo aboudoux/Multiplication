@@ -23,3 +23,9 @@ test('le parcours est lisible sur téléphone et le clavier garde Entrée',async
  await page.locator('#study-input-0').fill(String(a-b));await page.locator('#study-input-0').press('Enter');await page.clock.runFor(700);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
+test('division et grands produits sont jouables sans chrono',async({page})=>{
+ await player(page,'8');await page.locator('[data-skill=divide]').click();await page.clock.runFor(4050);
+ const numbers=(await page.locator('#equation').innerText()).match(/\d+/g)!.map(Number);await page.locator('#study-input-0').fill(String(numbers[0]/numbers[1]));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
+ await page.locator('#pause').click();await page.locator('#camp-exit').click();await page.locator('[data-skill=large-multiply]').click();await page.clock.runFor(4050);
+ const [a,b]=(await page.locator('#equation').innerText()).match(/\d+/g)!.map(Number);await page.locator('#study-input-0').fill(String(a*b));await page.locator('#study-submit').click();await page.clock.runFor(700);await expect(page.locator('#progress-caption')).toHaveText('1 / 10');
+});
