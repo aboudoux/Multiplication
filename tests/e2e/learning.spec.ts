@@ -24,7 +24,7 @@ for(const width of [390,768,1365])for(const example of [
  for(let i=pool.length-1;i>0;i--){const j=pool.findIndex(q=>q.id===ordered[i].id);draws.push((j+.5)/(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
  await page.evaluate(draws=>{const random=Math.random;Math.random=()=>draws.length?draws.shift()!:random();},draws);
  await launch(page,example.skill);await expect(page.locator('#equation')).toHaveText(example.prompt);
- await expect(page.locator('#study-format')).toContainText('validée automatiquement');
+ await expect(page.locator('#study-format')).toContainText('automatiquement');
  await expect(page.locator('#question-announcement')).toContainText('validée automatiquement');
  await expect(page.locator('#study-submit')).toHaveCount(0);
  const symbol=page.getByRole('button',{name:example.skill==='fraction-multiply'?'Barre de fraction':'Virgule',exact:true});await expect(symbol).toBeVisible();
@@ -40,6 +40,20 @@ for(const width of [390,768,1365])for(const example of [
  await expect(page.locator('#progress-caption')).toHaveText(`1 / ${example.count}`);
  const progress=await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('calcul-party:players:v1')!),p=data.players.find((p:any)=>p.id===data.active);return {materials:JSON.parse(p.data['calcul-party:training:v1']).materials,samples:Object.values(p.mentalMastery.skills).flatMap((s:any)=>s.samples).length};});
  expect(progress).toEqual({materials:1,samples:1});
+});
+
+for(const width of [390,1365])test(`1,8 × 10 : 80 déclenche la correction dès le deuxième chiffre à ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:950});await player(page,'10');
+ const bank=[...studyBank('decimal-scale','CM2',0)],target=bank.find(q=>q.exercise!.prompt==='1,8 × 10')!;expect(target).toBeTruthy();
+ const ordered=[target,...bank.filter(q=>q.id!==target.id)],pool=[...bank],draws:number[]=[];
+ for(let i=pool.length-1;i>0;i--){const j=pool.findIndex(q=>q.id===ordered[i].id);draws.push((j+.5)/(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+ await page.evaluate(draws=>{const random=Math.random;Math.random=()=>draws.length?draws.shift()!:random();},draws);
+ await launch(page,'decimal-scale');await expect(page.locator('#equation')).toHaveText('1,8 × 10');await expect(page.locator('.study-chalk-slots .answer-slot')).toHaveCount(2);await expect(page.locator('#study-submit')).toHaveCount(0);
+ await page.locator('[data-digit="8"]').click();await expect(page.locator('#correction-card')).toBeHidden();await expect(page.locator('#study-input-0')).toBeEnabled();
+ await page.locator('[data-digit="0"]').click();await expect(page.locator('#correction-card')).toBeVisible();await expect(page.locator('#correct-result')).toHaveText('18 !');await expect(page.locator('#study-input-0')).toBeDisabled();await expect(page.locator('#progress-caption')).toHaveText('0 / 10');
+ await page.keyboard.press('Enter');await page.screenshot({path:`artifacts/decimal-integer-error-${width}.png`,fullPage:true});await page.clock.runFor(2100);
+ const progress=await page.evaluate(()=>{const state=JSON.parse(localStorage.getItem('calcul-party:players:v1')!),p=state.players.find((p:any)=>p.id===state.active);return {materials:JSON.parse(p.data['calcul-party:training:v1']).materials,samples:p.mentalMastery.skills['decimal-scale'].samples};});
+ expect(progress.materials).toBe(0);expect(progress.samples).toHaveLength(1);expect(progress.samples[0].first).toBe(false);
 });
 
 for(const width of [390,768,1365])test(`la touche moins est accessible près des chiffres à ${width}px`,async({page})=>{

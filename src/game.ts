@@ -170,7 +170,15 @@ export class Game {
       const normalized=value.replace('−','-');
       if(/^-?\d+$/.test(normalized)&&normalized.replace('-','').length===String(Math.abs(this.current.exercise.answer.value)).length)this.resolve(answerMatches(this.current.exercise.answer,value),false,now);
     }
-    else if(this.autoExactAnswer&&this.current?.exercise&&answerMatches(this.current.exercise.answer,value))this.resolve(true,false,now);
+    else if(this.autoExactAnswer&&this.current?.exercise){
+      const answer=this.current.exercise.answer;
+      if(answerMatches(answer,value))this.resolve(true,false,now);
+      else if(answer.kind==='decimal'&&answer.value.denominator===1){
+        // A decimal calculation can expect an integer: judge complete integer entries too.
+        const normalized=value.replace('−','-');
+        if(/^-?\d+$/.test(normalized)&&normalized.replace('-','').length===String(Math.abs(answer.value.numerator)).length)this.resolve(false,false,now);
+      }
+    }
     return true;
   }
   submitAnswer(value:string,now:number):boolean {

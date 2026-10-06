@@ -95,4 +95,16 @@ describe('saisie mentale et rappels',()=>{
   let observed=0;const g=new Game({...defaults(),duration:10,lives:5},()=>.5,()=>true,{questions:[question(2)],untimed:false,unlimitedLives:false,explicitAnswers:true,autoIntegers:true,onAnswer:()=>observed++});g.start(0);g.tick(4001);g.setAnswer('2',14002);g.tick(14002);expect(g.lives).toBe(4);expect(observed).toBe(1);
   const decimalQ=mentalFacts('decimal-add','CM1',0)[0],d=new Game(defaults(),()=>.5,()=>true,{questions:[{...question(0),exercise:decimalQ}],untimed:true,unlimitedLives:true,explicitAnswers:true,autoIntegers:true});d.start(0);d.tick(4001);d.setAnswer('1,0',4100);expect(d.phase).toBe('victory');d.submitAnswer('1.0',4101);expect(d.solved).toBe(1);
  });
+ it.each([18,-18,0])('vérifie une réponse entière erronée pour un résultat décimal %i',value=>{
+  let observed=0;const q={...question(0),exercise:{...question(0).exercise,answer:{kind:'decimal' as const,value:{numerator:value,denominator:1}}}};
+  const g=new Game({...defaults(),duration:15,lives:5},()=>.5,()=>true,{questions:[q],untimed:false,unlimitedLives:false,explicitAnswers:true,autoIntegers:true,onAnswer:()=>observed++});g.start(0);g.tick(4001);
+  g.setAnswer('−',4100);expect(g.phase).toBe('question');expect(observed).toBe(0);
+  if(value!==0){g.setAnswer('8',4200);expect(g.phase).toBe('question');}
+  g.setAnswer(value===0?'9':value<0?'−80':'80',4300);expect(g.phase).toBe('feedback');expect(g.feedback?.correct).toBe(false);expect(g.feedback?.timeout).toBe(false);expect(g.mistakes).toBe(1);expect(g.lives).toBe(4);expect(g.solved).toBe(0);expect(observed).toBe(1);
+  g.submitAnswer('80',4301);g.tick(19001);expect(g.mistakes).toBe(1);expect(observed).toBe(1);
+ });
+ it.each(['18','18,0','18.00','36/2'])('conserve une réponse équivalente correcte %s',raw=>{
+  const q={...question(0),exercise:{...question(0).exercise,answer:{kind:'decimal' as const,value:{numerator:18,denominator:1}}}};
+  const g=new Game(defaults(),()=>.5,()=>true,{questions:[q],untimed:true,unlimitedLives:true,autoIntegers:true});g.start(0);g.tick(4001);g.setAnswer(raw,4100);expect(g.solved).toBe(1);expect(g.mistakes).toBe(0);
+ });
 });
