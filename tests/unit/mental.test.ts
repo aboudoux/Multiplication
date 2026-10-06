@@ -36,12 +36,11 @@ describe('calcul mental',()=>{
    }
   }
  });
- it('la troisième mission rappelle seulement les patterns pratiqués et le final les répartit',()=>{
-  const m:MentalMasteries={};recordMentalEvidence(m,'divide',{first:true,helped:false,timeMs:1000});
-  const a=adaptedAdventure(adventures[0],'CM1',m),third=a.stages[5];
-  const deck=adaptiveQuestions(third,m,()=>.5);expect(deck.filter(q=>q.exercise!.patternId==='divide')).toHaveLength(Math.round(third.count*.2));
-  expect(adaptiveQuestions(a.stages[3],m).every(q=>q.exercise!.patternId==='large-multiply')).toBe(true);
-  const final=adaptiveQuestions(a.stages.at(-1)!,m);expect(final.every(q=>q.exercise!.patternId==='divide')).toBe(true);
+  it('les rappels et le final utilisent seulement les notions découvertes dans la classe',()=>{
+   const history={CM1:{divide:0 as const,'large-multiply':0 as const}},a=adaptedAdventure(adventures[0],'CM1','normal',history),third=a.stages[5];
+   const deck=adaptiveQuestions(third,history,()=>.5);expect(deck.filter(q=>q.exercise!.patternId==='divide')).toHaveLength(third.count-Math.ceil(third.count*.7));
+   expect(adaptiveQuestions(a.stages[3],history).every(q=>q.exercise!.patternId==='large-multiply')).toBe(true);
+   const final=adaptiveQuestions(a.stages.at(-1)!,history);expect(new Set(final.map(q=>q.exercise!.patternId))).toEqual(new Set(['divide','large-multiply']));
  });
  it('la vitesse limite la montée, jamais la réussite et les acquis anciens sont isolés',()=>{
   const fast:MentalMasteries={},slow:MentalMasteries={};

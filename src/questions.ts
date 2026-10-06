@@ -1,5 +1,7 @@
 import type {Calculation} from './calculations';
 export interface Rational {numerator:number;denominator:number}
+export type QuestionPace = 'fact'|'strategy';
+export type QuestionBand = 'accessible'|'core'|'challenging';
 export type Answer =
  | {kind:'integer';value:number}
  | {kind:'decimal';value:Rational}
@@ -7,7 +9,7 @@ export type Answer =
  | {kind:'remainder';quotient:number;remainder:number}
  | {kind:'set';values:Rational[]}
  | {kind:'inequality';operator:'≤'|'≥'|'<'|'>';bound:Rational};
-interface ExerciseBase {skillId:string;patternId?:string;patternLevel?:number;choices?:string[];prompt:string;spoken:string;hint:string;answer:Answer;voiceTokens?:string[];visual?:{kind:'collection'|'fraction'|'square'|'cube'|'share';a:number;b:number;subtract?:boolean}}
+interface ExerciseBase {skillId:string;patternId?:string;patternLevel?:number;pace?:QuestionPace;band?:QuestionBand;commutativeKey?:string;choices?:string[];prompt:string;spoken:string;hint:string;answer:Answer;voiceTokens?:string[];visual?:{kind:'collection'|'fraction'|'square'|'cube'|'share';a:number;b:number;subtract?:boolean}}
 export type StudyQuestion = ExerciseBase & (
  | {kind:'arithmetic'} | {kind:'missing'} | {kind:'power'} | {kind:'equation'} | {kind:'problem'}
 );

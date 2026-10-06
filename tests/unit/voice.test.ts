@@ -31,6 +31,91 @@ function setup() {
   return { voice, source, gain, context, fetchMock, buffer, response };
 }
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+describe('narration completion for practice clocks', () => {
+  it('preserves the launch promise and completes natural playback only once', async () => {
+    vi.useFakeTimers();
+    const {voice,source} = setup(), completed = vi.fn();
+    await voice.speak(q(3,4),'classic',completed);
+    expect(source.start).toHaveBeenCalledOnce();
+    expect(completed).not.toHaveBeenCalled();
+    const ended = source.onended!;
+    ended();ended();
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(completed).toHaveBeenCalledExactlyOnceWith('ended');
+    expect(voice.status).toBe('idle');
+    expect(source.stop).not.toHaveBeenCalled();
+  });
+  it('notifies synchronously when a prepared recording is missing', () => {
+    const {voice,source} = setup(), completed = vi.fn();
+    voice.speakPrepared(q(3,4),'classic',completed);
+    expect(completed).toHaveBeenCalledExactlyOnceWith('unavailable');
+    expect(source.start).not.toHaveBeenCalled();
+    voice.stop();
+    expect(completed).toHaveBeenCalledOnce();
+  });
+  it('notifies at the end of a synchronous prepared playback', async () => {
+    const {voice,source} = setup(), completed = vi.fn();
+    await voice.speak(q(3,4));voice.stop();
+    voice.speakPrepared(q(3,4),'classic',completed);
+    expect(completed).not.toHaveBeenCalled();
+    source.onended!();
+    expect(completed).toHaveBeenCalledExactlyOnceWith('ended');
+  });
+  it('terminates an interrupted download immediately and ignores its later completion', async () => {
+    const {voice,source,fetchMock,response} = setup(), completed = vi.fn();
+    let finish!: () => void;
+    fetchMock.mockImplementationOnce(()=>new Promise(resolve=>{finish=()=>{void response().then(resolve);};}));
+    const launched = voice.speak(q(3,4),'classic',completed);
+    voice.stop();
+    expect(completed).toHaveBeenCalledExactlyOnceWith('interrupted');
+    finish();await launched;
+    expect(completed).toHaveBeenCalledOnce();
+    expect(source.start).not.toHaveBeenCalled();
+  });
+  it('reports failed loading or audio startup as unavailable', async () => {
+    const {voice,source,fetchMock} = setup(), failedLoad = vi.fn(), failedStart = vi.fn();
+    fetchMock.mockRejectedValueOnce(new Error('Offline'));
+    await voice.speak(q(3,4),'classic',failedLoad);
+    expect(failedLoad).toHaveBeenCalledExactlyOnceWith('unavailable');
+    source.start.mockImplementationOnce(()=>{throw new Error('Audio blocked');});
+    await voice.speak(q(3,4),'classic',failedStart);
+    expect(failedStart).toHaveBeenCalledExactlyOnceWith('unavailable');
+    voice.stop();
+    expect(failedLoad).toHaveBeenCalledOnce();expect(failedStart).toHaveBeenCalledOnce();
+  });
+  it('bounds a missing end event using the actual voice rate and releases playback', async () => {
+    vi.useFakeTimers();
+    const {voice,source} = setup(), completed = vi.fn();
+    await voice.speak(q(3,4),'dragon',completed);
+    await vi.advanceTimersByTimeAsync(2874);
+    expect(completed).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(completed).toHaveBeenCalledExactlyOnceWith('unavailable');
+    expect(source.stop).toHaveBeenCalledOnce();
+    expect(source.onended).toBeNull();
+    expect(voice.status).toBe('unavailable');
+    voice.stop();await vi.advanceTimersByTimeAsync(10000);
+    expect(completed).toHaveBeenCalledOnce();
+  });
+  it('cleans the completion watchdog on pause or mute without changing ordinary playback', async () => {
+    vi.useFakeTimers();
+    const {voice,source} = setup(), completed = vi.fn();
+    await voice.speak(q(3,4),'classic',completed);
+    voice.stop();await vi.advanceTimersByTimeAsync(10000);
+    expect(completed).toHaveBeenCalledExactlyOnceWith('interrupted');
+    await voice.speak(q(3,4));await vi.advanceTimersByTimeAsync(10000);
+    expect(voice.status).toBe('speaking');
+    expect(source.stop).toHaveBeenCalledOnce();
+    voice.stop();
+  });
+  it('does not leave a practice clock waiting on a suspended audio context', async () => {
+    const {voice,source,context} = setup(), completed = vi.fn();
+    Object.assign(context,{state:'suspended'});
+    await voice.speak(q(3,4),'classic',completed);
+    expect(completed).toHaveBeenCalledExactlyOnceWith('unavailable');
+    expect(source.start).not.toHaveBeenCalled();
+  });
+});
 describe("French question narration", () => {
   it('assembles complete hundreds and decimals without splitting their syllables',async()=>{
     const {voice,context,fetchMock,source}=setup();

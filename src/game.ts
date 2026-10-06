@@ -34,6 +34,10 @@ export interface PracticeRules {
   explicitAnswers?: boolean;
   autoIntegers?:boolean;
   retryAfter?:number;
+  /** Optional practice clocks, copied at construction independently of classic settings. */
+  questionTimeLimitMs?: (question: Calculation) => number | null;
+  waitForInitialNarration?: boolean;
+  feedbackDurationMs?: (question: Calculation) => number;
 }
 
 /** Pure clock-driven state machine. Only active answering time counts toward records. */
@@ -57,6 +61,9 @@ export class Game {
   private questionActiveMs = 0;
   private activeMs = 0;
   private remainingMs = 0;
+  private waitingForNarration = false;
+  private readonly questionLimits = new Map<string, number | null>();
+  private readonly feedbackDurations = new Map<string, number>();
   private countdownAction: CountdownAction = "next";
   private celebrationSuspendedAt: number | null = null;
 
@@ -70,12 +77,31 @@ export class Game {
     validateSettings(settings);
     this.settings = Object.freeze({ ...settings });
     this.lives = settings.lives;
+    for (const question of practice?.questions ?? []) {
+      if (practice?.questionTimeLimitMs) {
+        const limit = practice.questionTimeLimitMs(question);
+        if (limit !== null && (!Number.isFinite(limit) || limit <= 0)) throw new RangeError('Invalid practice clock');
+        this.questionLimits.set(question.id, limit);
+      }
+      if (practice?.feedbackDurationMs) {
+        const duration = practice.feedbackDurationMs(question);
+        if (!Number.isFinite(duration) || duration <= 0) throw new RangeError('Invalid practice feedback duration');
+        this.feedbackDurations.set(question.id, duration);
+      }
+    }
   }
   get duration() { return this.settings.duration; }
   get tables() { return this.settings.tables; }
   get startingLives() { return this.settings.lives; }
   get totalQuestions(): number { return this.practice?.questions.length ?? questionCount(this.settings); }
-  get untimed(): boolean { return !!this.practice?.untimed; }
+  get currentTimeLimitMs(): number | null {
+    const question = this.current ?? this.queue[0] ?? this.practice?.questions[0];
+    return question && this.questionLimits.has(question.id)
+      ? this.questionLimits.get(question.id)!
+      : this.practice?.untimed ? null : this.duration * 1000;
+  }
+  get waitingForInitialNarration(): boolean { return this.waitingForNarration; }
+  get untimed(): boolean { return this.currentTimeLimitMs === null; }
   get explicitAnswers():boolean {return !!this.practice?.explicitAnswers || !!this.current?.exercise;}
   get autoInteger():boolean {return !!this.practice?.autoIntegers&&this.current?.exercise?.answer.kind==='integer';}
   get autoExactAnswer():boolean {return !!this.practice?.autoIntegers&&['decimal','fraction'].includes(this.current?.exercise?.answer.kind??'')&&!this.current?.exercise?.choices;}
@@ -108,13 +134,23 @@ export class Game {
   }
 
   timeLeft(now: number): number {
-    if (this.phase === "question") return Math.max(0, this.deadline - now);
+    if (this.phase === "question") return this.waitingForNarration
+      ? this.currentTimeLimitMs!
+      : Math.max(0, this.deadline - now);
     if (this.phase === "paused" || this.phase === "countdown" || this.phase === "preparing") {
       return this.countdownAction === "resume-question"
         ? this.remainingMs
-        : this.duration * 1000;
+        : this.currentTimeLimitMs ?? Infinity;
     }
     return 0;
+  }
+
+  /** Narration completion never restarts a running clock or another question. */
+  startQuestionClock(questionNumber: number, now: number): boolean {
+    if (this.phase !== 'question' || questionNumber !== this.questionNumber || !this.waitingForNarration) return false;
+    this.waitingForNarration = false;
+    this.deadline = now + this.currentTimeLimitMs!;
+    return true;
   }
 
   elapsed(now: number): number {
@@ -200,7 +236,7 @@ export class Game {
     if (this.phase === "question") {
       this.activeMs += Math.max(0, now - this.questionStarted);
       this.questionActiveMs += Math.max(0,now-this.questionStarted);
-      this.remainingMs = this.deadline - now;
+      this.remainingMs = this.waitingForNarration ? this.currentTimeLimitMs! : this.deadline - now;
       this.countdownAction = "resume-question";
     } else if (this.phase === "feedback") {
       this.remainingMs = this.deadline - now;
@@ -231,7 +267,8 @@ export class Game {
     this.feedback = null;
     this.phase = "question";
     this.questionStarted = now;
-    this.deadline = this.untimed ? Infinity : now + this.duration * 1000;
+    this.waitingForNarration = !this.untimed && !!this.practice?.waitForInitialNarration;
+    this.deadline = this.untimed || this.waitingForNarration ? Infinity : now + this.currentTimeLimitMs!;
     this.countdownAction = "next";
   }
 
@@ -242,7 +279,7 @@ export class Game {
     }
     this.phase = "question";
     this.questionStarted = now;
-    this.deadline = now + this.remainingMs;
+    this.deadline = this.waitingForNarration ? Infinity : now + this.remainingMs;
   }
 
   private resolve(correct: boolean, timeout: boolean, now: number): void {
@@ -261,6 +298,7 @@ export class Game {
       pair: this.current,
       submitted: this.answer,
     };
+    this.waitingForNarration = false;
     if (correct) {
       this.solved++;
       this.streak++;
@@ -285,6 +323,6 @@ export class Game {
           ? this.victoryDuration
           : correct
             ? 650
-            : ERROR_FEEDBACK_MS);
+            : this.feedbackDurations.get(this.current.id) ?? ERROR_FEEDBACK_MS);
   }
 }

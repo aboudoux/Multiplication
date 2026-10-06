@@ -1,6 +1,8 @@
 import {mentalTrainingRhythm} from './mental-rhythm';
 import {studyVisual} from './study-visual';
-import {adaptedAdventure,adaptiveQuestions} from './adaptive-adventure';
+import {adaptedAdventure,resolveAdventureMission,recordAdventureMissionSuccess} from './adaptive-adventure';
+import {adventureDifficultyLabels,adventureRulesLabel} from './adventure-policy';
+import {AdventureAttemptTracker,saveAdventureAttempt} from './adventure-attempts';
 import {generateStudyQuestions} from './study-generator';
 import {AnswerUI} from './answer-ui';
 import {resultLabel} from './questions';
@@ -171,6 +173,11 @@ let trainingData: TrainingData = { settings: readTraining({getItem:()=>null}).se
 try { trainingData = readTraining(playerStorage,playerStorage.getItem('multipli-party:v1') ? saved : undefined); } catch { trainingStored=false; }
 const audio = new GameAudio();
 let activeStage: AdventureStage | null = null;
+let activeMission:ReturnType<typeof resolveAdventureMission>|null=null;
+let attemptTracker:AdventureAttemptTracker|null=null;
+let attemptStored=false;
+let attemptFeedback:import('./game').Feedback|null=null;
+const missionFailures=new Map<string,number>();
 let mapOpen = false;
 let chooserOpen=false;
 let activeAdventure:AdventureDefinition=chatonAdventure;
@@ -257,14 +264,18 @@ get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-car
 get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
 get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="camp-results-exit" class="secondary-button" type="button" hidden>Retour au camp</button>');
+get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="retry-easy" class="secondary-button" type="button" hidden>Réessayer en Facile</button>');
+get('retry-easy').addEventListener('click',()=>{if(!activeStage?.study)return;profiles.active.adventureDifficulty='easy';profiles.save();start();});
 get('camp-results-exit').insertAdjacentHTML('afterend','<button id="camp-colony-ready" class="play-button" type="button" hidden>Un chantier est prêt ! Aller construire →</button>');
 function openCamp(tab: 'workshop'|'colony' = 'workshop'): void {
+  finishAdventureAttempt('abandoned',performance.now());
   trainingActive=false; studySkill=null; activeStage=null; mapOpen=false; chooserOpen=false; campOpen=true; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
   persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored); camp.root.before(learningUI.root); learningUI.open();
 }
 function showLanding(): void {
+  finishAdventureAttempt('abandoned',performance.now());
   campOpen=false; trainingActive=false; studySkill=null; activeStage=null; mapOpen=false; chooserOpen=false; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
@@ -291,9 +302,15 @@ function createGame(): Game {
       }});
   }
   if(activeStage?.study) {
-    const duration=adventureDurations[activeStage.world.id],lives=adventureLives[activeStage.world.id];
-    return new Game({...defaults(),duration:duration??15,lives:lives??5},Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions:adaptiveQuestions(activeStage,profiles.mental),untimed:duration===null,unlimitedLives:lives===null,explicitAnswers:true,autoIntegers:true,retryAfter:3,victoryDurationMs:MISSION_REWARD_MS,onAnswer:(q,e)=>{recordMentalEvidence(profiles.mental,q.exercise!.patternId!,e,q.exercise!.patternLevel);profiles.save();}});
+    // Resolve again at each attempt: a manual difficulty change affects the retry.
+    const original=adventures.find(a=>a.id===activeAdventure.id)!;
+    activeStage=adaptedAdventure(original,profiles.active.grade,profiles.active.adventureDifficulty,profiles.active.adventurePractice).stages.find(s=>s.id===activeStage!.id)!;
+    activeMission=resolveAdventureMission(activeStage,profiles.active.adventurePractice);
+    const {questions,policy,rules}=activeMission;
+    attemptTracker=new AdventureAttemptTracker();attemptStored=false;attemptFeedback=null;
+    return new Game({...defaults(),duration:15,lives:rules.lives??5},Math.random,q=>!saved.voiceEnabled||saved.muted||audio.questionPrepared(q),{questions,untimed:policy.timeLimits.factMs===null&&policy.timeLimits.strategyMs===null,unlimitedLives:rules.lives===null,questionTimeLimitMs:rules.questionTimeLimitMs,waitForInitialNarration:true,feedbackDurationMs:q=>policy.grade==='GS'||policy.grade==='CP'?4000:q.exercise?.pace==='strategy'?3000:2000,explicitAnswers:true,autoIntegers:true,retryAfter:3,victoryDurationMs:MISSION_REWARD_MS,onAnswer:(q,e)=>{attemptTracker?.observe(e);recordMentalEvidence(profiles.mental,q.exercise!.patternId!,e,q.exercise!.patternLevel);profiles.save();}});
   }
+  activeMission=null;
   const duration = activeStage ? adventureDurations[activeStage.world.id] : null;
   const lives = activeStage ? adventureLives[activeStage.world.id] : null;
   return new Game({...saved,duration:duration ?? saved.duration,lives:lives ?? saved.lives}, Math.random, question =>
@@ -375,9 +392,10 @@ function applyTheme(): void {
 let newlyUnlockedMissions: string[] = [];
 let clearUnlockReveal = () => {};
 function showMap(): void {
+  finishAdventureAttempt('abandoned',performance.now());
   clearUnlockReveal();
   const original=adventures.find(a=>a.id===activeAdventure.id)!;
-  activeAdventure=profiles.active.adaptive?adaptedAdventure(original,profiles.active.grade,profiles.mental):original;
+  activeAdventure=profiles.active.adaptive?adaptedAdventure(original,profiles.active.grade,profiles.active.adventureDifficulty,profiles.active.adventurePractice):original;
   worlds=activeAdventure.worlds;stages=activeAdventure.stages;
   activeStage = null; mapOpen = true; chooserOpen=false; previewVictory = false; campOpen=false; trainingActive=false;
   audio.stopSpeech(); surprises.clear();
@@ -387,6 +405,7 @@ function showMap(): void {
   get('map-title').focus();
 }
 function showAdventureChoice():void {
+  finishAdventureAttempt('abandoned',performance.now());
   clearUnlockReveal(); newlyUnlockedMissions=[];cacheAdventure();
   activeFinale.close();activeStage=null;mapOpen=false;chooserOpen=true;campOpen=false;trainingActive=false;previewVictory=false;
   audio.stopSpeech();surprises.clear();game=createGame();previousPhase='finished';
@@ -431,8 +450,9 @@ adventureMap.addEventListener('click', event => {
     if (adventureProgress.completed.length !== stages.length || activeFinale.active) return;
     showFinale(); return;
   }
-  const stage = stages.find(s => s.id === button.dataset.stage);
+  let stage = stages.find(s => s.id === button.dataset.stage);
   if (!stage || !stageUnlocked(adventureProgress,stage,activeAdventure)) return;
+  if(stage.study?.policy?.blockedFinal)stage=stages[0];
   clearUnlockReveal(); newlyUnlockedMissions = [];
   activeStage = stage; mapOpen = false; applyTheme(); start();
 });
@@ -500,7 +520,7 @@ function start(): void {
   lastWarning = -1;
   recordProcessed = false;
   get("difficulty-label").textContent =
-    trainingActive&&studySkill ? `${studyGrade} · ${mentalPatternById(studySkill)?.title} · ${game.untimed?'Sans chrono · Essais illimités':`${game.duration} s · ${game.startingLives} vies`}` : trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${activeStage.study?(game.untimed?'Sans chrono · Essais illimités':`${game.duration} s · ${game.startingLives} vies`):`${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}`}` : '';
+    trainingActive&&studySkill ? `${studyGrade} · ${mentalPatternById(studySkill)?.title} · ${game.untimed?'Sans chrono · Essais illimités':`${game.duration} s · ${game.startingLives} vies`}` : trainingActive ? trainingLabel(trainingData.settings) : activeStage ? `${activeStage.world.name} · ${activeStage.name} · ${activeMission?`${adventureDifficultyLabels[activeMission.policy.difficulty]} · ${adventureRulesLabel(activeMission.policy)}`:`${adventureTimeLabel(activeStage.world.id)} · ${adventureLivesLabel(activeStage.world.id)}`}` : '';
   get("time-progress").setAttribute("aria-valuemax", String(game.duration));
   get("progress").setAttribute("aria-valuemax", String(game.totalQuestions));
   get("progress-goal").textContent = String(game.totalQuestions);
@@ -540,10 +560,13 @@ function goHome(): void {
   showLanding();
 }
 get("sound").addEventListener("click", () => {
+  const toggledGame=game,number=game.questionNumber;
   saved.muted = !saved.muted;
   audio.setMuted(saved.muted);
+  if(saved.muted)game.startQuestionClock(game.questionNumber,performance.now());
   activeFinale.setMuted(saved.muted);
   void audio.unlock().then(() => {
+    if(game!==toggledGame||game.questionNumber!==number)return;
     prepareUpcomingQuestions();
     if (!saved.muted) speakCurrentQuestion(true);
   });
@@ -551,26 +574,27 @@ get("sound").addEventListener("click", () => {
   renderPreferences();
 });
 function speakCurrentQuestion(retry = false): void {
-  if (
-    game.phase === "question" &&
-    game.current &&
-    saved.voiceEnabled &&
-    !saved.muted
-  ) {
-    audio.speakQuestion(game.current, retry);
-  }
+  if(game.phase!=="question"||!game.current)return;
+  const spokenGame=game,number=game.questionNumber;
+  if(!saved.voiceEnabled||saved.muted){game.startQuestionClock(number,performance.now());return;}
+  const wait=game.waitingForInitialNarration;
+  audio.speakQuestion(game.current,retry,wait?()=>{
+    if(game===spokenGame&&game.questionNumber===number&&game.phase==='question')game.startQuestionClock(number,performance.now());
+  }:undefined);
 }
 get("voice").addEventListener("click", () => {
+  const toggledGame=game,number=game.questionNumber;
   saved.voiceEnabled = !saved.voiceEnabled;
-  if (!saved.voiceEnabled) audio.stopSpeech();
+  if (!saved.voiceEnabled) {audio.stopSpeech();game.startQuestionClock(game.questionNumber,performance.now());}
   else void audio.unlock().then(() => {
+    if(game!==toggledGame||game.questionNumber!==number||!saved.voiceEnabled||saved.muted)return;
     prepareUpcomingQuestions();
     speakCurrentQuestion(true);
   });
   persist();
   renderPreferences();
 });
-get("repeat-question").addEventListener("click", () => speakCurrentQuestion(true));
+get("repeat-question").addEventListener("click", () => {if(!game.waitingForInitialNarration)speakCurrentQuestion(true);});
 get("skip-voice").addEventListener("click", () => {
   saved.voiceEnabled = false;
   audio.stopSpeech();
@@ -684,17 +708,17 @@ document.addEventListener("visibilitychange", () => {
     return;
   }
   if (document.hidden) {
-    audio.stopSpeech();
     pause();
+    audio.stopSpeech();
     audio.ambience(false, game.solved, false);
   }
 });
 window.addEventListener("pagehide", () => {
   activeFinale.setBackground(true);
   document.documentElement.classList.add('camp-background');
-  audio.stopSpeech();
   if ((activeStage || trainingActive) && game.phase === 'victory') { game.suspendCelebration(performance.now()); audio.suspendReward(true); }
   game.pause(performance.now());
+  audio.stopSpeech();
 });
 window.addEventListener('pageshow', () => {
   activeFinale.setBackground(document.hidden);
@@ -761,7 +785,20 @@ function renderResults(now: number): void {
 
 }
 
+function failureKey():string {return `${profiles.active.id}:${profiles.active.grade}:${activeAdventure.id}:${activeStage?.id}`;}
+function finishAdventureAttempt(outcome:'won'|'lost'|'abandoned',now:number):void {
+  if(!attemptTracker||attemptStored||!activeStage?.study||!activeMission)return;
+  if(game.feedback&&game.feedback!==attemptFeedback){attemptFeedback=game.feedback;if(game.feedback.timeout)attemptTracker.timeout();}
+  if(game.solved===game.totalQuestions)outcome='won';
+  else if(game.lives===0&&!game.unlimitedLives)outcome='lost';
+  const summary=attemptTracker.finish({adventure:activeAdventure.id,stage:activeStage.id,grade:activeMission.policy.grade,difficulty:activeMission.policy.difficulty,discovery:activeMission.discovery,outcome,total:game.totalQuestions,solved:game.solved,mistakes:game.mistakes,activeMs:game.elapsed(now)});
+  attemptStored=true;saveAdventureAttempt(playerStorage,summary);
+  if(outcome==='won')missionFailures.delete(failureKey());
+  else if(outcome==='lost')missionFailures.set(failureKey(),(missionFailures.get(failureKey())??0)+1);
+}
+window.addEventListener('pagehide',event=>{if(!event.persisted)finishAdventureAttempt('abandoned',performance.now());});
 function render(now: number): void {
+  if(attemptTracker&&!attemptStored&&game.feedback&&game.feedback!==attemptFeedback){attemptFeedback=game.feedback;if(game.feedback.timeout)attemptTracker.timeout();}
   if (trainingActive && game.solved>creditedMaterials) {
     creditedMaterials=awardMaterials(trainingData,game.solved,creditedMaterials);
     persistTraining();
@@ -771,6 +808,7 @@ function render(now: number): void {
     get('camp-cargo').classList.add('delivering');
   }
   const phase = previewVictory ? "victory" : game.phase;
+  get('retry-easy').hidden=phase!=='finished'||!activeStage?.study||activeMission?.policy.difficulty==='easy'||(missionFailures.get(failureKey())??0)<2;
   get('camp-colony-ready').hidden=phase!=='finished' || !trainingActive || colonyStatus(trainingData).missing>0;
   const isPlaying = !["welcome", "defeat", "victory", "finished"].includes(phase);
   const overlay = phase === "countdown" || phase === "paused" || phase === "preparing";
@@ -822,12 +860,14 @@ function render(now: number): void {
       if (previousQuestion === game.questionNumber) speakCurrentQuestion();
     }
     if (phase === "defeat") {
+      finishAdventureAttempt('lost',now);
       get("board").classList.remove("reaction-correct", "reaction-error");
       if (saved.voiceEnabled) { audio.disappointment(); if (saved.theme !== "star") audio.end(); }
       else audio.end();
       get("defeat").focus({ preventScroll: true });
     }
     if (phase === "victory") {
+      if(activeStage?.study&&!previewVictory){recordAdventureMissionSuccess(profiles.active.adventurePractice,activeStage,activeMission?.policy);profiles.save();finishAdventureAttempt('won',now);}
       const availableBefore = new Set(stages.filter(stage => stageUnlocked(adventureProgress, stage,activeAdventure)).map(stage => stage.id));
       if (activeStage && !previewVictory && completeStage(adventureProgress,activeStage,activeAdventure)) {
         newlyUnlockedMissions = stages.filter(stage => !availableBefore.has(stage.id) && stageUnlocked(adventureProgress, stage,activeAdventure)).map(stage => stage.id);
@@ -892,12 +932,15 @@ function render(now: number): void {
     button.disabled = phase !== "question";
   });
   get<HTMLButtonElement>("repeat-question").disabled =
-    phase !== "question" || !saved.voiceEnabled || saved.muted;
-  const left = game.untimed ? 0 : game.timeLeft(now);
+    phase !== "question" || !saved.voiceEnabled || saved.muted || game.waitingForInitialNarration;
+  const budget=game.currentTimeLimitMs;
+  const left = budget===null ? 0 : game.timeLeft(now);
   const seconds = Math.ceil(left / 1000);
   get("time-left").textContent = `${seconds} s`;
   get("time-fill").style.transform =
-    `scaleX(${Math.min(1, left / (game.duration * 1000))})`;
+    `scaleX(${budget===null?0:Math.min(1,left/budget)})`;
+  get("time-progress").setAttribute("aria-valuemax",String((budget??0)/1000));
+  get("time-progress").setAttribute("aria-valuetext",game.waitingForInitialNarration?'Le chrono attend la lecture':budget===null?'Sans chrono':`${seconds} secondes restantes`);
   get("time-progress").setAttribute("aria-valuenow", String(seconds));
   get("time-box").classList.toggle(
     "urgent",

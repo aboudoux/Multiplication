@@ -3,6 +3,7 @@ import type { Calculation } from "./calculations";
 import { voiceProfiles, voiceRates, type VoiceStyle } from "./voice-profiles";
 export { voiceRates, type VoiceStyle } from "./voice-profiles";
 export type VoiceStatus = "idle" | "loading" | "speaking" | "unavailable";
+export type VoiceCompletion = 'ended' | 'unavailable' | 'interrupted';
 export const VOICE_LOAD_TIMEOUT_MS = 5000;
 const STUDY_TOKEN_REVISION='2';
 interface VoiceClip {
@@ -18,6 +19,8 @@ export class QuestionVoice {
   private source: AudioBufferSourceNode | null = null;
   private gain: GainNode | null = null;
   private cache = new Map<string, VoiceClip>();
+  private completion: ((reason: VoiceCompletion) => void) | null = null;
+  private completionTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private context: AudioContext,
@@ -35,18 +38,20 @@ export class QuestionVoice {
   }
 
   /** Called in the same render as the equation: no download or async decoding. */
-  speakPrepared(question: Calculation, style: VoiceStyle = "classic"): void {
+  speakPrepared(question: Calculation, style: VoiceStyle = "classic", onComplete?: (reason: VoiceCompletion) => void): void {
     this.stop();
+    this.completion = onComplete ?? null;
     const clip = this.cache.get(voicePath(question));
     if (clip?.state !== "ready" || !clip.buffer) {
-      this.status = "unavailable";
+      this.terminate('unavailable');
       return;
     }
     this.startBuffer(clip.buffer, 0, 1.6, style, this.generation);
   }
 
-  async speak(question: Calculation, style: VoiceStyle = "classic"): Promise<void> {
+  async speak(question: Calculation, style: VoiceStyle = "classic", onComplete?: (reason: VoiceCompletion) => void): Promise<void> {
     this.stop();
+    this.completion = onComplete ?? null;
     await this.play(voicePath(question), 0, 1.6, style);
   }
 
@@ -119,14 +124,17 @@ export class QuestionVoice {
       this.startBuffer(buffer, delay, volume, style, generation);
     } catch {
       if (generation === this.generation) {
-        this.stop();
-        this.status = "unavailable";
+        this.terminate('unavailable');
       }
     }
   }
 
   private startBuffer(buffer: AudioBuffer, delay: number, volume: number, style: VoiceStyle, generation: number): void {
     try {
+      if (this.completion && this.context.state && this.context.state !== 'running') {
+        this.terminate('unavailable');
+        return;
+      }
       const source = this.context.createBufferSource();
       const gain = this.context.createGain();
       gain.gain.value = volume;
@@ -146,26 +154,42 @@ export class QuestionVoice {
       this.source = source;
       this.gain = gain;
       source.onended = () => {
+        if (generation !== this.generation || this.source !== source) return;
         source.disconnect();
         gain.disconnect();
-        if (generation === this.generation) {
-          this.source = null;
-          this.gain = null;
-          this.status = "idle";
-        }
+        this.source = null;
+        this.gain = null;
+        this.status = "idle";
+        this.complete('ended');
       };
       if (delay > 0) source.start(this.context.currentTime + delay);
       else source.start();
       this.status = "speaking";
+      if (this.completion) {
+        this.completionTimer = setTimeout(() => {
+          if (generation === this.generation && this.source === source) this.terminate('unavailable');
+        }, Math.max(0, (delay + buffer.duration / voiceRates[style]) * 1000) + 1000);
+      }
     } catch {
       if (generation === this.generation) {
-        this.stop();
-        this.status = "unavailable";
+        this.terminate('unavailable');
       }
     }
   }
 
   stop(): void {
+    this.terminate('interrupted');
+  }
+
+  private complete(reason: VoiceCompletion): void {
+    if (this.completionTimer !== null) clearTimeout(this.completionTimer);
+    this.completionTimer = null;
+    const callback = this.completion;
+    this.completion = null;
+    callback?.(reason);
+  }
+
+  private terminate(reason: VoiceCompletion): void {
     this.generation++;
     if (this.source) {
       this.source.onended = null;
@@ -179,6 +203,7 @@ export class QuestionVoice {
     this.gain?.disconnect();
     this.source = null;
     this.gain = null;
-    this.status = "idle";
+    this.status = reason === 'unavailable' ? 'unavailable' : 'idle';
+    this.complete(reason);
   }
 }

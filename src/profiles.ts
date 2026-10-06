@@ -1,8 +1,9 @@
 import { grades, skillById, type Grade, type Masteries } from './curriculum';
 import {emptyMental,validateMental,type MentalRegistry} from './mental-patterns';
+import {isAdventureDifficulty,validateAdventurePractice,type AdventureDifficulty,type AdventurePractice} from './adventure-policy';
 export const PROFILES_KEY='calcul-party:players:v1';
-export const scopedKeys=['multipli-party:v1','calcul-party:training:v1','calcul-party:adventure:v1','calcul-party:adventure:pico:v1'];
-export interface Player {id:string;name:string;avatar:string;grade:Grade;adaptive:boolean;data:Record<string,string>;mastery:Masteries;mentalMastery?:MentalRegistry;mentalDuration?:10|15|null}
+export const scopedKeys=['multipli-party:v1','calcul-party:training:v1','calcul-party:adventure:v1','calcul-party:adventure:pico:v1','calcul-party:adventure-attempts:v1'];
+export interface Player {id:string;name:string;avatar:string;grade:Grade;adaptive:boolean;adventureDifficulty:AdventureDifficulty;adventurePractice:AdventurePractice;data:Record<string,string>;mastery:Masteries;mentalMastery?:MentalRegistry;mentalDuration?:10|15|null}
 export interface Players {version:1;active:string;players:Player[]}
 type Disk=Pick<Storage,'getItem'|'setItem'|'removeItem'>;
 const avatars=['🐱','🐜','🦊','🐉','⭐','🚀'];
@@ -11,14 +12,14 @@ export class Profiles {
   state:Players;
   stored=true;
   constructor(private disk:Disk) {
-    this.state={version:1,active:'current',players:[{id:'current',name:'Joueur actuel',avatar:'🐱',grade:'CP',adaptive:false,data:{},mastery:{}}]};
+    this.state={version:1,active:'current',players:[{id:'current',name:'Joueur actuel',avatar:'🐱',grade:'CP',adaptive:false,adventureDifficulty:'normal',adventurePractice:{},data:{},mastery:{}}]};
     try {
       let value:unknown=null;
       try {value=JSON.parse(disk.getItem(PROFILES_KEY)??'null');}catch{/* Preserve legacy backups when the registry is corrupt. */}
       const saved=value as Players|null;
       if(saved?.version===1 && Array.isArray(saved.players) && saved.players.length>0 && saved.players.length<=50) {
         const valid:Player[]=saved.players.filter((p:Player)=>p && typeof p.id==='string' && /^[a-zA-Z0-9-]{1,80}$/.test(p.id) && typeof p.name==='string' && p.name.length>0 && p.name.length<=40 && grades.includes(p.grade) && typeof p.adaptive==='boolean' && p.data && typeof p.data==='object' && !Array.isArray(p.data)).map((p:Player)=>({
-          ...p,avatar:avatars.includes(p.avatar)?p.avatar:avatars[0],data:Object.fromEntries(scopedKeys.filter(k=>typeof p.data[k]==='string').map(k=>[k,p.data[k]])),mastery:validateMastery(p.mastery),mentalMastery:validateMental(p.mentalMastery),mentalDuration:p.mentalDuration===10||p.mentalDuration===15?p.mentalDuration:null,
+          ...p,avatar:avatars.includes(p.avatar)?p.avatar:avatars[0],adventureDifficulty:isAdventureDifficulty(p.adventureDifficulty)?p.adventureDifficulty:'normal',adventurePractice:validateAdventurePractice(p.adventurePractice),data:Object.fromEntries(scopedKeys.filter(k=>typeof p.data[k]==='string').map(k=>[k,p.data[k]])),mastery:validateMastery(p.mastery),mentalMastery:validateMental(p.mentalMastery),mentalDuration:p.mentalDuration===10||p.mentalDuration===15?p.mentalDuration:null,
         }));
         if(valid.length && new Set(valid.map(p=>p.id)).size===valid.length) {
           this.state={version:1,active:valid.some(p=>p.id===saved.active)?saved.active:valid[0].id,players:valid}; return;
@@ -32,7 +33,7 @@ export class Profiles {
   get mental(){return (this.active.mentalMastery??=emptyMental()).skills;}
   add(name:string,grade:Grade,avatar=avatars[0]):Player {
     if(!name.trim() || name.trim().length>40 || !grades.includes(grade) || this.state.players.length>=50)throw new RangeError('Profil invalide');
-    const p:Player={id:crypto.randomUUID(),name:name.trim(),avatar:avatars.includes(avatar)?avatar:avatars[0],grade,adaptive:true,data:{},mastery:{}};
+    const p:Player={id:crypto.randomUUID(),name:name.trim(),avatar:avatars.includes(avatar)?avatar:avatars[0],grade,adaptive:true,adventureDifficulty:'normal',adventurePractice:{},data:{},mastery:{}};
     this.state.players.push(p);this.state.active=p.id;this.save();return p;
   }
   select(id:string):boolean {if(!this.state.players.some(p=>p.id===id))return false;this.state.active=id;this.save();return true;}

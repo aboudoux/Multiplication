@@ -1,6 +1,6 @@
 import { themes, type ThemeId } from "./themes";
 import type { Calculation } from "./calculations";
-import { QuestionVoice, type VoiceStyle } from "./voice";
+import { QuestionVoice, type VoiceStyle, type VoiceCompletion } from "./voice";
 
 /** Original synthesized arcade sounds and bundled French voice prompts. */
 export class GameAudio {
@@ -46,10 +46,13 @@ export class GameAudio {
     return this.voice?.isPrepared(question) ?? true;
   }
 
-  speakQuestion(question: Calculation, retry = false): void {
-    if (this.muted) return;
-    if (retry) void this.voice?.speak(question, this.voiceStyle);
-    else this.voice?.speakPrepared(question, this.voiceStyle);
+  speakQuestion(question: Calculation, retry = false, onComplete?: (reason: VoiceCompletion) => void): void {
+    if (this.muted || !this.voice || (onComplete && this.context?.state !== 'running')) {
+      onComplete?.('unavailable');
+      return;
+    }
+    if (retry) void this.voice.speak(question, this.voiceStyle, onComplete);
+    else this.voice.speakPrepared(question, this.voiceStyle, onComplete);
   }
 
   stopSpeech(): void {

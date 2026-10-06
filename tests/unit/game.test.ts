@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDeck, DEFEAT_DURATION_MS, ERROR_FEEDBACK_MS, Game, shuffle, VICTORY_DURATION_MS } from "../../src/game";
-import type { Duration } from "../../src/game";
+import type { Duration, PracticeRules } from "../../src/game";
+import type { Calculation } from '../../src/calculations';
 
 // An injectable random source keeps the production deck in its original order.
 function started(duration: Duration = 10, tables = 10, lives = 3) {
@@ -53,6 +54,127 @@ describe("the multiplication deck", () => {
       deck.map((pair) => pair.id).sort(),
     );
     expect(deck[0].id).toBe("1x1");
+  });
+});
+
+describe('practice clocks and corrections', () => {
+  const questions: Calculation[] = [
+    {operation:'multiply',a:3,b:4,result:12,id:'3x4'},
+    {operation:'multiply',a:5,b:6,result:30,id:'5x6'},
+  ];
+  function practice(options: Partial<PracticeRules> = {}) {
+    const game = new Game({mode:'multiply',length:'all',tables:10,duration:10,lives:5},()=>.5,()=>true,{
+      questions,untimed:false,unlimitedLives:false,questionTimeLimitMs:q=>q.id==='3x4'?20000:25000,...options,
+    });
+    game.start(0);game.tick(4000);return game;
+  }
+  it('copies per-question budgets, supports new durations and keeps them on a retry', () => {
+    let budget = 20000, snapshots = 0;
+    const game = practice({questionTimeLimitMs:q=>{snapshots++;return q.id==='3x4'?budget:25000;},retryAfter:3});
+    budget = 1000;
+    expect(snapshots).toBe(2);
+    expect(game.duration).toBe(10);
+    expect(game.currentTimeLimitMs).toBe(20000);
+    expect(game.timeLeft(4000)).toBe(20000);
+    game.digit('0',5000);game.digit('0',5000);game.tick(7000);
+    expect(game.current?.id).toBe('5x6');
+    expect(game.currentTimeLimitMs).toBe(25000);
+    game.digit('3',7100);game.digit('0',7100);game.tick(7750);
+    expect(game.current?.id).toBe('3x4');
+    expect(game.currentTimeLimitMs).toBe(20000);
+    expect(game.timeLeft(7750)).toBe(20000);
+    expect(snapshots).toBe(2);
+  });
+  it('accepts input during narration, then starts the full budget once and measures from display', () => {
+    const evidence: {timeMs:number}[] = [];
+    const game = practice({questions:questions.slice(0,1),waitForInitialNarration:true,onAnswer:(_,e)=>evidence.push(e)});
+    game.digit('1',9000);
+    expect(game.answer).toBe('1');
+    expect(game.waitingForInitialNarration).toBe(true);
+    game.tick(10000);
+    expect(game.phase).toBe('question');
+    expect(game.timeLeft(10000)).toBe(20000);
+    expect(game.startQuestionClock(game.questionNumber,10000)).toBe(true);
+    expect(game.startQuestionClock(game.questionNumber,10500)).toBe(false);
+    expect(game.timeLeft(11000)).toBe(19000);
+    game.digit('2',11000);
+    expect(game.phase).toBe('victory');
+    expect(evidence[0].timeMs).toBe(7000);
+    expect(game.elapsed(11000)).toBe(7000);
+  });
+  it('ignores a completed narration after an early answer or on a later question', () => {
+    const game = practice({waitForInitialNarration:true});
+    const first = game.questionNumber;
+    game.digit('1',4100);game.digit('2',4100);
+    expect(game.startQuestionClock(first,4200)).toBe(false);
+    game.tick(4750);
+    expect(game.waitingForInitialNarration).toBe(true);
+    expect(game.startQuestionClock(first,5000)).toBe(false);
+    expect(game.timeLeft(5000)).toBe(25000);
+    expect(game.startQuestionClock(game.questionNumber,5000)).toBe(true);
+    expect(game.timeLeft(6000)).toBe(24000);
+  });
+  it('preserves narration waiting before the clock and remaining time after it through pauses', () => {
+    const evidence: {timeMs:number}[] = [];
+    const game = practice({questions:questions.slice(0,1),waitForInitialNarration:true,onAnswer:(_,e)=>evidence.push(e)});
+    game.digit('1',4500);game.pause(5000);
+    expect(game.timeLeft(9000)).toBe(20000);
+    expect(game.startQuestionClock(game.questionNumber,9000)).toBe(false);
+    game.resume(10000);game.tick(14000);
+    expect(game.answer).toBe('1');
+    expect(game.waitingForInitialNarration).toBe(true);
+    game.startQuestionClock(game.questionNumber,15000);game.pause(16000);
+    expect(game.timeLeft(20000)).toBe(19000);
+    game.resume(60000);game.tick(64000);
+    expect(game.waitingForInitialNarration).toBe(false);
+    expect(game.timeLeft(64000)).toBe(19000);
+    expect(game.startQuestionClock(game.questionNumber,64000)).toBe(false);
+    game.digit('2',65000);
+    expect(evidence[0].timeMs).toBe(4000);
+  });
+  it('keeps a per-question untimed practice untimed without waiting for audio', () => {
+    const game = practice({questionTimeLimitMs:()=>null,waitForInitialNarration:true});
+    expect(game.currentTimeLimitMs).toBeNull();
+    expect(game.untimed).toBe(true);
+    expect(game.waitingForInitialNarration).toBe(false);
+    expect(game.startQuestionClock(game.questionNumber,5000)).toBe(false);
+    game.tick(100000);
+    expect(game.phase).toBe('question');
+    expect(game.timeLeft(100000)).toBe(Infinity);
+  });
+  it('charges a timed expiry once after narration without accepting a racing digit', () => {
+    const game = practice({waitForInitialNarration:true});
+    game.startQuestionClock(game.questionNumber,10000);
+    game.digit('1',29000);
+    expect(game.digit('2',30000)).toBe(false);
+    game.tick(30000);
+    expect(game.lives).toBe(4);
+    expect(game.feedback?.timeout).toBe(true);
+    expect(game.elapsed(30000)).toBe(26000);
+  });
+  it('copies correction durations while preserving success feedback and paused corrections', () => {
+    let correction = 4000;
+    const game = practice({feedbackDurationMs:q=>q.id==='3x4'?correction:3000});
+    correction = 1000;
+    game.digit('0',5000);game.digit('0',5000);game.pause(5500);
+    game.resume(10000);game.tick(14000);
+    game.tick(17499);expect(game.phase).toBe('feedback');
+    game.tick(17500);expect(game.current?.id).toBe('5x6');
+    game.digit('0',18000);game.digit('0',18000);
+    game.tick(20999);expect(game.phase).toBe('feedback');
+    game.tick(21000);expect(game.current?.id).toBe('3x4');
+    game.digit('1',21100);game.digit('2',21100);
+    game.tick(21749);expect(game.phase).toBe('feedback');
+    game.tick(21750);expect(game.current?.id).toBe('5x6');
+  });
+  it('rejects invalid practice clock and feedback budgets without relaxing classic validation', () => {
+    for (const value of [0,-1,NaN,Infinity]) {
+      expect(()=>practice({questionTimeLimitMs:()=>value})).toThrow(RangeError);
+      expect(()=>practice({feedbackDurationMs:()=>value})).toThrow(RangeError);
+    }
+    expect(()=>new Game({mode:'multiply',length:'all',tables:10,duration:20 as Duration,lives:3})).toThrow(RangeError);
+    expect(started().currentTimeLimitMs).toBe(10000);
+    expect(started().waitingForInitialNarration).toBe(false);
   });
 });
 

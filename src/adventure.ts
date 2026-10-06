@@ -40,7 +40,7 @@ export const worlds: readonly AdventureWorld[] = [
   {id:'dragon',name:'La montagne des trésors',friend:'Dragon',tier:3,color:'#ff9959',missions:['Découvre les cristaux','Ouvre le coffre','Invite le dragon'],souvenir:'Le dragon apporte un trésor de confettis !'},
   {id:'star',name:'La grande fête',friend:'Étoile',tier:4,color:'#fff17d',missions:['Installe les guirlandes','Prépare la piste','Que la fête commence !'],souvenir:'Tous les amis sont réunis. Place à la fête !'},
 ];
-export interface AdventureStage { id: string; world: AdventureWorld; index: number; name: string; count: number; operations: Operation[]; limit: number; tables: number; lesson: string; quotas?: Partial<Record<Operation,number>>; study?:{grade:Grade;skills:string[];phase:number;mixed?:boolean} }
+export interface AdventureStage { id: string; world: AdventureWorld; index: number; name: string; count: number; operations: Operation[]; limit: number; tables: number; lesson: string; quotas?: Partial<Record<Operation,number>>; study?:{grade:Grade;skills:string[];phase:number;mixed?:boolean;policy?:import('./adventure-policy').AdventureMissionPolicy} }
 type Challenge = {difficulty:string; counts:number[]; limits:number[]; tables:number[]; operations:Operation[][]};
 const originalChallenges: Record<OriginalThemeId,Challenge> = {
  kitten:{difficulty:'Découverte',counts:[5,8,10],limits:[5,8,10],tables:[1,1,1],operations:[['add'],['add'],['add']]},

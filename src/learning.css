@@ -27,3 +27,5 @@
 .learning-panel h2{color:#233c36;font-size:2rem;margin:8px 0 18px}
 .study-choices { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
 .study-choices .play-button { min-width:88px; min-height:48px; }
+.adventure-attempt-list{padding-left:22px;max-height:300px;overflow:auto}.adventure-attempt-list li{margin:12px 0;overflow-wrap:anywhere}.adventure-attempt-list strong,.adventure-attempt-list span,.adventure-attempt-list small{display:block}.adventure-attempt-list small{margin-top:4px}
+#adventure-difficulty-setting[hidden]{display:none}
