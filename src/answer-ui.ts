@@ -3,10 +3,13 @@ import type {Calculation} from './calculations';
 import {resultLabel} from './questions';
 export class AnswerUI {
  readonly root=document.createElement('form');
+ readonly signControls=document.createElement('div');
  private text!:HTMLInputElement;
  private focused:HTMLInputElement|null=null;
  constructor(private update:(value:string)=>void,private submit:(value:string)=>void,private helped:()=>void) {
   this.root.id='study-answer';this.root.className='study-answer';this.root.hidden=true;
+  this.signControls.className='study-keypad-sign';this.signControls.hidden=true;
+  this.signControls.addEventListener('click',e=>{if((e.target as Element).closest('[data-char="−"]'))this.append('−');});
   this.root.addEventListener('input',()=>update(this.value));
   this.root.addEventListener('focusin',e=>{if(e.target instanceof HTMLInputElement)this.focused=e.target;});
   this.root.addEventListener('submit',e=>{e.preventDefault();submit(this.value);});
@@ -36,8 +39,12 @@ export class AnswerUI {
   this.focused=this.text;
   this.text.inputMode='none';
   if(autoInteger)this.root.querySelector('#study-submit')!.remove();
-  if(format==='integer'&&!signed)this.root.querySelector('[data-char="−"]')?.remove();
+  if(format==='integer'&&!signed&&!resultLabel(q).startsWith('-'))this.root.querySelector('[data-char="−"]')?.remove();
   if((format==='decimal'||format==='fraction')&&answer&&(answer.kind==='decimal'||answer.kind==='fraction')&&answer.value.numerator>=0)this.root.querySelector('[data-char="−"]')?.remove();
+  this.signControls.replaceChildren();
+  const minus=this.root.querySelector<HTMLButtonElement>('[data-char="−"]');
+  if(minus&&!q.exercise?.choices){minus.setAttribute('aria-label','Signe moins');this.signControls.append(minus);}
+  this.signControls.hidden=!this.signControls.children.length;
   if(!this.root.querySelector('.study-symbols')!.children.length)this.root.querySelector('.study-symbols')!.setAttribute('hidden','');
   if(q.exercise?.choices){
    this.root.querySelector('.study-fields')!.setAttribute('hidden','');this.root.querySelector('.study-symbols')!.setAttribute('hidden','');
@@ -59,5 +66,6 @@ export class AnswerUI {
    display.innerHTML=Array.from({length:Math.max(Number(display.dataset.characters),characters.length)},(_,n)=>`<span class="answer-slot${characters[n]?' filled':''}">${escapeHtml(characters[n]??'')}</span>`).join('');
   });
   this.root.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.disabled=!enabled);
+  this.signControls.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.disabled=!enabled);
  }
 }
