@@ -194,8 +194,10 @@ export class ClockArcade {
     }
     if (!this.playing) return;
     this.remaining = Math.max(0, this.deadline - now);
-    if (this.remaining === 0) this.show('results');
-    else this.updateTimer();
+    if (this.remaining === 0) {
+      this.show('results');
+      if (!document.hidden) this.playAnswer(false);
+    } else this.updateTimer();
   }
 
   pause(now: number): void {

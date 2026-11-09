@@ -122,15 +122,18 @@ test('la mélodie du lapin continue pendant la correction, la pause et le bilan'
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   await expect(page.locator('.clock-guest-trail')).toBeVisible();
-  const effects = (frequencies: number[]) => page.evaluate(values =>
-    (window as any).navigationProbe.filter((note: any) => note.type === 'triangle' && values.includes(note.frequency)).map((note: any) => note.frequency), frequencies);
-  const fanfare = [698.46, 880, 1046.5, 1174.66, 1318.51, 1396.91];
+  const effects = (type: OscillatorType, frequencies: number[]) => page.evaluate(({ waveform, values }) =>
+    (window as any).navigationProbe.filter((note: any) => note.type === waveform && values.includes(note.frequency)).map((note: any) => note.frequency), { waveform: type, values: frequencies });
+  const fanfare = [369.99, 554.37, 739.99, 932.33, 739.99];
+  const cowbell = [440, 392, 440, 349.23, 440, 466.16, 392, 349.23];
   await answerClock(page);
-  await expect.poll(() => effects(fanfare)).toEqual(fanfare);
+  await expect.poll(() => effects('triangle', fanfare)).toEqual(fanfare);
+  await expect.poll(() => effects('sawtooth', fanfare)).toEqual(fanfare);
   const start = (await notes()).length;
   await answerClock(page, false);
   await expect(page.locator('.clock-lesson')).toBeVisible();
-  await expect.poll(() => effects([124, 92])).toEqual([124, 92]);
+  await expect.poll(() => effects('square', cowbell)).toEqual(cowbell);
+  await expect.poll(() => effects('sine', [55, 49, 58.27])).toEqual([55, 49, 55, 58.27, 49]);
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(start);
   await expect(page.locator('.clock-lesson')).toBeHidden({ timeout: 8000 });
   await page.locator('[data-clock-action="pause"]').click();

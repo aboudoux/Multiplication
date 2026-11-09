@@ -240,15 +240,24 @@ export class GameAudio {
     for (const source of this.clockSources) { try { source.stop(); } catch { /* Already ended. */ } }
     this.clockSources.clear();
     if (correct) {
-      [698.46, 880, 1046.5, 1174.66, 1318.51, 1396.91].forEach((note, index) =>
-        this.tone(note, index * .095, .23, .18, 'triangle', this.clockSources));
-      [174.61, 196, 233.08].forEach((note, index) =>
-        this.tone(note, .08 + index * .18, .21, .12, 'sine', this.clockSources));
+      const brass = [[369.99, 0, .15], [554.37, .15, .13], [739.99, .27, .14], [932.33, .41, .13], [739.99, .54, .36]];
+      for (const [note, delay, length] of brass) {
+        this.tone(note, delay, length, .16, 'triangle', this.clockSources);
+        this.tone(note, delay, length, .052, 'sawtooth', this.clockSources);
+      }
+      [184.99, 233.08, 277.18].forEach(note => this.tone(note, .54, .33, .055, 'sine', this.clockSources));
     } else {
-      [124, 92].forEach((note, index) => {
-        this.tone(note, index * .22, .16, .25, 'triangle', this.clockSources);
-        this.tone(note / 2, index * .22, .19, .15, 'sine', this.clockSources);
-      });
+      // A syncopated cowbell pattern over a short, low bass beat.
+      const step = .105;
+      const cowbell = [[0, 440], [2, 392], [3, 440], [6, 349.23], [8, 440], [10, 466.16], [11, 392], [14, 349.23]];
+      for (const [beat, note] of cowbell) {
+        this.tone(note, beat * step, .078, .073, 'square', this.clockSources);
+        this.tone(note * 1.49, beat * step, .062, .033, 'square', this.clockSources);
+      }
+      for (const [beat, note] of [[0, 55], [4, 49], [7, 55], [10, 58.27], [12, 49]]) {
+        this.tone(note, beat * step, .19, .20, 'sine', this.clockSources);
+        this.tone(note * 2, beat * step, .078, .085, 'triangle', this.clockSources);
+      }
     }
   }
   error(): void {
