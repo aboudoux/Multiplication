@@ -71,6 +71,28 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-center .clock-face { margin:14px auto; }
 .clock-face text { fill:#49335e; font:700 12px system-ui,sans-serif; text-anchor:middle; dominant-baseline:central; }
 .clock-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:20px; }
+.clock-done { justify-self:start; display:inline-block; padding:3px 9px; border-radius:16px; background:#d5f2dc; color:#204e35; font-weight:700; font-size:14px; }
+.page-wrap:has(.clock-companion:not([hidden])) { padding-bottom:100px; }
+.clock-companion { position:fixed; inset-inline-end:max(8px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:15; display:flex; flex-direction:column; align-items:center; pointer-events:none; color:#2c193d; }
+.clock-companion > span { background:#fff5e2; border:1px solid #d879a0; border-radius:18px; padding:5px 9px; font-size:clamp(10px,2.5vw,13px); font-weight:700; box-shadow:0 2px 5px #49335e30; }
+.clock-companion-art img { display:block; width:clamp(54px,9vw,80px); height:auto; transform-origin:center bottom; animation:clock-companion-idle 7s ease-in-out infinite; }
+.clock-companion[data-gesture="cheer"] .clock-companion-art { animation:clock-companion-hop .48s ease-out both; }
+.clock-companion[data-gesture="encourage"] .clock-companion-art { animation:clock-companion-nod .55s ease-in-out both; }
+.clock-companion[data-gesture="finish"] .clock-companion-art { animation:clock-companion-hop .5s ease-out 2 both; }
+@keyframes clock-companion-idle {
+  0%,84%,100% { transform:rotate(0); }
+  89% { transform:rotate(-6deg); }
+  94% { transform:rotate(5deg); }
+}
+@keyframes clock-companion-hop {
+  0%,100% { transform:translateY(0); }
+  42% { transform:translateY(-15px) rotate(-6deg); }
+}
+@keyframes clock-companion-nod {
+  0%,100% { transform:rotate(0); }
+  40% { transform:rotate(9deg); }
+  75% { transform:rotate(-5deg); }
+}
 
 @media (701px <= width <= 920px) {
   html[data-theme="club"] .destinations { gap:15px; }

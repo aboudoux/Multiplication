@@ -1,15 +1,21 @@
-import { clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
+import { CLOCK_PROGRESS_KEY, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
 
 type Level = Parameters<typeof clockRound>[1];
 type Screen = 'catalogue' | 'levels' | 'playing' | 'paused' | 'results';
+type Gesture = 'cheer' | 'encourage' | 'finish';
 const rabbitEvery = 5;
+const levelKey = (game: ClockGame, level: number) => `${game}:${level}`;
+const levelKeys = clockGameIds.flatMap(game => clockLevels.map((_, level) => levelKey(game, level)));
 
 export class ClockArcade {
   readonly root = document.createElement('section');
+  readonly companion = document.createElement('aside');
   private readonly content = document.createElement('div');
   private readonly feedback = document.createElement('p');
   private readonly burst = document.createElement('div');
   private readonly parade = document.createElement('div');
+  private readonly progressLabel = document.createElement('span');
+  private completed = new Set<string>();
   private screen: Screen = 'catalogue';
   private game: ClockGame = 'read';
   private level: Level = 0;
@@ -21,7 +27,11 @@ export class ClockArcade {
   private deadline = 0;
   private displayedSeconds = -1;
 
-  constructor(private readonly goHome: () => void, private readonly playSuccess: (milestone: boolean) => void) {
+  constructor(
+    private readonly goHome: () => void,
+    private readonly playSuccess: (milestone: boolean) => void,
+    private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
+  ) {
     this.root.className = 'clock-arcade';
     this.root.setAttribute('aria-labelledby', 'clock-heading');
     this.root.hidden = true;
@@ -32,6 +42,11 @@ export class ClockArcade {
     this.burst.setAttribute('aria-hidden', 'true');
     this.parade.setAttribute('aria-hidden', 'true');
     this.root.append(this.content, this.feedback, this.burst, this.parade);
+    this.companion.className = 'clock-companion';
+    this.companion.setAttribute('aria-label', 'Ton compagnon, le lapin chrono');
+    this.companion.innerHTML = '<div class="clock-companion-art"><img src="/themes/lapin-chrono.svg" alt="" width="80" height="80"></div>';
+    this.companion.append(this.progressLabel);
+    this.loadProgress();
     this.root.addEventListener('click', event => {
       const button = (event.target as Element).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
@@ -50,6 +65,44 @@ export class ClockArcade {
   }
 
   get playing(): boolean { return !this.root.hidden && this.screen === 'playing'; }
+
+  loadProgress(): void {
+    this.completed = this.readProgress();
+    this.totalCorrect = 0;
+    delete this.companion.dataset.gesture;
+    this.updateCompanion();
+  }
+
+  reactCompanion(gesture: Gesture): void {
+    if (this.companion.hidden) return;
+    delete this.companion.dataset.gesture;
+    void this.companion.offsetWidth;
+    this.companion.dataset.gesture = gesture;
+  }
+
+  private readProgress(): Set<string> {
+    try {
+      const saved: unknown = JSON.parse(this.storage().getItem(CLOCK_PROGRESS_KEY) ?? '[]');
+      return new Set(Array.isArray(saved) ? levelKeys.filter(key => saved.includes(key)) : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private completeLevel(): void {
+    const key = levelKey(this.game, this.level);
+    if (this.completed.has(key)) return;
+    for (const saved of this.readProgress()) this.completed.add(saved);
+    this.completed.add(key);
+    try { this.storage().setItem(CLOCK_PROGRESS_KEY, JSON.stringify([...this.completed])); }
+    catch { /* Keep the progress for the current visit when storage is blocked. */ }
+    this.updateCompanion();
+  }
+
+  private updateCompanion(): void {
+    this.companion.hidden = this.completed.size === 0;
+    this.progressLabel.textContent = `${this.completed.size} / ${levelKeys.length} niveaux faits`;
+  }
 
   open(): void {
     this.clearCelebrations();
@@ -105,7 +158,10 @@ export class ClockArcade {
     }
     const milestone = correct && this.totalCorrect % rabbitEvery === 0;
     this.index++;
-    this.show(this.index === this.questions.length ? 'results' : 'playing');
+    const finished = this.index === this.questions.length;
+    if (finished) this.completeLevel();
+    this.show(finished ? 'results' : 'playing');
+    this.reactCompanion(finished ? 'finish' : correct ? 'cheer' : 'encourage');
     this.feedback.textContent = correct
       ? milestone ? `Bravo, ${this.totalCorrect} bonnes réponses ! Voilà le lapin !` : 'Bravo, bonne réponse !'
       : `Pour la question précédente : ${question.explanation}`;
@@ -155,15 +211,16 @@ export class ClockArcade {
 
     switch (this.screen) {
       case 'catalogue':
-        return `<div class="clock-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span>6 JEUX · 3 NIVEAUX</span></div>
+        return `<div class="clock-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span>${this.completed.size} / ${levelKeys.length} niveaux faits</span></div>
           <header class="clock-intro"><img src="/themes/lapin-chrono.svg" alt="" width="144" height="144"><div><span class="clock-kicker">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure, compare les durées et joue avec les aiguilles. Par quel jeu veux-tu commencer ?</p></div></header>
           <div class="clock-games">${clockGameIds.map(id => {
             const item = clockGames[id];
-            return `<button type="button" data-clock-action="game" data-game="${id}"><span class="clock-icon" aria-hidden="true">${item.icon}</span><strong>${item.name}</strong><span>${item.description}</span></button>`;
+            const done = clockLevels.filter((_, level) => this.completed.has(levelKey(id, level))).length;
+            return `<button type="button" data-clock-action="game" data-game="${id}"><span class="clock-icon" aria-hidden="true">${item.icon}</span><strong>${item.name}</strong><span>${item.description}</span><small>${done} / ${clockLevels.length} niveaux faits</small></button>`;
           }).join('')}</div>`;
       case 'levels':
         return `<div class="clock-top">${catalogue}</div><div class="clock-center"><span class="clock-icon" aria-hidden="true">${game.icon}</span>${title(game.name)}<p>${game.description}</p><p>Choisis ton niveau. Les ${roundLength} questions s’enchaînent pendant que le chrono tourne.</p></div>
-          <div class="clock-games clock-levels">${clockLevels.map((level, index) => `<button type="button" data-clock-action="level" data-level="${index}"><span class="clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small>${level.seconds} secondes</small></button>`).join('')}</div>`;
+          <div class="clock-games clock-levels">${clockLevels.map((level, index) => `<button type="button" data-clock-action="level" data-level="${index}"><span class="clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small>${level.seconds} secondes</small>${this.completed.has(levelKey(this.game, index)) ? '<span class="clock-done">✓ Fait</span>' : ''}</button>`).join('')}</div>`;
       case 'paused':
         return `<div class="clock-center"><span class="clock-icon" aria-hidden="true">⏸️</span>${title('Petite pause')}
           <p>Ton chrono t’attend.</p><div class="clock-actions"><button type="button" class="play-button" data-clock-action="resume">On continue !</button>${catalogue}</div></div>`;
@@ -172,7 +229,7 @@ export class ClockArcade {
         const answered = this.index === 1 ? '1 question jouée' : `${this.index} questions jouées`;
         const successes = this.score === 1 ? '1 bonne réponse' : `${this.score} bonnes réponses`;
         return `<div class="clock-center"><img src="/themes/lapin-chrono.svg" alt="" width="144" height="144">${title(finished ? 'Bien joué !' : 'Le chrono a sonné !')}
-          <p><strong>${successes}</strong> · ${answered} sur ${roundLength}</p><p>Chaque essai t’aide à mieux apprivoiser le temps.</p>
+          <p><strong>${successes}</strong> · ${answered} sur ${roundLength}</p>${finished ? `<p><span class="clock-done">✓ Niveau fait</span> ${clockLevels[this.level].name}</p>` : '<p>Chaque essai t’aide à mieux apprivoiser le temps.</p>'}
           <div class="clock-actions"><button type="button" class="play-button" data-clock-action="replay">Rejouer</button>${catalogue}</div></div>`;
       }
       case 'playing': {
