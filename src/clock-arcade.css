@@ -143,6 +143,8 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-story-teaser,.clock-story-end { background:#ffe4d8; border:2px solid #dfa494; border-radius:20px; padding:14px 18px; }
 .clock-story-teaser { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; }
 .clock-story-teaser .secondary-button { flex-shrink:0; }
+.clock-story-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.clock-story-actions .play-button { min-height:48px; padding:8px 16px; font-size:15px; }
 .clock-arcade h3 { margin:0; font:700 clamp(21px,3.5vw,28px)/1.2 Kalam,cursive; }
 .clock-story-intro { margin-bottom:24px; }
 .clock-chapters { list-style:none; padding:0; margin:0 auto 20px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-width:860px; }

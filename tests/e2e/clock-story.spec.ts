@@ -25,6 +25,7 @@ test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   await openStoryGame(page, 2);
   const friends = page.locator('.clock-companion-friend');
+  await expect(page.getByRole('button', { name: 'Revoir l’animation' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Lire l’histoire' }).click();
   await expect(page.getByRole('heading', { name: 'Le goûter du tic-tac' })).toBeVisible();
   await expect(page.getByText(/sa montre tombe dans une flaque/i)).toBeVisible();
@@ -89,14 +90,24 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await expect(scene).toHaveAttribute('data-step', '4');
   await expect(page.getByRole('progressbar', { name: 'Tableau du film' })).toHaveAttribute('value', '5');
   await expect(scene.locator('.clock-finale-confetti i')).toHaveCount(12);
-  await expect(page.getByRole('button', { name: 'Revoir l’animation' })).toBeVisible();
+  const replay = page.getByRole('button', { name: 'Revoir l’animation' });
+  await expect(replay).toBeVisible();
+  await replay.click();
+  await expect(scene).toHaveAttribute('data-step', '0');
+  await expect(page.getByRole('progressbar', { name: 'Tableau du film' })).toHaveAttribute('value', '1');
   await page.getByRole('button', { name: 'Mon bilan' }).click();
   await expect(page.getByText('Niveau fait', { exact: false })).toBeVisible();
 
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(page.locator('.clock-companion')).toContainText('18 / 18 niveaux faits');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.locator('#open-clock-arcade').click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await replay.click();
+  await expect(scene).toHaveAttribute('data-step', '0');
+  await page.getByRole('button', { name: 'Tous les jeux' }).click();
+  await expect(replay).toBeVisible();
   await page.getByRole('button', { name: 'Lire l’histoire' }).click();
   await page.getByRole('button', { name: 'Voir la fin animée' }).click();
   await page.clock.fastForward(21_000);
