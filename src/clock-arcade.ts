@@ -362,7 +362,9 @@ export class ClockArcade {
     this.displayedSeconds = seconds;
     const timer = this.root.querySelector<HTMLElement>('#clock-time')!;
     timer.textContent = `${seconds} s`;
-    this.root.querySelector<HTMLProgressElement>('.clock-progress')!.value = seconds;
+    const track = this.content.querySelector<HTMLElement>('.time-track')!;
+    track.setAttribute('aria-valuenow', String(seconds));
+    track.querySelector('span')!.style.transform = `scaleX(${seconds / clockLevels[this.level].seconds})`;
   }
 
   private markup(): string {
@@ -375,13 +377,13 @@ export class ClockArcade {
 
     switch (this.screen) {
       case 'catalogue':
-        return `<div class="clock-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span>${this.completed.size} / ${levelKeys.length} niveaux faits</span></div>
-          <header class="clock-intro"><img src="/themes/lapin-chrono.svg" alt="" width="144" height="144"><div><span class="clock-kicker">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure, compare les durées et joue avec les aiguilles. Par quel jeu veux-tu commencer ?</p></div></header>
+        return `<div class="camp-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span class="camp-materials">${this.completed.size} / ${levelKeys.length} niveaux faits</span></div>
+          <header class="camp-heading clock-intro"><div><span class="eyebrow">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure, compare les durées et joue avec les aiguilles. Par quel jeu veux-tu commencer ?</p></div><img src="/themes/lapin-chrono.svg" alt="" width="144" height="144"></header>
           <div class="clock-story-teaser"><div class="clock-story-invite">${sprite('kitten', 4, 'clock-kitten-sticker')}<div><span class="clock-kicker">L’HISTOIRE DU LAPIN</span><h3>${clockStoryTitle}</h3><p>Sa montre s’est arrêtée et il a raté le goûter. Retrouve ses amis en jouant !</p></div></div><div class="clock-story-actions">${story}${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Revoir l’animation</button>' : ''}</div></div>
-          <div class="clock-games">${clockGameIds.map(id => {
+          <div class="camp-presets clock-games">${clockGameIds.map(id => {
             const item = clockGames[id];
             const done = clockLevels.filter((_, level) => this.completed.has(levelKey(id, level))).length;
-            return `<button type="button" data-clock-action="game" data-game="${id}"><span class="clock-icon" aria-hidden="true">${item.icon}</span><strong>${item.name}</strong><span>${item.description}</span><small>${done} / ${clockLevels.length} niveaux faits</small></button>`;
+            return `<button type="button" data-clock-action="game" data-game="${id}"><span class="camp-symbol clock-icon" aria-hidden="true">${item.icon}</span><strong>${item.name}</strong><span>${item.description}</span><small class="camp-preset-note">${done} / ${clockLevels.length} niveaux faits</small></button>`;
           }).join('')}</div>`;
       case 'story':
         return `<div class="clock-top">${this.storyReturn === 'levels' ? levels : catalogue}<span>${this.completed.size} / ${levelKeys.length} niveaux faits</span></div>
@@ -400,29 +402,29 @@ export class ClockArcade {
       }
       case 'levels':
         return `<div class="clock-top">${catalogue}</div><div class="clock-center"><span class="clock-icon" aria-hidden="true">${game.icon}</span>${title(game.name)}<p>${game.description}</p><p>Choisis ton niveau. Les ${roundLength} questions s’enchaînent pendant que le chrono tourne.</p></div>
-          <div class="clock-games clock-levels">${clockLevels.map((level, index) => `<button type="button" data-clock-action="level" data-level="${index}"><span class="clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small>${level.seconds} secondes</small>${this.completed.has(levelKey(this.game, index)) ? '<span class="clock-done">✓ Fait</span>' : ''}</button>`).join('')}</div>`;
+          <div class="camp-presets clock-games clock-levels">${clockLevels.map((level, index) => `<button type="button" data-clock-action="level" data-level="${index}"><span class="camp-symbol clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small class="camp-preset-note">${level.seconds} secondes</small>${this.completed.has(levelKey(this.game, index)) ? '<span class="clock-done">✓ Fait</span>' : ''}</button>`).join('')}</div>`;
       case 'correction':
         return clockCorrectionMarkup(this.questions[this.index], this.mistakenOption!, Math.ceil(this.remaining / 1000));
       case 'paused':
-        return `<div class="clock-center"><span class="clock-icon" aria-hidden="true">⏸️</span>${title('Petite pause')}
-          <p>Ton chrono t’attend.</p><div class="clock-actions"><button type="button" class="play-button" data-clock-action="resume">On continue !</button>${catalogue}</div></div>`;
+        return `<div class="game-overlay clock-pause"><div class="pause-panel"><span class="clock-icon" aria-hidden="true">⏸️</span>${title('Petite pause')}
+          <p>Ton chrono t’attend.</p><div class="result-actions"><button type="button" class="play-button" data-clock-action="resume">On continue !</button>${catalogue}</div></div></div>`;
       case 'results': {
         const finished = this.index === roundLength;
-        const answered = this.index === 1 ? '1 question jouée' : `${this.index} questions jouées`;
-        const successes = this.score === 1 ? '1 bonne réponse' : `${this.score} bonnes réponses`;
+        const errors = this.index - this.score;
         const artwork = finished ? '<img src="/themes/lapin-chrono.svg" alt="" width="144" height="144">' : timeoutScene;
-        return `<div class="clock-center">${artwork}<p class="clock-kicker">${game.name} · ${clockLevels[this.level].name}</p>${title(finished ? 'Bien joué !' : 'Le chrono a sonné !')}
-          <p><strong>${successes}</strong> · ${answered} sur ${roundLength}</p>${finished ? `<p><span class="clock-done">✓ Niveau fait</span> ${clockLevels[this.level].name}</p>` : '<p>Chaque essai t’aide à mieux apprivoiser le temps.</p>'}
+        return `<div class="results-screen clock-results">${artwork}<span class="eyebrow">${game.name} · ${clockLevels[this.level].name}</span>${title(finished ? 'Bien joué !' : 'Le chrono a sonné !')}
+          ${finished ? `<p><span class="clock-done">✓ Niveau fait</span> ${clockLevels[this.level].name}</p>` : '<p>Chaque essai t’aide à mieux apprivoiser le temps.</p>'}
+          <div class="result-stats"><div><strong>${this.score}</strong> <span>${this.score === 1 ? 'bonne réponse' : 'bonnes réponses'}</span></div><div><strong>${this.index} / ${roundLength}</strong><span>questions jouées</span></div><div><strong>${errors}</strong><span>${errors === 1 ? 'erreur' : 'erreurs'}</span></div></div>
           ${this.arrival ? `<div class="clock-arrival" role="status">${clockFriendArt(this.arrival)}<div><strong>${this.arrival.name} te rejoint !</strong><p>${this.arrival.story}</p></div></div>` : ''}
-          <div class="clock-actions"><button type="button" class="play-button" data-clock-action="levels">Retour aux niveaux</button><button type="button" class="secondary-button" data-clock-action="replay">Rejouer</button>${this.arrival ? story : ''}${this.storyComplete ? finale : ''}</div></div>`;
+          <div class="result-actions"><button type="button" class="play-button" data-clock-action="levels">Retour aux niveaux</button><button type="button" class="secondary-button" data-clock-action="replay">Rejouer</button>${this.arrival ? story : ''}${this.storyComplete ? finale : ''}</div></div>`;
       }
       case 'playing': {
         const question = this.questions[this.index];
-        const banner = `<div class="clock-top"><span>${game.name} · ${clockLevels[this.level].name}</span><span>Question ${this.index + 1} sur ${roundLength}</span></div>
-          <div class="clock-timer"><progress class="clock-progress" aria-label="Temps restant" max="${clockLevels[this.level].seconds}"></progress><span id="clock-time" role="timer"></span>
-          <button type="button" class="secondary-button" data-clock-action="pause">Pause</button></div>`;
-        return `${banner}<div class="clock-center">${title(question.prompt)}${question.detail ? `<p>${question.detail}</p>` : ''}${question.face === undefined ? '' : clockFace(question.face)}</div>
-          <div class="clock-options">${question.options.map((option, index) => `<button type="button" data-clock-action="answer" data-option="${index}">${typeof option === 'number' ? clockFace(option) : option}</button>`).join('')}</div>`;
+        return `<div class="game-status clock-status"><div><span class="small-label">${game.name} · ${clockLevels[this.level].name}</span><span class="streak">Question ${this.index + 1} sur ${roundLength}</span></div>
+          <div class="session-actions"><button type="button" class="secondary-button" data-clock-action="pause">Pause</button></div></div>
+          <div class="question-time"><div><span>◷ Temps restant</span><strong id="clock-time" role="timer"></strong></div><div class="time-track" role="progressbar" aria-label="Temps restant" aria-valuemin="0" aria-valuemax="${clockLevels[this.level].seconds}"><span></span></div></div>
+          <div class="question-area clock-question"><div class="question-content clock-center">${title(question.prompt)}${question.detail ? `<p>${question.detail}</p>` : ''}${question.face === undefined ? '' : clockFace(question.face)}</div></div>
+          <div class="keypad-panel"><div class="keypad-label">CHOISIS TA RÉPONSE</div><div class="keypad clock-options">${question.options.map((option, index) => `<button type="button" data-clock-action="answer" data-option="${index}">${typeof option === 'number' ? clockFace(option) : option}</button>`).join('')}</div></div>`;
       }
     }
   }

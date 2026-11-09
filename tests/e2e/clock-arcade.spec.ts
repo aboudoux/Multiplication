@@ -21,6 +21,8 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   const box = (await illustration.boundingBox())!;
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.getByRole('heading', { name: 'Les jeux du lapin chrono' })).toBeFocused();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'ant');
+  await expect(page.locator('.clock-games.camp-presets button')).toHaveCount(6);
   for (const game of clockGameIds) {
     await page.locator(`[data-game="${game}"]`).click();
     await expect(page.locator('[data-clock-action="level"]')).toHaveCount(3);
@@ -28,17 +30,26 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.getByRole('button', { name: 'Accueil', exact: false }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'club');
   await expect(page.locator('#open-clock-arcade')).toBeFocused();
   await expect(page.locator('#open-adventure')).toBeVisible();
   await expect(page.locator('#open-training')).toBeVisible();
 });
 
 test('une réussite avance immédiatement et une fiche d’erreur se ferme seule', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#open-clock-arcade').click();
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   const timer = page.getByRole('timer');
   await expect(timer).toHaveText('90 s');
+  const timeTrack = page.getByRole('progressbar', { name: 'Temps restant' });
+  await expect(timeTrack).toHaveAttribute('aria-valuenow', '90');
+  await expect(page.locator('.clock-options.keypad button')).toHaveCount(3);
+  const question = await page.locator('#clock-heading').boundingBox();
+  const arcade = await page.locator('.clock-arcade').boundingBox();
+  expect(question!.x).toBeGreaterThanOrEqual(arcade!.x);
+  expect(question!.x + question!.width).toBeLessThanOrEqual(arcade!.x + arcade!.width);
   await answerClock(page);
   await expect(page.getByText('Question 2 sur 5')).toBeVisible();
   await expect(page.locator('.clock-feedback')).toHaveText('Bravo, bonne réponse !');
@@ -46,11 +57,13 @@ test('une réussite avance immédiatement et une fiche d’erreur se ferme seule
   await expect(page.locator('.clock-quick-runner').first()).toHaveCSS('animation-name', 'clock-quick-sprint');
   await page.clock.runFor(1500);
   await expect(timer).toHaveText('89 s');
+  await expect(timeTrack).toHaveAttribute('aria-valuenow', '89');
   await answerClock(page, false);
   await expect(page.getByRole('heading', { name: 'Regardons ensemble' })).toBeFocused();
   await expect(page.locator('.clock-lesson')).toContainText('89 S RESTANTES');
   await expect(page.locator('.clock-options')).toHaveCount(0);
   await expect(page.locator('.clock-lesson .clock-face')).toBeVisible();
+  await expect(page.locator('.clock-lesson.correction-card')).toBeVisible();
   await expect(page.locator('.clock-sparkles')).toHaveCount(0);
   const mistake = page.locator('.clock-mistake-effect');
   await expect(mistake.locator('i')).toHaveCount(12);
@@ -89,6 +102,7 @@ test('une réussite avance immédiatement et une fiche d’erreur se ferme seule
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
   await expect(page.getByText('1 bonne réponse')).toBeVisible();
+  await expect(page.locator('.clock-results .result-stats > div')).toHaveCount(3);
   await page.getByRole('button', { name: 'Rejouer' }).click();
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
 });
@@ -154,7 +168,8 @@ test('le bonhomme et les étoiles repartent à chaque réussite, le lapin tous l
       await expect(page.locator('.clock-rabbit-runner')).toHaveCount(0);
     }
     await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
-    await expect(page.getByText('5 questions jouées sur 5', { exact: false })).toBeVisible();
+    const played = page.locator('.clock-results .result-stats > div').filter({ hasText: 'questions jouées' });
+    await expect(played.getByText('5 / 5')).toBeVisible();
     await page.getByRole('button', { name: 'Rejouer' }).click();
   }
 });

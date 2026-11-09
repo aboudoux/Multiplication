@@ -218,6 +218,8 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 
 *Le goûter du tic-tac* suit les six mini-jeux existants du Lapin chrono, avec trois niveaux chacun. Le lapin a raté le goûter parce que sa montre est tombée dans une flaque et s’est arrêtée. Un animal rejoint le groupe après 3, 6, 9, 12 et 15 niveaux distincts terminés. Son portrait apparaît à côté du lapin et son chapitre raconte ce qu’il apporte à la réparation. Les chapitres, les compagnons et la fin se déduisent de la progression des niveaux.
 
+Le Lapin chrono reprend le tableau vert et les cartes du camp, puis le bandeau, la jauge du temps, les touches et le bilan des jeux de calcul. Les touches affichent les choix du mini-jeu et la fiche de correction garde son illustration.
+
 Le 18e niveau lance cinq tableaux de cinq secondes chacun : les retrouvailles sous le chêne, la réparation de la montre, le réglage des aiguilles, la cloche et le goûter. La scène conserve la mélodie du lapin et ponctue les actions de carillons. Elle se suspend pendant une pause ou en arrière-plan et affiche les tableaux fixes avec la réduction des animations. Le dernier tableau reste visible et le film est rejouable depuis l’histoire. Depuis le bilan d’une manche, le retour mène aux niveaux du mini-jeu joué.
 
 Une bonne réponse enchaîne immédiatement sur la question suivante avec des personnages et des confettis en fête. Une erreur fige le chrono, joue le même riff funk à la basse qu’à la fin du temps et ouvre une fiche avec la réponse et un cadran, une frise ou des durées à comparer. Après 4,5 secondes de lecture à l’écran, la manche avance et le décompte reprend automatiquement. La mélodie de fond accompagne aussi la lecture de la fiche.

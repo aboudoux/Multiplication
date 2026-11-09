@@ -24,7 +24,7 @@ function correctionFigure(question: ClockQuestion): string {
 }
 
 export function clockCorrectionMarkup(question: ClockQuestion, selected: ClockQuestion['correct'], seconds: number): string {
-  return `<article class="clock-lesson" data-lesson-kind="${question.correction.kind}">
+  return `<article class="correction-card clock-lesson" data-lesson-kind="${question.correction.kind}">
     <header class="clock-lesson-header">${sprite('kitten', 0, 'clock-kitten-sticker')}<div><span class="clock-kicker">CHRONO EN PAUSE · ${seconds} S RESTANTES</span><h2 id="clock-heading" tabindex="-1">Regardons ensemble</h2></div></header>
     <div class="clock-lesson-body"><div class="clock-lesson-text"><p class="clock-lesson-question">${question.prompt}</p>
     <p>Tu avais choisi <strong>${answerLabel(selected)}</strong>.</p><p class="clock-lesson-answer"><span>LA BONNE RÉPONSE</span><strong>${answerLabel(question.correct)}</strong></p><p>${question.explanation}</p></div>

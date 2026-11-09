@@ -231,6 +231,7 @@ get('open-clock-arcade').addEventListener('click', () => {
   void audio.navigation();
   get('home').hidden = true;
   clockArcade.open();
+  applyTheme();
 });
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
 get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
@@ -326,7 +327,7 @@ function applyTheme(): void {
   const id = activeStage?.world.id ?? (campOpen || trainingActive ? 'ant' : previewVictory ? mapOpen ? activeAdventure.hero : saved.theme : mapOpen ? activeAdventure.hero : landing ? 'kitten' : saved.theme);
   const theme = themes[id];
   get('board').classList.toggle('pico-playing',!!activeStage && activeAdventure.id==='pico');
-  document.documentElement.dataset.theme = landing ? 'club' : id;
+  document.documentElement.dataset.theme = !clockArcade.root.hidden ? 'ant' : landing ? 'club' : id;
   document.documentElement.style.setProperty("--dance-beat", `${120 / theme.music.bpm}s`);
   get("sad-mascot").innerHTML = theme.sad;
   get("dance-mascot").innerHTML = theme.dance;

@@ -8,21 +8,23 @@ html[data-theme="club"] .clock-entry .destination-art { background:none; }
 html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-entry .play-button:hover,.clock-entry .play-button:active { transform:none; }
 
-.clock-arcade { position:relative; color:#2c193d; background:#fff5e2; border:1px solid #d9a2b7; border-radius:24px; margin-top:18px; padding:20px clamp(12px,3vw,26px) 26px; }
-.clock-arcade .secondary-button { color:inherit; background:#fff6e0; border-color:#bb8ba4; }
-.clock-arcade .play-button { color:inherit; }
-.clock-arcade button:focus-visible { outline:3px solid #49335e; outline-offset:3px; }
-.clock-top,.clock-timer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; font-weight:700; }
+.clock-arcade { padding:12px 0 20px; }
+.clock-arcade .secondary-button { min-height:44px; }
+.clock-top { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; font-weight:700; }
 .clock-top > span { font-size:14px; }
-.clock-intro { display:flex; justify-content:center; align-items:center; gap:20px; margin:18px 0 24px; }
-.clock-intro img,.clock-center img { width:clamp(96px,19vw,144px); height:auto; }
-.clock-kicker { color:#843754; font-size:12px; font-weight:700; letter-spacing:1.6px; }
-.clock-arcade h2 { color:inherit; margin:0; font:700 clamp(28px,5vw,45px)/1.14 Kalam,cursive; }
+.clock-intro img,.clock-results > img { width:clamp(80px,19vw,144px); height:auto; }
+.clock-intro img { flex:none; }
+.clock-intro h2 { margin:12px 0; font-size:clamp(30px,5vw,56px); }
+.clock-kicker { color:var(--yellow); font-size:12px; font-weight:700; letter-spacing:1.6px; }
+.clock-center h2,.clock-pause h2 { margin:0; font-size:clamp(28px,5vw,45px); }
 .clock-arcade p { margin:8px 0; line-height:1.55; }
 .clock-center { max-width:620px; margin:24px auto 18px; text-align:center; }
 .clock-arcade .clock-feedback { min-height:2.8em; margin:16px auto 0; max-width:60ch; text-align:center; font-weight:700; }
-.clock-feedback-correct { color:#236343; }
-.clock-lesson { max-width:790px; margin:8px auto; padding:clamp(14px,3vw,30px); border:2px solid #d18ca8; border-radius:24px; background:#fffaf0; box-shadow:0 5px 0 #b67b9829; }
+.clock-feedback-correct { color:var(--mint); }
+.clock-lesson.correction-card { position:relative; inset:auto; transform:none; display:block; width:100%; max-width:790px; min-height:0; margin:20px auto; padding:clamp(14px,3vw,30px); text-align:left; pointer-events:auto; }
+.clock-lesson.correction-card strong { font:inherit; font-weight:700; color:inherit; text-shadow:none; }
+.clock-lesson :is(h2,.clock-kicker) { color:#ffe34f; }
+.clock-lesson h2 { font-size:clamp(26px,5vw,45px); margin:0; }
 .clock-lesson-header,.clock-story-invite { display:flex; align-items:center; gap:12px; }
 .clock-kitten-sticker.theme-sprite { flex:none; width:clamp(45px,10vw,84px); border-radius:18px; }
 .clock-story-invite .clock-kitten-sticker { width:clamp(46px,8vw,70px); }
@@ -30,12 +32,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-lesson-question { font-weight:700; }
 .clock-lesson-answer { display:grid; gap:3px; padding:9px 13px; border-radius:13px; background:#e1f1d7; color:#234f36; }
 .clock-lesson-answer span { font-size:12px; font-weight:700; letter-spacing:.075em; }
-.clock-lesson-answer strong { font:700 clamp(25px,5vw,39px)/1.15 Kalam,cursive; }
-.clock-lesson-figure { margin:0; padding:14px; border:1px solid #d8a8bc; border-radius:17px; background:#f8ecf3; }
+.clock-lesson .clock-lesson-answer strong { font:700 clamp(25px,5vw,39px)/1.15 Kalam,cursive; }
+.clock-lesson-figure { margin:0; padding:14px; border:1px solid #d8a8bc; border-radius:17px; background:#f8ecf3; color:#49335e; }
 .clock-lesson-figure figcaption { font-weight:700; text-align:center; }
 .clock-lesson-face .clock-face { max-width:clamp(116px,22vw,174px); margin:0 auto 10px; }
 .clock-lesson-face figcaption { display:grid; gap:4px; font-size:14px; }
-.clock-lesson-face figcaption span:first-child { color:#49335e; }
 .clock-lesson-face figcaption span:last-child { color:#8c3458; }
 .clock-lesson-line,.clock-lesson-bars { list-style:none; padding:0; margin:10px 0 0; }
 .clock-lesson-line { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; font-weight:700; }
@@ -117,24 +118,24 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   .clock-rabbit-dust { display:none; }
   @keyframes clock-celebration-fade { 0%,75% { opacity:1; } 100% { opacity:0; } }
 }
-.clock-games,.clock-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
-.clock-games button,.clock-options button { display:grid; gap:6px; align-content:start; text-align:left; min-height:58px; padding:14px; color:inherit; background:#fff7e9; border:2px solid #cf8ba9; border-radius:16px; box-shadow:0 4px 0 #b9789570; cursor:pointer; font:inherit; }
-.clock-games button:nth-child(3n + 2) { background:#f8edff; border-color:#a890cb; }
-.clock-games button:nth-child(3n) { background:#e6f7ee; border-color:#77a894; }
-.clock-games button:hover,.clock-options button:hover { border-color:#8b4c70; }
-.clock-games strong { font:700 23px/1.1 Kalam,cursive; }
-.clock-games small { font-weight:700; }
+.clock-games button:focus-visible { outline-offset:4px; }
 .clock-icon { display:block; font-size:30px; }
-.clock-timer { justify-content:flex-end; margin-top:14px; }
-.clock-progress { flex:1; min-width:100px; height:18px; accent-color:#a85278; }
+.clock-status { margin:16px 0; padding-bottom:14px; }
 #clock-time { min-width:4ch; text-align:right; font-variant-numeric:tabular-nums; }
-.clock-options { max-width:590px; margin:0 auto; }
-.clock-options button { place-content:center; text-align:center; font-weight:700; }
-.clock-options button:has(.clock-face) { display:flex; justify-content:center; padding:6px; }
+.question-area.clock-question { grid-template-columns:minmax(0,1fr); height:auto; min-height:126px; }
+.clock-question .question-content { width:100%; padding-inline:8px; }
+.clock-options { grid-template-columns:repeat(3,minmax(0,1fr)); max-width:590px; margin:0 auto; }
+.clock-options button { min-height:64px; height:auto; padding:8px; font-size:clamp(16px,3vw,24px); line-height:1.2; overflow-wrap:anywhere; }
+.clock-options button:has(.clock-face) { display:grid; place-items:center; padding:6px; }
 .clock-face { display:block; width:100%; max-width:150px; height:auto; }
 .clock-center .clock-face { margin:14px auto; }
 .clock-face text { fill:#49335e; font:700 12px system-ui,sans-serif; text-anchor:middle; dominant-baseline:central; }
 .clock-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:20px; }
+.game-overlay.clock-pause { position:relative; inset:auto; min-height:300px; border-radius:18px; }
+.clock-pause .result-actions,.clock-results .result-actions { flex-wrap:wrap; }
+.clock-arcade .clock-results > p { margin-inline:auto; }
+.clock-results .result-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.clock-results .result-stats span { font-size:12px; }
 .clock-done { justify-self:start; display:inline-block; padding:3px 9px; border-radius:16px; background:#d5f2dc; color:#204e35; font-weight:700; font-size:14px; }
 .page-wrap:has(.clock-arcade:not([hidden]) .clock-companion:not([hidden])) { padding-bottom:100px; }
 .clock-companion { position:fixed; inset-inline-end:max(8px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:15; display:flex; flex-direction:column; align-items:center; pointer-events:none; color:#2c193d; }
@@ -253,7 +254,7 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   75% { transform:rotate(-5deg); }
 }
 
-.clock-story-teaser,.clock-story-end { background:#ffe4d8; border:2px solid #dfa494; border-radius:20px; padding:14px 18px; }
+.clock-story-teaser,.clock-story-end { background:var(--world-panel); border:1px solid var(--world-edge); border-radius:18px; padding:14px 18px; }
 .clock-story-teaser { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; }
 .clock-story-teaser .secondary-button { flex-shrink:0; }
 .clock-story-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
@@ -261,13 +262,13 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-arcade h3 { margin:0; font:700 clamp(21px,3.5vw,28px)/1.2 Kalam,cursive; }
 .clock-story-intro { margin-bottom:24px; }
 .clock-chapters { list-style:none; padding:0; margin:0 auto 20px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-width:860px; }
-.clock-chapter,.clock-arrival { display:grid; grid-template-columns:64px 1fr; gap:12px; align-items:center; background:#fff9ef; border:2px solid #d997b0; border-radius:18px; padding:12px; text-align:left; }
-.clock-chapter-locked { background:#f1e9f5; border-style:dashed; border-color:#bba6c5; }
+.clock-chapter,.clock-arrival { display:grid; grid-template-columns:64px 1fr; gap:12px; align-items:center; background:var(--world-panel); border:1px solid var(--world-edge); border-radius:18px; padding:12px; text-align:left; }
+.clock-chapter-locked { border-style:dashed; }
 .clock-chapter p,.clock-arrival p { margin:5px 0 0; }
 .clock-mystery { display:grid; place-items:center; width:52px; height:52px; background:#e2cfea; border-radius:50%; color:#49335e; font:700 30px Kalam,cursive; }
 .clock-story-end { text-align:center; max-width:860px; margin:auto; }
 .clock-story-end .play-button { margin-top:10px; }
-.clock-arrival { margin:16px auto 0; max-width:450px; background:#edf6dd; border-color:#9bb581; }
+.clock-arrival { margin:16px auto 0; max-width:450px; }
 .clock-arrival .clock-friend-art { animation:clock-friend-cheer .75s ease-out 2 both; }
 
 .clock-finale-scene { position:relative; isolation:isolate; overflow:hidden; min-height:clamp(224px,40vw,364px); max-width:780px; margin:auto; border-radius:24px; border:3px solid #c8889d; background:#d5eab1; }
@@ -370,9 +371,7 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 }
 @media (max-width:700px) {
   html[data-theme="club"] .destinations { grid-template-columns:1fr; }
-  .clock-games { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .clock-levels { grid-template-columns:1fr; }
-  .clock-intro { gap:10px; }
+  .clock-games .clock-done { grid-column:2; }
   .clock-options { gap:8px; }
   .clock-options button { padding:8px 4px; }
 }
