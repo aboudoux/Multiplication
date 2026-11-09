@@ -635,7 +635,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) clockArcade.pause(performance.now());
+  if (document.hidden) clockArcade.suspend(performance.now());
   activeFinale.setBackground(document.hidden);
   document.documentElement.classList.toggle('camp-background',document.hidden);
   if ((activeStage || trainingActive) && game.phase === 'victory') {
@@ -651,7 +651,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
-  clockArcade.pause(performance.now());
+  clockArcade.suspend(performance.now());
   activeFinale.setBackground(true);
   document.documentElement.classList.add('camp-background');
   audio.stopSpeech();

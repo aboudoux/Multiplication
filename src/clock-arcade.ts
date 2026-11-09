@@ -2,6 +2,8 @@ import { clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLeng
 
 type Level = Parameters<typeof clockRound>[1];
 type Screen = 'catalogue' | 'levels' | 'playing' | 'feedback' | 'paused' | 'results';
+const correctFeedbackMs = 2500;
+const correctionMs = 4500;
 
 export class ClockArcade {
   readonly root = document.createElement('section');
@@ -14,6 +16,7 @@ export class ClockArcade {
   private correct = false;
   private remaining = 0;
   private deadline = 0;
+  private feedbackUntil: number | null = null;
   private displayedSeconds = -1;
 
   constructor(private readonly goHome: () => void, private readonly playSuccess: () => void) {
@@ -32,7 +35,6 @@ export class ClockArcade {
         case 'pause': this.pause(now); break;
         case 'resume': this.resume(now); break;
         case 'answer': this.answer(Number(button.dataset.option), now); break;
-        case 'next': this.advance(now); break;
         case 'replay': this.start(now); break;
       }
     });
@@ -48,6 +50,12 @@ export class ClockArcade {
   close(): void { this.root.hidden = true; }
 
   tick(now: number): void {
+    if (this.root.hidden) return;
+    if (this.screen === 'feedback') {
+      this.feedbackUntil ??= now + (this.correct ? correctFeedbackMs : correctionMs);
+      if (now >= this.feedbackUntil) this.advance(now);
+      return;
+    }
     if (!this.playing) return;
     this.remaining = Math.max(0, this.deadline - now);
     if (this.remaining === 0) this.show('results');
@@ -58,6 +66,12 @@ export class ClockArcade {
     if (!this.playing) return;
     this.tick(now);
     if (this.playing) this.show('paused');
+  }
+
+  suspend(now: number): void {
+    // Give the child the full reading time again after returning to this tab.
+    this.feedbackUntil = null;
+    this.pause(now);
   }
 
   private start(now: number): void {
@@ -83,11 +97,11 @@ export class ClockArcade {
       this.score++;
       this.playSuccess();
     }
+    this.feedbackUntil = now + (this.correct ? correctFeedbackMs : correctionMs);
     this.show('feedback');
   }
 
   private advance(now: number): void {
-    if (this.screen !== 'feedback') return;
     this.index++;
     if (this.index === this.questions.length) this.show('results');
     else this.resume(now);
@@ -147,7 +161,7 @@ export class ClockArcade {
           <div class="clock-timer"><progress class="clock-progress" aria-label="Temps restant" max="${clockLevels[this.level].seconds}"></progress><span id="clock-time" role="timer"></span>
           ${feedback ? '<span class="clock-timer-wait">En pause</span>' : '<button type="button" class="secondary-button" data-clock-action="pause">Pause</button>'}</div>`;
         if (feedback) return `${banner}<div class="clock-center"><span class="clock-icon" aria-hidden="true">${this.correct ? '⭐' : '💡'}</span>${title(this.correct ? 'Bravo !' : 'Regarde bien !')}<p>${question.explanation}</p>
-          <button type="button" class="play-button" data-clock-action="next">${this.index + 1 === roundLength ? 'Voir mon résultat' : 'Question suivante →'}</button></div>`;
+          <p class="clock-feedback-note">${this.index + 1 === roundLength ? 'Ton résultat arrive…' : 'La prochaine question arrive…'}</p></div>`;
         return `${banner}<div class="clock-center">${title(question.prompt)}${question.detail ? `<p>${question.detail}</p>` : ''}${question.face === undefined ? '' : clockFace(question.face)}</div>
           <div class="clock-options">${question.options.map((option, index) => `<button type="button" data-clock-action="answer" data-option="${index}">${typeof option === 'number' ? clockFace(option) : option}</button>`).join('')}</div>`;
       }
