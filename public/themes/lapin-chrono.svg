@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220">
+  <defs>
+    <linearGradient id="fur" x1="0" x2="1" y1="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#fff8e7"/><stop offset="1" stop-color="#eebea4"/></linearGradient>
+    <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#ffdd73"/><stop offset="1" stop-color="#f5a745"/></linearGradient>
+  </defs>
+  <circle cx="109" cy="117" r="85" fill="#f1a8bf"/>
+  <ellipse cx="112" cy="196" rx="70" ry="9" fill="#b85f7b" opacity=".24"/>
+  <path fill="#fff0a0" d="M31 65l4 10 10 4-10 4-4 10-4-10-10-4 10-4zm155-23 3 8 8 3-8 3-3 8-3-8-8-3 8-3zm17 126 2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>
+  <g stroke="#69405a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="81" cy="161" rx="39" ry="35" fill="url(#fur)"/>
+    <ellipse cx="58" cy="186" rx="25" ry="11" fill="#fff0dc"/>
+    <path d="M64 86C46 71 29 34 39 23c13-13 34 24 43 52M94 73C87 50 97 13 109 14c16 1 16 42 4 66" fill="url(#fur)"/>
+    <path d="M64 65C53 53 43 31 46 31c6-1 18 17 23 31m33 1c-2-13 3-37 7-38 5 4 2 27-2 39" fill="#ef97a5" stroke="none"/>
+    <path d="M44 136c26-9 54-3 64 6l-11 20-18-9-25 4z" fill="#8b72cd"/>
+    <path d="M84 155q18 2 25 21l-15 7-14-19" fill="#a791e9"/>
+    <ellipse cx="83" cy="109" rx="51" ry="41" fill="url(#fur)"/>
+    <ellipse cx="72" cy="104" rx="4.5" ry="6" fill="#513449" stroke="none"/>
+    <ellipse cx="105" cy="104" rx="4.5" ry="6" fill="#513449" stroke="none"/>
+    <path d="M84 112q5-4 10 0l-5 5z" fill="#e17b90" stroke-width="2"/>
+    <path d="M89 117q-4 12-11 4m11-4q3 12 10 4" fill="none" stroke-width="2.5"/>
+    <path d="M87 126h5v5h-5z" fill="#fffaf0" stroke-width="1.4"/>
+    <ellipse cx="61" cy="117" rx="8" ry="4" fill="#ef9aa5" stroke="none"/>
+    <ellipse cx="114" cy="116" rx="8" ry="4" fill="#ef9aa5" stroke="none"/>
+    <path d="M106 161q12 10 29-4l-6-15q-12 5-17 4" fill="#fff0dc"/>
+    <path d="M128 112q14-21 29-18m-27 14q5-13 13-17" fill="none" stroke="#fff3c7" stroke-width="4"/>
+    <rect x="149" y="97" width="15" height="13" rx="4" fill="url(#gold)"/>
+    <circle cx="157" cy="144" r="39" fill="url(#gold)"/>
+    <circle cx="157" cy="144" r="30" fill="#fff8dd" stroke-width="2.5"/>
+    <path d="M157 121v4m23 19h-4m-19 23v-4m-23-19h4" fill="none" stroke-width="2.5"/>
+    <path d="M157 130v14l13 7" fill="none" stroke="#9d4472" stroke-width="4"/>
+    <circle cx="157" cy="144" r="3" fill="#69405a" stroke="none"/>
+    <ellipse cx="125" cy="157" rx="10" ry="7" transform="rotate(-23 125 157)" fill="#fff0dc"/>
+  </g>
+</svg>

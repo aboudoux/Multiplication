@@ -26,6 +26,8 @@ import { ThemedKeypad } from './keypad';
 import './keypad.css';
 import './training.css';
 import './landing.css';
+import { ClockArcade } from './clock-arcade';
+import './clock-arcade.css';
 import './colony.css';
 import { BirthdayParty } from './birthday-party';
 import './birthday-party.css';
@@ -77,6 +79,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="destinations">
             <article class="destination-card"><span class="destination-tag">EXPLORER & DÉCOUVRIR</span><div class="destination-art adventure-entry-art" aria-hidden="true"><img src="/themes/adventure-map.png" alt="" width="1254" height="1254" decoding="async"></div><h2>Partir à l’aventure</h2><p>Une fête avec le chaton ou un voyage en mer avec Pico : choisis ton aventure.</p><button id="open-adventure" class="play-button" type="button">Choisir mon aventure →</button></article>
             <article class="destination-card camp-entry"><span class="destination-tag">S’ENTRAÎNER & CONSTRUIRE</span><div class="destination-art">${ant()}</div><h2>Le camp d’entraînement</h2><p>Choisis tes calculs et aide les petites fourmis à bâtir leur maison.</p><button id="open-training" class="play-button" type="button">S’entraîner avec les fourmis →</button></article>
+            <article class="destination-card clock-entry"><span class="destination-tag">JOUER AVEC LE TEMPS</span><div class="destination-art"><img src="/themes/lapin-chrono.svg" alt="" width="220" height="220"></div><h2>Le lapin chrono</h2><p>Suis le petit lapin et sa montre. Six jeux pour apprivoiser l’heure et les durées.</p><button id="open-clock-arcade" class="play-button" type="button">Jouer avec le lapin →</button></article>
           </div>
         </section>
 
@@ -222,6 +225,13 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
 });
 get('home').before(camp.root);
+const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), () => audio.success());
+get('home').before(clockArcade.root);
+get('open-clock-arcade').addEventListener('click', () => {
+  void audio.navigation();
+  get('home').hidden = true;
+  clockArcade.open();
+});
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
 get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
@@ -233,11 +243,12 @@ function openCamp(tab: 'workshop'|'colony' = 'workshop'): void {
   get('board').classList.remove('adventure-playing','untimed-playing');
   persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored);
 }
-function showLanding(): void {
+function showLanding(focusId = 'open-training'): void {
+  clockArcade.close();
   campOpen=false; trainingActive=false; activeStage=null; mapOpen=false; chooserOpen=false; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
-  applyTheme(); render(performance.now()); get('open-training').focus();
+  applyTheme(); render(performance.now()); get(focusId).focus();
 }
 get('open-training').addEventListener('click',()=>openCamp());
 get('camp-exit').addEventListener('click',()=>openCamp());
@@ -474,6 +485,7 @@ function previewVictoryAnimation(): void {
   });
 }
 function goHome(): void {
+  if (!clockArcade.root.hidden) { showLanding('open-clock-arcade'); return; }
   if (activeFinale.active) activeFinale.close();
   if (previewVictory) return;
   // The brand is only a home link outside an active game; no accidental loss of progress.
@@ -577,6 +589,13 @@ get("erase").addEventListener("click", () => {
   render(performance.now());
 });
 document.addEventListener("keydown", (event) => {
+  if (!clockArcade.root.hidden) {
+    if (event.key === 'Escape' && clockArcade.playing) {
+      event.preventDefault();
+      clockArcade.pause(performance.now());
+    }
+    return;
+  }
   if (activeFinale.active) {
     if (event.key === 'Escape') {
       event.preventDefault(); activeFinale.close(); returnFromFinale();
@@ -616,6 +635,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 document.addEventListener("visibilitychange", () => {
+  if (document.hidden) clockArcade.pause(performance.now());
   activeFinale.setBackground(document.hidden);
   document.documentElement.classList.toggle('camp-background',document.hidden);
   if ((activeStage || trainingActive) && game.phase === 'victory') {
@@ -631,6 +651,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
+  clockArcade.pause(performance.now());
   activeFinale.setBackground(true);
   document.documentElement.classList.add('camp-background');
   audio.stopSpeech();
@@ -721,7 +742,7 @@ function render(now: number): void {
     "is-speaking",
     audio.speechStatus === "speaking",
   );
-  get("home").hidden = phase !== "welcome" || mapOpen || campOpen || chooserOpen;
+  get("home").hidden = phase !== "welcome" || mapOpen || campOpen || chooserOpen || !clockArcade.root.hidden;
   camp.root.hidden = phase !== 'welcome' || !campOpen;
   get('camp-cargo').hidden=!trainingActive || !isPlaying;
   get('camp-victory').hidden=!trainingActive || phase!=='victory';
@@ -954,10 +975,11 @@ if (new URLSearchParams(location.search).get('fete') === '1') {
 }
 function frame(now: number): void {
   const inMenus=!activeFinale.active && !previewVictory && !trainingActive && !activeStage
-    && game.phase==='welcome' && (campOpen || mapOpen || chooserOpen || !get('home').hidden);
+    && game.phase==='welcome' && (campOpen || mapOpen || chooserOpen || !get('home').hidden || !clockArcade.root.hidden);
   get('menu-audio-enable').hidden=!inMenus || (!saved.muted && audio.ready);
   audio.homeMusic(!document.hidden && inMenus);
   if (!document.hidden) {
+    clockArcade.tick(now);
     activeFinale.update(now);
     if (previewVictory && now >= previewEndsAt) {
       previewVictory = false;
