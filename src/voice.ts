@@ -1,6 +1,7 @@
 import { voicePath } from "./calculations";
 import type { Calculation } from "./calculations";
 import { voiceProfiles, voiceRates, type VoiceStyle } from "./voice-profiles";
+import rabbitLateClip from './rabbit-late.wav?inline';
 export { voiceRates, type VoiceStyle } from "./voice-profiles";
 export type VoiceStatus = "idle" | "loading" | "speaking" | "unavailable";
 export const VOICE_LOAD_TIMEOUT_MS = 5000;
@@ -54,6 +55,11 @@ export class QuestionVoice {
     await this.play("/sounds/crowd-disappointed.wav", 0.55, 1);
   }
 
+  async rabbitLate(): Promise<void> {
+    this.stop();
+    await this.play(rabbitLateClip, 0.55, 1.5, 'kitten');
+  }
+
   private load(url: string, retry = false): VoiceClip {
     const existing = this.cache.get(url);
     if (existing && !(retry && existing.state === "unavailable")) return existing;
@@ -66,7 +72,9 @@ export class QuestionVoice {
       }, VOICE_LOAD_TIMEOUT_MS);
     });
     const composed = url.match(/^\/voice\/fr\/composed\/(add|subtract|multiply)\/(\d+)-(\d+)$/);
-    const download = composed ? this.compose(composed[1],composed[2],composed[3]) : fetch(url, { signal: controller.signal }).then(async response => {
+    const download = url === rabbitLateClip
+      ? this.context.decodeAudioData(Uint8Array.from(atob(url.slice(url.indexOf(',') + 1)), char => char.charCodeAt(0)).buffer)
+      : composed ? this.compose(composed[1],composed[2],composed[3]) : fetch(url, { signal: controller.signal }).then(async response => {
       if (!response.ok) throw new Error("Voice unavailable");
       return this.context.decodeAudioData(await response.arrayBuffer());
     });

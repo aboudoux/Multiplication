@@ -222,6 +222,8 @@ Le Lapin chrono reprend le tableau vert et les cartes du camp, puis le bandeau, 
 
 Les 18 niveaux se débloquent dans l’ordre du catalogue, en commençant par Découverte, puis Exploration et Défi pour chaque mini-jeu. Jouer les cinq questions avant la fin du chrono termine le niveau. Le bilan propose de continuer vers le premier niveau encore à faire ou de revenir aux niveaux du mini-jeu joué. Les niveaux déjà terminés restent rejouables, y compris ceux qui avaient été faits dans le désordre avant l’ajout des cadenas.
 
+À la fin de chaque niveau terminé, le lapin traverse l’écran avec la bulle « Oh là là, je suis en retard ! ». Sa réplique française est jouée si le son et la voix sont activés. Avec la réduction des animations, le lapin reste immobile sous la bulle.
+
 Le dernier niveau à terminer lance cinq tableaux de cinq secondes chacun : les retrouvailles sous le chêne, la réparation de la montre, le réglage des aiguilles, la cloche et le goûter. La scène conserve la mélodie du lapin et ponctue les actions de carillons. Elle se suspend pendant une pause ou en arrière-plan et affiche les tableaux fixes avec la réduction des animations. Le dernier tableau reste visible et le film est rejouable depuis l’histoire.
 
 Une bonne réponse enchaîne immédiatement sur la question suivante avec des personnages et des confettis en fête. Une erreur fige le chrono, joue le même riff funk à la basse qu’à la fin du temps et ouvre une fiche avec la réponse et un cadran, une frise ou des durées à comparer. Après 4,5 secondes de lecture à l’écran, la manche avance et le décompte reprend automatiquement. La mélodie de fond accompagne aussi la lecture de la fiche.

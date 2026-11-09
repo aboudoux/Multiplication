@@ -50,7 +50,7 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 @media (max-width:600px) {
   .clock-lesson-body { grid-template-columns:1fr; }
 }
-.clock-burst,.clock-parade,.clock-quick-layer { pointer-events:none; z-index:14; }
+.clock-burst,.clock-parade,.clock-quick-layer,.clock-finish-layer { pointer-events:none; z-index:14; }
 .clock-burst { position:absolute; inset:auto 0 0; height:75px; display:grid; place-items:center; }
 .clock-sparkles { position:relative; display:grid; place-items:center; width:70px; height:48px; animation:clock-sparkles 1s ease-out both; }
 .clock-success-star { color:#b64c79; font-size:clamp(34px,8vw,62px); line-height:1; text-shadow:0 2px 0 #fff3b8; animation:clock-star-pop .64s cubic-bezier(.2,.85,.25,1.15) both; }
@@ -69,8 +69,21 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-mistake-effect { position:fixed; inset:0; overflow:hidden; pointer-events:none; background:#ea496313; box-shadow:inset 0 0 52px 14px #d8304c55; animation:clock-mistake-glow var(--clock-lesson-duration) ease-out both; }
 .clock-mistake-effect i { position:absolute; left:var(--cross-x); top:var(--cross-y); color:#bb2647; font:900 clamp(29px,5.5vw,62px)/1 system-ui,sans-serif; text-shadow:0 2px 0 #ffe2d8; opacity:.56; transform:translate(-50%,-50%); animation:clock-mistake-cross .55s ease-out var(--cross-delay) both; }
 .clock-mistake-effect i:nth-child(even) { color:#db4662; font-size:clamp(23px,4vw,48px); }
-.clock-parade,.clock-quick-layer { position:fixed; inset:0; overflow:hidden; }
-.clock-rabbit-runner { position:absolute; bottom:clamp(18px,8vh,84px); left:0; width:clamp(88px,17vw,146px); animation:clock-rabbit 2.65s linear both; }
+.clock-parade,.clock-quick-layer,.clock-finish-layer { position:fixed; inset:0; overflow:hidden; }
+.clock-rabbit-runner,.clock-finish-runner { position:absolute; bottom:clamp(18px,8vh,84px); left:0; width:clamp(88px,17vw,146px); animation:clock-rabbit 2.65s linear both; }
+.clock-finish-pass { position:absolute; inset:0; animation:clock-finish-pass 3.2s ease-out both; }
+.clock-finish-bubble {
+  position:absolute; z-index:1; bottom:calc(clamp(18px,8vh,84px) + clamp(88px,17vw,146px) + 6px); left:50%;
+  width:max-content; max-width:calc(100% - 24px); transform:translateX(-50%); padding:10px 16px; text-align:center;
+  color:#452b49; background:#fff5db; border:3px solid #d68ca7; border-radius:20px; box-shadow:0 4px 0 #75425455;
+  font:700 clamp(20px,5vw,31px)/1.2 Kalam,cursive;
+}
+.clock-finish-bubble::after {
+  content:""; position:absolute; top:100%; left:50%; width:14px; height:14px; background:inherit;
+  border-right:3px solid #d68ca7; border-bottom:3px solid #d68ca7; transform:translate(-50%,-7px) rotate(45deg);
+}
+.camp-background :is(.clock-finish-pass,.clock-finish-runner) { animation-play-state:paused; }
+@keyframes clock-finish-pass { 0%,84% { opacity:1; } 100% { opacity:0; } }
 .clock-rabbit-dust { position:absolute; left:-18%; bottom:8%; display:flex; align-items:end; gap:4px; }
 .clock-rabbit-dust i { width:10px; height:10px; background:#fff3cb; border-radius:50%; animation:clock-rabbit-puff .5s ease-out 5 both; }
 .clock-rabbit-dust i:nth-child(2) { animation-delay:.09s; width:8px; height:8px; }
@@ -112,6 +125,8 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   .clock-quick-party { animation:clock-party-life 3s ease-out both !important; }
   .clock-mistake-effect { animation:clock-mistake-glow var(--clock-lesson-duration) ease-out both !important; }
   .clock-rabbit-runner { left:auto; right:16px; }
+  .clock-finish-pass { animation:clock-finish-pass 3.2s ease-out both !important; }
+  .clock-finish-runner { left:50%; transform:translateX(-50%); }
   .clock-quick-runner { left:var(--party-rest-x); transform:translateX(-50%); }
   .clock-party-confetti i { top:var(--paper-y); opacity:.65; }
   .clock-sparkles i { transform:translate(var(--burst-x),var(--burst-y)); }
@@ -200,10 +215,10 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 :is(.clock-companion,.clock-guest-trail)[data-gesture="cheer"] .clock-friend-art { animation:clock-friend-cheer .64s cubic-bezier(.22,.8,.35,1) both; }
 :is(.clock-companion,.clock-guest-trail)[data-gesture="cheer"] :is(.clock-companion-friend,.clock-guest-spot):nth-child(even) .clock-friend-art { animation-delay:.1s; }
 .clock-guest-trail[data-gesture="encourage"] .clock-friend-art { animation:clock-companion-nod .55s ease-in-out both; }
-:is(.clock-companion-art,.clock-rabbit-runner,.clock-finale-cast) .clock-rabbit-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 5.8s ease-in-out infinite; }
-:is(.clock-companion-art,.clock-rabbit-runner,.clock-finale-cast) .clock-rabbit-ears { transform-box:fill-box; transform-origin:center bottom; animation:clock-animal-sway 3.6s ease-in-out infinite; }
-:is(.clock-companion-art,.clock-rabbit-runner,.clock-finale-cast) .clock-rabbit-watch { transform-box:fill-box; transform-origin:center top; animation:clock-rabbit-tick var(--watch-pace,3.6s) ease-in-out infinite; }
-.clock-rabbit-runner { --watch-pace:.66s; }
+:is(.clock-companion-art,.clock-rabbit-runner,.clock-finish-runner,.clock-finale-cast) .clock-rabbit-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 5.8s ease-in-out infinite; }
+:is(.clock-companion-art,.clock-rabbit-runner,.clock-finish-runner,.clock-finale-cast) .clock-rabbit-ears { transform-box:fill-box; transform-origin:center bottom; animation:clock-animal-sway 3.6s ease-in-out infinite; }
+:is(.clock-companion-art,.clock-rabbit-runner,.clock-finish-runner,.clock-finale-cast) .clock-rabbit-watch { transform-box:fill-box; transform-origin:center top; animation:clock-rabbit-tick var(--watch-pace,3.6s) ease-in-out infinite; }
+.clock-rabbit-runner,.clock-finish-runner { --watch-pace:.66s; }
 .camp-background :is(.clock-companion,.clock-guest-trail) * { animation-play-state:paused; }
 @keyframes clock-guest-stroll {
   0%,100% { left:0; transform:translateY(0) rotate(0); }

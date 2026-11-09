@@ -109,6 +109,7 @@ test('une réussite avance immédiatement et une fiche d’erreur se ferme seule
   await expect(timer).toHaveText('89 s');
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
+  await expect(page.locator('.clock-finish-pass')).toHaveCount(0);
   await expect(page.getByText('1 bonne réponse')).toBeVisible();
   await expect(page.locator('.clock-results .result-stats > div')).toHaveCount(3);
   await page.getByRole('button', { name: 'Rejouer' }).click();
@@ -250,12 +251,20 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
     await advanceClockLesson(page);
   }
   await expect(page.getByText('Niveau fait', { exact: false })).toBeVisible();
+  const finishPass = page.locator('.clock-finish-pass');
+  await expect(finishPass).toContainText('Oh là là, je suis en retard !');
+  await expect(finishPass.locator('.clock-finish-runner')).toHaveCSS('animation-name', 'clock-rabbit');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(finishPass.locator('.clock-finish-runner')).toHaveCSS('animation-name', 'none');
+  await expect(finishPass).toBeVisible();
   await expect(companion).toBeVisible();
   await expect(companion).toContainText('1 / 18 niveaux faits');
   await expect(companion).toHaveAttribute('data-gesture', 'finish');
 
   await expect(games).toHaveCount(0);
   await levels.click();
+  await expect(finishPass).toHaveCount(0);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(page.getByRole('heading', { name: 'Lis l’horloge' })).toBeVisible();
   await expect(firstLevel.locator('.clock-done')).toHaveText('✓ Fait');
   await expect(page.locator('[data-level="1"]')).toBeEnabled();

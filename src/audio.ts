@@ -2,7 +2,7 @@ import { themes, type ThemeId } from "./themes";
 import type { Calculation } from "./calculations";
 import { QuestionVoice, type VoiceStyle } from "./voice";
 
-export type ClockCue = 'correct' | 'mistake' | 'timeout' | 'stop';
+export type ClockCue = 'correct' | 'mistake' | 'timeout' | 'rabbit-late' | 'stop';
 
 const clubMusic = {
   melody: [392,493.88,587.33,0,523.25,493.88,440,0,349.23,440,523.25,0,493.88,440,392,0],
@@ -239,9 +239,16 @@ export class GameAudio {
       this.tone(note, i*.08, .24, .18, themes[this.theme].music.timbre));
   }
   clockAnswer(cue: ClockCue): void {
+    if (cue === 'rabbit-late') {
+      if (!this.muted && this.ready) void this.voice?.rabbitLate();
+      return;
+    }
     for (const source of this.clockSources) { try { source.stop(); } catch { /* Already ended. */ } }
     this.clockSources.clear();
-    if (cue === 'stop') return;
+    if (cue === 'stop') {
+      this.stopSpeech();
+      return;
+    }
     if (cue === 'correct') {
       const brass = [[369.99, 0, .15], [554.37, .15, .13], [739.99, .27, .14], [932.33, .41, .13], [739.99, .54, .36]];
       for (const [note, delay, length] of brass) {

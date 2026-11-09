@@ -61,6 +61,7 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   const scene = page.locator('.clock-finale-scene');
   const caption = page.locator('.clock-finale-caption');
   await expect(page.getByRole('heading', { name: 'Enfin l’heure du goûter !' })).toBeVisible();
+  await expect(page.locator('.clock-finish-bubble')).toHaveText('Oh là là, je suis en retard !');
   await expect(scene.locator('.clock-finale-cast svg')).toHaveCount(6);
   await expect(scene).toHaveAttribute('data-step', '0');
   await page.clock.fastForward(5100);

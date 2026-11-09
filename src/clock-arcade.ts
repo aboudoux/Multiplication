@@ -16,7 +16,9 @@ const orderedLevels = clockGameIds.flatMap(game => clockLevels.map((_, level) =>
 const sparkleTrajectories = [[-88,-24],[-74,5],[-60,-41],[-37,13],[-29,-53],[-11,-20],[14,-56],[28,12],[42,-42],[59,6],[75,-22],[88,-1]];
 const successBurst = `<div class="clock-sparkles"><span class="clock-success-star">✦</span>${sparkleTrajectories.map(([x, y], index) =>
   `<i style="--burst-x:${x}px;--burst-y:${y}px;--burst-delay:${(index % 4) * 32}ms"></i>`).join('')}</div>`;
-const rabbitParade = `<div class="clock-rabbit-runner"><span class="clock-rabbit-dust"><i></i><i></i><i></i></span>${clockRabbitArt}</div>`;
+const runningRabbit = `<span class="clock-rabbit-dust" aria-hidden="true"><i></i><i></i><i></i></span>${clockRabbitArt}`;
+const rabbitParade = `<div class="clock-rabbit-runner">${runningRabbit}</div>`;
+const finishPass = `<div class="clock-finish-pass"><span class="clock-finish-bubble">Oh là là, je suis en retard&nbsp;!</span><div class="clock-finish-runner">${runningRabbit}</div></div>`;
 const starRunner = `<svg viewBox="0 0 100 100" aria-hidden="true">
   <path d="M4 41h15M0 54h14M8 66h12" fill="none" stroke="#e8aa46" stroke-width="4" stroke-linecap="round"/>
   <path d="m35 67-5 14-10 4m44-17 11 11 12-3M30 43l-13 7m51-10 14-10" fill="none" stroke="#685077" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -52,6 +54,7 @@ export class ClockArcade {
   private readonly burst = document.createElement('div');
   private readonly quick = document.createElement('div');
   private readonly parade = document.createElement('div');
+  private readonly finishLayer = document.createElement('div');
   private readonly guestTrail = document.createElement('div');
   private readonly progressLabel = document.createElement('span');
   private readonly companionFriends = document.createElement('div');
@@ -91,13 +94,15 @@ export class ClockArcade {
     this.burst.className = 'clock-burst';
     this.quick.className = 'clock-quick-layer';
     this.parade.className = 'clock-parade';
+    this.finishLayer.className = 'clock-finish-layer';
+    this.finishLayer.setAttribute('role', 'status');
     this.burst.setAttribute('aria-hidden', 'true');
     this.quick.setAttribute('aria-hidden', 'true');
     this.parade.setAttribute('aria-hidden', 'true');
     this.guestTrail.className = 'clock-guest-trail';
     this.guestTrail.setAttribute('aria-hidden', 'true');
     this.guestTrail.hidden = true;
-    this.root.append(this.content, this.guestTrail, this.feedback, this.burst, this.quick, this.parade, this.companion);
+    this.root.append(this.content, this.guestTrail, this.feedback, this.burst, this.quick, this.parade, this.finishLayer, this.companion);
     this.companion.className = 'clock-companion';
     this.companion.setAttribute('aria-label', 'Le lapin chrono et ses amis');
     this.companion.innerHTML = `<div class="clock-companion-crew"><div class="clock-companion-art">${clockRabbitArt}</div></div>`;
@@ -285,7 +290,7 @@ export class ClockArcade {
     this.playCue('correct');
     this.celebrate(this.burst, successBurst);
     this.celebrate(this.quick, quickParade, true);
-    if (milestone) this.celebrate(this.parade, rabbitParade);
+    if (milestone && this.playing) this.celebrate(this.parade, rabbitParade);
   }
 
   private continueAfterCorrection(now: number): void {
@@ -303,7 +308,12 @@ export class ClockArcade {
     if (finished) this.completeLevel();
     if (finished && !storyWasComplete && this.storyComplete) this.startFinale(now, 'results');
     else this.show(finished ? 'results' : 'playing');
-    if (finished) this.reactCompanion('finish');
+    if (finished) {
+      this.reactCompanion('finish');
+      this.parade.replaceChildren();
+      this.celebrate(this.finishLayer, finishPass);
+      if (!document.hidden) this.playCue('rabbit-late');
+    }
   }
 
   private celebrate(layer: HTMLElement, markup: string, append = false): void {
@@ -317,6 +327,7 @@ export class ClockArcade {
     this.burst.replaceChildren();
     this.quick.replaceChildren();
     this.parade.replaceChildren();
+    this.finishLayer.replaceChildren();
   }
 
   private startFinale(now: number, back: FinaleOrigin): void {
@@ -354,7 +365,10 @@ export class ClockArcade {
   }
 
   private show(screen: Screen): void {
-    if (this.screen === 'results') this.playCue('stop');
+    if (this.screen === 'results' || this.screen === 'finale') {
+      this.finishLayer.replaceChildren();
+      this.playCue('stop');
+    }
     this.screen = screen;
     this.content.innerHTML = this.markup();
     this.guestTrail.hidden = screen !== 'playing' || !this.guestTrail.childElementCount;

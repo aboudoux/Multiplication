@@ -5,7 +5,7 @@ import { answerClock } from './clock-helpers';
 
 const funkBassRiff = [41.2, 82.41, 41.2, 49, 55, 58.27, 61.74, 73.42, 41.2];
 
-async function prepare(page:Page,muted=false) {
+async function prepare(page:Page,muted=false,voiceEnabled=false) {
  await page.addInitScript(({key,saved})=>{
   localStorage.setItem(key,JSON.stringify(saved));
   const probe:{frequency:number;type:string;delay:number;cancelled:boolean}[]=[];
@@ -22,7 +22,7 @@ async function prepare(page:Page,muted=false) {
    node.stop=(at?:number)=>{if(played && at===undefined)played.cancelled=true;stop(at);};
    return node;
   };
- },{key:STORAGE_KEY,saved:{...defaults(),muted,voiceEnabled:false}});
+ },{key:STORAGE_KEY,saved:{...defaults(),muted,voiceEnabled}});
  await page.goto('/');
 }
 async function count(page:Page) {return page.evaluate(()=>(window as any).navigationProbe.filter((note:any)=>note.type==='triangle'&&[523.25,659.25,783.99].includes(note.frequency)).length);}
@@ -167,6 +167,44 @@ test('le chrono expiré joue un riff de basse funk et le rejeu le coupe', async 
   expect(riff.at(-1).delay).toBeGreaterThan(1.8);
   await page.getByRole('button', { name: 'Rejouer' }).click();
   expect((await bass()).at(-1).cancelled).toBe(true);
+});
+
+test('la voix du lapin joue au bilan et s’arrête au retour aux niveaux', async ({ page }) => {
+  await page.addInitScript(() => {
+    const lines: { stopped: boolean }[] = [];
+    Object.assign(window, { rabbitLines: lines });
+    const create = AudioContext.prototype.createBufferSource;
+    AudioContext.prototype.createBufferSource = function () {
+      const source = create.call(this);
+      const start = source.start.bind(source);
+      const stop = source.stop.bind(source);
+      let line: typeof lines[number] | undefined;
+      source.start = (...args) => {
+        if (source.buffer && source.buffer.duration > 1.5 && Math.abs(source.playbackRate.value - 1.15) < .01) {
+          line = { stopped: false };
+          lines.push(line);
+        }
+        start(...args);
+      };
+      source.stop = (...args) => {
+        if (line) line.stopped = true;
+        stop(...args);
+      };
+      return source;
+    };
+  });
+  await prepare(page, false, true);
+  await page.locator('#open-clock-arcade').click();
+  await page.locator('[data-game="read"]').click();
+  await page.locator('[data-level="0"]').click();
+  const lines = () => page.evaluate(() => (window as any).rabbitLines);
+  for (let index = 0; index < 4; index++) await answerClock(page);
+  expect(await lines()).toHaveLength(0);
+  await answerClock(page);
+  await expect(page.locator('.clock-finish-bubble')).toHaveText('Oh là là, je suis en retard !');
+  await expect.poll(lines).toEqual([{ stopped: false }]);
+  await page.getByRole('button', { name: 'Retour aux niveaux' }).click();
+  await expect.poll(lines).toEqual([{ stopped: true }]);
 });
 
 test.describe('audible autoplay permitted',()=>{
