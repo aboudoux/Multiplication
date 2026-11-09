@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { clockCorrectionMs } from '../../src/clock-games';
 
 export async function answerClock(page: Page, correct = true) {
   const hour = (await page.locator('#clock-heading').textContent())!.match(/(\d+) h/)![1];
@@ -8,12 +9,11 @@ export async function answerClock(page: Page, correct = true) {
   await (correct ? answer : wrong).click();
 }
 
-export async function continueClockLesson(page: Page) {
-  const next = page.locator('[data-clock-action="continue-lesson"]');
-  if (await next.isVisible()) await next.click();
+export async function advanceClockLesson(page: Page) {
+  if (await page.locator('.clock-lesson').isVisible()) await page.clock.fastForward(clockCorrectionMs + 100);
 }
 
 export async function answerFirstClockOption(page: Page) {
   await page.locator('[data-clock-action="answer"]').first().click();
-  await continueClockLesson(page);
+  await advanceClockLesson(page);
 }

@@ -1,4 +1,4 @@
-import { CLOCK_PROGRESS_KEY, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
+import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
 import clockRabbitArt from '/themes/lapin-chrono.svg?raw';
 import { clockFriendArt } from './clock-characters';
 import { clockCorrectionMarkup } from './clock-correction';
@@ -16,15 +16,20 @@ const sparkleTrajectories = [[-88,-24],[-74,5],[-60,-41],[-37,13],[-29,-53],[-11
 const successBurst = `<div class="clock-sparkles"><span class="clock-success-star">✦</span>${sparkleTrajectories.map(([x, y], index) =>
   `<i style="--burst-x:${x}px;--burst-y:${y}px;--burst-delay:${(index % 4) * 32}ms"></i>`).join('')}</div>`;
 const rabbitParade = `<div class="clock-rabbit-runner"><span class="clock-rabbit-dust"><i></i><i></i><i></i></span>${clockRabbitArt}</div>`;
-const quickParade = `<div class="clock-quick-runner"><svg viewBox="0 0 100 100" aria-hidden="true">
+const starRunner = `<svg viewBox="0 0 100 100" aria-hidden="true">
   <path d="M4 41h15M0 54h14M8 66h12" fill="none" stroke="#e8aa46" stroke-width="4" stroke-linecap="round"/>
   <path d="m35 67-5 14-10 4m44-17 11 11 12-3M30 43l-13 7m51-10 14-10" fill="none" stroke="#685077" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="m50 13 10 19 21 3-15 15 4 21-20-10-19 10 3-21-15-15 21-3Z" fill="#ffdc74" stroke="#a25b70" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m50 13 10 19 21 3-15 15 4 21-20-10-19 10 3-21-15-15 21-3Z" fill="var(--party-color)" stroke="#a25b70" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="43" cy="43" r="2.8" fill="#52364f"/><circle cx="57" cy="43" r="2.8" fill="#52364f"/>
   <path d="M44 50q6 8 12 0" fill="none" stroke="#52364f" stroke-width="2" stroke-linecap="round"/>
-</svg></div>`;
+</svg>`;
+const partyColors = ['#ffdc74', '#f3a4c4', '#bdb0f1', '#9bdbb9'];
+const quickParade = `<div class="clock-quick-party">${partyColors.map((color, index) =>
+  `<div class="clock-quick-runner" style="--party-color:${color};--party-lane:${12 + index * 17}%;--party-delay:${index * 105}ms;--party-rest-x:${12 + index * 24}%">${starRunner}</div>`).join('')}
+  <div class="clock-party-confetti">${Array.from({ length: 32 }, (_, index) =>
+    `<i style="--paper-x:${2 + index * 37 % 96}%;--paper-y:${5 + index * 23 % 90}%;--paper-drift:${(index % 7 - 3) * 17}px;--paper-delay:${index % 8 * 45}ms;--party-color:${partyColors[index % partyColors.length]}"></i>`).join('')}</div></div>`;
 const crossPositions = [[8,13],[27,6],[51,10],[77,6],[92,15],[6,36],[94,39],[7,66],[93,68],[12,89],[48,93],[85,89]];
-const mistakeEffect = `<div class="clock-mistake-effect">${crossPositions.map(([x, y], index) =>
+const mistakeEffect = `<div class="clock-mistake-effect" style="--clock-lesson-duration:${clockCorrectionMs}ms">${crossPositions.map(([x, y], index) =>
   `<i style="--cross-x:${x}%;--cross-y:${y}%;--cross-delay:${(index % 4) * 65}ms">×</i>`).join('')}</div>`;
 
 export class ClockArcade {
@@ -50,6 +55,8 @@ export class ClockArcade {
   private deadline = 0;
   private displayedSeconds = -1;
   private mistakenOption: ClockQuestion['correct'] | null = null;
+  private lessonElapsed = 0;
+  private lessonFrameAt: number | null = null;
   private arrival: ClockFriend | undefined;
   private storyReturn: 'catalogue' | 'levels' = 'catalogue';
   private finaleReturn: FinaleOrigin = 'story';
@@ -109,7 +116,6 @@ export class ClockArcade {
         case 'pause': this.pause(now); break;
         case 'resume': this.resume(now); break;
         case 'answer': this.answer(Number(button.dataset.option), now); break;
-        case 'continue-lesson': this.continueAfterCorrection(now); break;
         case 'replay': this.start(now); break;
       }
     });
@@ -178,7 +184,14 @@ export class ClockArcade {
   }
 
   tick(now: number): void {
-    if (!this.root.hidden && this.screen === 'finale') this.tickFinale(now);
+    if (this.root.hidden) return;
+    if (this.screen === 'finale') this.tickFinale(now);
+    if (this.screen === 'correction') {
+      this.lessonElapsed += now - (this.lessonFrameAt ?? now);
+      this.lessonFrameAt = now;
+      if (this.lessonElapsed >= clockCorrectionMs) this.continueAfterCorrection(now);
+      return;
+    }
     if (!this.playing) return;
     this.remaining = Math.max(0, this.deadline - now);
     if (this.remaining === 0) this.show('results');
@@ -187,6 +200,7 @@ export class ClockArcade {
 
   pause(now: number): void {
     this.finaleFrameAt = null;
+    this.lessonFrameAt = null;
     if (!this.playing) return;
     this.tick(now);
     if (this.playing) {
@@ -222,6 +236,8 @@ export class ClockArcade {
     if (selected === undefined) return;
     if (selected !== question.correct) {
       this.mistakenOption = selected;
+      this.lessonElapsed = 0;
+      this.lessonFrameAt = now;
       this.feedback.textContent = '';
       this.clearCelebrations();
       this.show('correction');

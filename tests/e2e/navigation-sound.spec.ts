@@ -1,7 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 import {defaults,STORAGE_KEY} from '../../src/storage';
 import { CLOCK_PROGRESS_KEY } from '../../src/clock-games';
-import { answerClock, answerFirstClockOption, continueClockLesson } from './clock-helpers';
+import { answerClock } from './clock-helpers';
 
 async function prepare(page:Page,muted=false) {
  await page.addInitScript(({key,saved})=>{
@@ -124,7 +124,7 @@ test('la mélodie du lapin continue pendant la correction, la pause et le bilan'
   await expect(page.locator('.clock-guest-trail')).toBeVisible();
   const effects = (frequencies: number[]) => page.evaluate(values =>
     (window as any).navigationProbe.filter((note: any) => note.type === 'triangle' && values.includes(note.frequency)).map((note: any) => note.frequency), frequencies);
-  const fanfare = [698.46, 880, 1046.5, 1396.91];
+  const fanfare = [698.46, 880, 1046.5, 1174.66, 1318.51, 1396.91];
   await answerClock(page);
   await expect.poll(() => effects(fanfare)).toEqual(fanfare);
   const start = (await notes()).length;
@@ -132,12 +132,12 @@ test('la mélodie du lapin continue pendant la correction, la pause et le bilan'
   await expect(page.locator('.clock-lesson')).toBeVisible();
   await expect.poll(() => effects([124, 92])).toEqual([124, 92]);
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(start);
-  await continueClockLesson(page);
+  await expect(page.locator('.clock-lesson')).toBeHidden({ timeout: 8000 });
   await page.locator('[data-clock-action="pause"]').click();
   const paused = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(paused);
   await page.locator('[data-clock-action="resume"]').click();
-  for (let index = 0; index < 3; index++) await answerFirstClockOption(page);
+  for (let index = 0; index < 3; index++) await answerClock(page);
   await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
   const finished = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(finished);

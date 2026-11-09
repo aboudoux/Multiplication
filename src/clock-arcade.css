@@ -45,11 +45,9 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-lesson-bars li + li { margin-top:8px; }
 .clock-lesson-bars i { display:block; width:var(--clock-duration); height:12px; border-radius:8px; background:#a8648b; margin-top:4px; }
 .clock-lesson-bars li + li i { background:#538877; }
-.clock-lesson-footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
-.clock-lesson-footer .play-button { white-space:normal; }
+.clock-lesson-footer { font-weight:700; }
 @media (max-width:600px) {
   .clock-lesson-body { grid-template-columns:1fr; }
-  .clock-lesson-footer .play-button { width:100%; }
 }
 .clock-burst,.clock-parade,.clock-quick-layer { pointer-events:none; z-index:14; }
 .clock-burst { position:absolute; inset:auto 0 0; height:75px; display:grid; place-items:center; }
@@ -59,10 +57,16 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-sparkles i:nth-of-type(3n+1) { background:#e7a94b; clip-path:polygon(50% 0,63% 35%,100% 50%,63% 64%,50% 100%,37% 64%,0 50%,37% 35%); width:16px; height:16px; }
 .clock-sparkles i:nth-of-type(3n+2) { background:#83ac89; border-radius:50%; width:8px; height:8px; }
 .clock-sparkles i:nth-of-type(4n) { background:#9780c6; }
-.clock-quick-runner { position:absolute; bottom:clamp(80px,17vh,168px); left:0; width:clamp(68px,13vw,116px); filter:drop-shadow(0 3px 0 #e7a25655); animation:clock-quick-sprint 1.4s linear both; }
+.clock-quick-party,.clock-party-confetti { position:absolute; inset:0; }
+.clock-quick-party { animation:clock-party-life 3s ease-out both; }
+.clock-quick-runner { position:absolute; bottom:var(--party-lane); left:0; width:clamp(62px,11vw,108px); filter:drop-shadow(0 3px 0 #e7a25655); animation:clock-quick-sprint 2.5s linear var(--party-delay) both; }
+.clock-quick-runner:nth-child(even) { animation-direction:reverse; }
 .clock-quick-runner svg { display:block; width:100%; height:auto; }
-.clock-mistake-effect { position:fixed; inset:0; overflow:hidden; pointer-events:none; box-shadow:inset 0 0 32px 9px #d8304c88,inset 0 0 110px 28px #e54a5252; animation:clock-mistake-glow 2.4s ease-out both; }
-.clock-mistake-effect i { position:absolute; left:var(--cross-x); top:var(--cross-y); color:#bb2647; font:900 clamp(29px,5.5vw,62px)/1 system-ui,sans-serif; text-shadow:0 2px 0 #ffe2d8; opacity:.68; transform:translate(-50%,-50%); animation:clock-mistake-cross .55s ease-out var(--cross-delay) both; }
+.clock-party-confetti i { position:absolute; top:-20px; left:var(--paper-x); width:9px; height:15px; background:var(--party-color); border-radius:2px; animation:clock-party-paper 2.6s ease-out var(--paper-delay) both; }
+.clock-party-confetti i:nth-child(3n) { width:10px; height:10px; border-radius:50%; }
+.clock-party-confetti i:nth-child(4n) { width:15px; height:15px; clip-path:polygon(50% 0,62% 35%,100% 50%,62% 65%,50% 100%,38% 65%,0 50%,38% 35%); }
+.clock-mistake-effect { position:fixed; inset:0; overflow:hidden; pointer-events:none; background:#ea496313; box-shadow:inset 0 0 52px 14px #d8304c55; animation:clock-mistake-glow var(--clock-lesson-duration) ease-out both; }
+.clock-mistake-effect i { position:absolute; left:var(--cross-x); top:var(--cross-y); color:#bb2647; font:900 clamp(29px,5.5vw,62px)/1 system-ui,sans-serif; text-shadow:0 2px 0 #ffe2d8; opacity:.56; transform:translate(-50%,-50%); animation:clock-mistake-cross .55s ease-out var(--cross-delay) both; }
 .clock-mistake-effect i:nth-child(even) { color:#db4662; font-size:clamp(23px,4vw,48px); }
 .clock-parade,.clock-quick-layer { position:fixed; inset:0; overflow:hidden; }
 .clock-rabbit-runner { position:absolute; bottom:clamp(18px,8vh,84px); left:0; width:clamp(88px,17vw,146px); animation:clock-rabbit 2.65s linear both; }
@@ -85,8 +89,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   80% { transform:translate(77vw,0) rotate(-5deg); }
   100% { transform:translateX(105vw); }
 }
-@keyframes clock-mistake-glow { 0% { opacity:0; } 15%,57% { opacity:1; } 100% { opacity:0; } }
-@keyframes clock-mistake-cross { from { opacity:0; transform:translate(-50%,-50%) scale(.55) rotate(-18deg); } to { opacity:.68; transform:translate(-50%,-50%) scale(1) rotate(8deg); } }
+@keyframes clock-party-life { 0%,84% { opacity:1; } 100% { opacity:0; } }
+@keyframes clock-party-paper { 0% { opacity:0; transform:translate(0) rotate(0); } 12% { opacity:.82; } 86% { opacity:.7; } 100% { opacity:0; transform:translate(var(--paper-drift),105vh) rotate(310deg); } }
+@keyframes clock-mistake-glow { 0% { opacity:0; } 9%,70% { opacity:1; } 100% { opacity:0; } }
+@keyframes clock-mistake-cross { from { opacity:0; transform:translate(-50%,-50%) scale(.55) rotate(-18deg); } to { opacity:.56; transform:translate(-50%,-50%) scale(1) rotate(8deg); } }
+.camp-background .clock-mistake-effect,.camp-background .clock-mistake-effect * { animation-play-state:paused !important; }
 @keyframes clock-rabbit {
   0% { transform:translateX(-110%); }
   12% { transform:translate(6vw,-31px) rotate(-8deg); }
@@ -100,9 +107,12 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 }
 @media (prefers-reduced-motion:reduce) {
   /* Keep only a stationary fade despite the global reduced-motion animation reset. */
-  .clock-sparkles,.clock-rabbit-runner,.clock-quick-runner { animation:clock-celebration-fade 1.2s ease-out both !important; }
-  .clock-mistake-effect { animation:clock-mistake-glow 2.4s ease-out both !important; }
-  .clock-rabbit-runner,.clock-quick-runner { left:auto; right:16px; }
+  .clock-sparkles,.clock-rabbit-runner { animation:clock-celebration-fade 1.2s ease-out both !important; }
+  .clock-quick-party { animation:clock-party-life 3s ease-out both !important; }
+  .clock-mistake-effect { animation:clock-mistake-glow var(--clock-lesson-duration) ease-out both !important; }
+  .clock-rabbit-runner { left:auto; right:16px; }
+  .clock-quick-runner { left:var(--party-rest-x); transform:translateX(-50%); }
+  .clock-party-confetti i { top:var(--paper-y); opacity:.65; }
   .clock-sparkles i { transform:translate(var(--burst-x),var(--burst-y)); }
   .clock-rabbit-dust { display:none; }
   @keyframes clock-celebration-fade { 0%,75% { opacity:1; } 100% { opacity:0; } }

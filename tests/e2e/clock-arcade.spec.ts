@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { defaults, STORAGE_KEY } from '../../src/storage';
 import { clockGameIds, clockRound, clockTime } from '../../src/clock-games';
-import { answerClock, answerFirstClockOption, continueClockLesson } from './clock-helpers';
+import { advanceClockLesson, answerClock, answerFirstClockOption } from './clock-helpers';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(({ key, settings }) => localStorage.setItem(key, JSON.stringify(settings)), {
@@ -33,7 +33,7 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await expect(page.locator('#open-training')).toBeVisible();
 });
 
-test('une réussite avance immédiatement et une erreur attend que la fiche soit lue', async ({ page }) => {
+test('une réussite avance immédiatement et une fiche d’erreur se ferme seule', async ({ page }) => {
   await page.locator('#open-clock-arcade').click();
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
@@ -42,7 +42,8 @@ test('une réussite avance immédiatement et une erreur attend que la fiche soit
   await answerClock(page);
   await expect(page.getByText('Question 2 sur 5')).toBeVisible();
   await expect(page.locator('.clock-feedback')).toHaveText('Bravo, bonne réponse !');
-  await expect(page.locator('.clock-quick-runner')).toHaveCSS('animation-name', 'clock-quick-sprint');
+  await expect(page.locator('.clock-quick-runner')).toHaveCount(4);
+  await expect(page.locator('.clock-quick-runner').first()).toHaveCSS('animation-name', 'clock-quick-sprint');
   await page.clock.runFor(1500);
   await expect(timer).toHaveText('89 s');
   await answerClock(page, false);
@@ -53,14 +54,25 @@ test('une réussite avance immédiatement et une erreur attend que la fiche soit
   await expect(page.locator('.clock-sparkles')).toHaveCount(0);
   const mistake = page.locator('.clock-mistake-effect');
   await expect(mistake.locator('i')).toHaveCount(12);
-  await expect(mistake).toHaveCSS('animation-duration', '2.4s');
+  await expect(mistake).toHaveCSS('animation-duration', '4.5s');
   await expect(mistake).toHaveCSS('pointer-events', 'none');
-  await mistake.evaluate(element => element.dispatchEvent(new Event('animationend')));
-  await expect(mistake).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'J’ai compris, on continue' })).toHaveCount(0);
+  await page.clock.runFor(1700);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
   await page.clock.fastForward(100_000);
   await expect(page.locator('.clock-lesson')).toContainText('89 S RESTANTES');
-  await page.getByRole('button', { name: 'J’ai compris, on continue' }).click();
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.runFor(2300);
+  await expect(page.locator('.clock-lesson')).toBeVisible();
+  await page.clock.fastForward(650);
   await expect(page.getByText('Question 3 sur 5')).toBeVisible();
+  await expect(mistake).toHaveCount(0);
   await expect(timer).toHaveText('89 s');
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
@@ -110,17 +122,21 @@ test('le bonhomme et les étoiles repartent à chaque réussite, le lapin tous l
       await expect(page.getByText(`Question ${index} sur 5`)).toBeVisible();
       if (wrongFirst && index === 1) {
         await answerClock(page, false);
-        await continueClockLesson(page);
+        await advanceClockLesson(page);
         continue;
       }
       const previous = await page.locator('.clock-sparkles').elementHandles();
-      const previousRunner = await page.locator('.clock-quick-runner').last().elementHandles();
+      const previousRunner = await page.locator('.clock-quick-party').last().elementHandles();
       if (previousRunner[0]) await previousRunner[0].evaluate(node => (node as HTMLElement).style.animationPlayState = 'paused');
       await answerClock(page);
       successes++;
       await expect(page.locator('.clock-sparkles')).toHaveCount(1);
       await expect(page.locator('.clock-sparkles i')).toHaveCount(12);
-      await expect(page.locator('.clock-quick-runner').last()).toHaveCSS('animation-name', successes <= 5 ? 'clock-quick-sprint' : 'clock-celebration-fade');
+      const party = page.locator('.clock-quick-party').last();
+      await expect(party.locator('.clock-quick-runner')).toHaveCount(4);
+      await expect(party.locator('.clock-party-confetti i')).toHaveCount(32);
+      await expect(party).toHaveCSS('animation-duration', '3s');
+      await expect(party.locator('.clock-quick-runner').first()).toHaveCSS('animation-name', successes <= 5 ? 'clock-quick-sprint' : 'none');
       if (previous[0]) expect(await previous[0].evaluate(node => node.isConnected)).toBe(false);
       if (previousRunner[0]) {
         expect(await previousRunner[0].evaluate(node => node.isConnected)).toBe(true);
@@ -188,7 +204,7 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await page.locator('[data-game="match"]').click();
   await firstLevel.click();
   await answerClock(page, false);
-  await continueClockLesson(page);
+  await advanceClockLesson(page);
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
   await expect(companion).toBeHidden();
@@ -196,7 +212,7 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await page.getByRole('button', { name: 'Rejouer' }).click();
   for (let index = 0; index < 5; index++) {
     await answerClock(page, false);
-    await continueClockLesson(page);
+    await advanceClockLesson(page);
   }
   await expect(page.getByText('Niveau fait', { exact: false })).toBeVisible();
   await expect(companion).toBeVisible();
@@ -218,7 +234,7 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await expect(companion.locator('.clock-companion-art')).toHaveCSS('animation-name', 'clock-companion-hop');
   await answerClock(page, false);
   await expect(companion).toHaveAttribute('data-gesture', 'encourage');
-  await continueClockLesson(page);
+  await advanceClockLesson(page);
   for (let index = 0; index < 3; index++) await answerClock(page);
   await expect(companion).toContainText('1 / 18 niveaux faits');
 

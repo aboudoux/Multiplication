@@ -220,7 +220,7 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 
 Le 18e niveau lance cinq tableaux de cinq secondes chacun : les retrouvailles sous le chêne, la réparation de la montre, le réglage des aiguilles, la cloche et le goûter. La scène conserve la mélodie du lapin et ponctue les actions de carillons. Elle se suspend pendant une pause ou en arrière-plan et affiche les tableaux fixes avec la réduction des animations. Le dernier tableau reste visible et le film est rejouable depuis l’histoire. Depuis le bilan d’une manche, le retour mène aux niveaux du mini-jeu joué.
 
-Une bonne réponse enchaîne immédiatement sur la question suivante. Une erreur fige le chrono et ouvre une fiche avec la réponse et un cadran, une frise ou des durées à comparer. Le bouton « J’ai compris, on continue » reprend le décompte et fait avancer la manche. La mélodie accompagne aussi la lecture de la fiche.
+Une bonne réponse enchaîne immédiatement sur la question suivante avec des personnages et des confettis en fête. Une erreur fige le chrono et ouvre une fiche avec la réponse et un cadran, une frise ou des durées à comparer. Après 4,5 secondes de lecture à l’écran, la manche avance et le décompte reprend automatiquement. La mélodie accompagne aussi la lecture de la fiche.
 
 ## Repères dans le code
 

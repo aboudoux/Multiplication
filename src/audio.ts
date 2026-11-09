@@ -240,9 +240,10 @@ export class GameAudio {
     for (const source of this.clockSources) { try { source.stop(); } catch { /* Already ended. */ } }
     this.clockSources.clear();
     if (correct) {
-      [698.46, 880, 1046.5, 1396.91].forEach((note, index) =>
-        this.tone(note, index * .07, .17, .18, 'triangle', this.clockSources));
-      this.tone(174.61, .08, .16, .12, 'sine', this.clockSources);
+      [698.46, 880, 1046.5, 1174.66, 1318.51, 1396.91].forEach((note, index) =>
+        this.tone(note, index * .095, .23, .18, 'triangle', this.clockSources));
+      [174.61, 196, 233.08].forEach((note, index) =>
+        this.tone(note, .08 + index * .18, .21, .12, 'sine', this.clockSources));
     } else {
       [124, 92].forEach((note, index) => {
         this.tone(note, index * .22, .16, .25, 'triangle', this.clockSources);

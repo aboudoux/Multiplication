@@ -29,6 +29,6 @@ export function clockCorrectionMarkup(question: ClockQuestion, selected: ClockQu
     <div class="clock-lesson-body"><div class="clock-lesson-text"><p class="clock-lesson-question">${question.prompt}</p>
     <p>Tu avais choisi <strong>${answerLabel(selected)}</strong>.</p><p class="clock-lesson-answer"><span>LA BONNE RÉPONSE</span><strong>${answerLabel(question.correct)}</strong></p><p>${question.explanation}</p></div>
     ${correctionFigure(question)}</div>
-    <footer class="clock-lesson-footer"><p>Prends le temps de regarder la fiche.</p><button class="play-button" type="button" data-clock-action="continue-lesson">J’ai compris, on continue</button></footer>
+    <p class="clock-lesson-footer">Lis la fiche. Le jeu reprend tout seul.</p>
   </article>`;
 }

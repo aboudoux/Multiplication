@@ -10,6 +10,7 @@ type Level = 0 | 1 | 2;
 export const clockGameIds = ['read', 'match', 'order', 'compare', 'elapsed', 'next'] as const;
 export type ClockGame = (typeof clockGameIds)[number];
 export const roundLength = 5;
+export const clockCorrectionMs = 4500;
 export const CLOCK_PROGRESS_KEY = 'calcul-party:clock-progress:v1';
 
 export const clockGames = {
