@@ -48,6 +48,9 @@ test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ p
 
   await page.reload();
   await expect(friends).toHaveCount(1);
+  await expect(friends.first()).toBeHidden();
+  await page.locator('#open-clock-arcade').click();
+  await expect(friends.first()).toBeVisible();
   await expect(page.locator('.clock-companion')).toContainText('3 / 18 niveaux faits');
 });
 

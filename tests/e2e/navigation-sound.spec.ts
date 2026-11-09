@@ -151,6 +151,24 @@ test('la mélodie du lapin continue pendant la correction, la pause et le bilan'
   expect((await notes()).length).toBe(muted);
 });
 
+test('le chrono expiré joue un riff de basse funk et le rejeu le coupe', async ({ page }) => {
+  await page.clock.install();
+  await prepare(page);
+  await page.locator('#open-clock-arcade').click();
+  await page.locator('[data-game="match"]').click();
+  await page.locator('[data-level="0"]').click();
+  const bass = () => page.evaluate(() => (window as any).navigationProbe.filter((note: any) =>
+    note.type === 'sine' && [41.2, 82.41, 49, 55, 58.27, 61.74, 73.42].includes(note.frequency)));
+  expect(await bass()).toHaveLength(0);
+  await page.clock.fastForward(100_000);
+  await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
+  const riff = await bass();
+  expect(riff.map((note: any) => note.frequency)).toEqual([41.2, 82.41, 41.2, 49, 55, 58.27, 61.74, 73.42, 41.2]);
+  expect(riff.at(-1).delay).toBeGreaterThan(1.8);
+  await page.getByRole('button', { name: 'Rejouer' }).click();
+  expect((await bass()).at(-1).cancelled).toBe(true);
+});
+
 test.describe('audible autoplay permitted',()=>{
  test('home music starts on arrival without any click',async({playwright})=>{
   const browser=await playwright.chromium.launch({channel:'msedge',args:['--autoplay-policy=no-user-gesture-required']});

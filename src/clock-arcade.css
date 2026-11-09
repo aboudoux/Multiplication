@@ -136,13 +136,42 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-face text { fill:#49335e; font:700 12px system-ui,sans-serif; text-anchor:middle; dominant-baseline:central; }
 .clock-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:20px; }
 .clock-done { justify-self:start; display:inline-block; padding:3px 9px; border-radius:16px; background:#d5f2dc; color:#204e35; font-weight:700; font-size:14px; }
-.page-wrap:has(.clock-companion:not([hidden])) { padding-bottom:100px; }
+.page-wrap:has(.clock-arcade:not([hidden]) .clock-companion:not([hidden])) { padding-bottom:100px; }
 .clock-companion { position:fixed; inset-inline-end:max(8px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:15; display:flex; flex-direction:column; align-items:center; pointer-events:none; color:#2c193d; }
 .clock-companion > span { background:#fff5e2; border:1px solid #d879a0; border-radius:18px; padding:5px 9px; font-size:clamp(10px,2.5vw,13px); font-weight:700; box-shadow:0 2px 5px #49335e30; }
 .clock-companion-art .clock-rabbit-art { width:clamp(57px,9vw,86px); transform-origin:center bottom; animation:clock-companion-idle 7s ease-in-out infinite; }
 .clock-companion-crew,.clock-companion-friends { display:flex; align-items:end; }
 .clock-companion-friends { gap:2px; padding-bottom:6px; }
 .clock-companion-friend { display:block; width:clamp(28px,7vw,44px); }
+
+.clock-timeout-scene {
+  position:relative; isolation:isolate; display:flex; justify-content:center; align-items:center;
+  width:min(100%,360px); min-height:146px; margin:0 auto 12px; overflow:hidden; border:2px solid #c985a1;
+  border-radius:22px; background:radial-gradient(ellipse at 56% 43%,#fff2c4 12%,#f9d5cc 69%,#eac5df);
+}
+.clock-timeout-scene::before {
+  content:""; position:absolute; inset:auto 12% 12%; height:24%; z-index:-1; border-radius:50%; background:#b86c9a26;
+}
+.clock-timeout-dial { width:clamp(56px,15vw,91px); transform-origin:center 60%; animation:clock-timeout-ring .536s ease-in-out 4; }
+.clock-timeout-hand { transform-origin:48px 58px; transform-box:view-box; animation:clock-timeout-hand 1.072s ease-out; }
+.clock-timeout-rabbit { width:clamp(94px,26vw,141px); transform-origin:center bottom; animation:clock-timeout-dance 1.072s ease-in-out 2; }
+.clock-timeout-note { position:absolute; top:14%; left:15%; color:#79345d; font-size:clamp(17px,4vw,26px); }
+.clock-timeout-note:nth-child(2) { top:9%; left:73%; }
+.clock-timeout-note:nth-child(3) { top:58%; left:85%; }
+@keyframes clock-timeout-ring {
+  0%,100% { transform:rotate(0); }
+  28% { transform:rotate(-12deg); }
+  63% { transform:rotate(9deg); }
+}
+@keyframes clock-timeout-hand { from { transform:rotate(-360deg); } to { transform:rotate(0); } }
+@keyframes clock-timeout-dance {
+  0%,50%,100% { transform:translate(0) rotate(0); }
+  25% { transform:translate(-6px,-7px) rotate(-7deg); }
+  75% { transform:translate(6px,-5px) rotate(7deg); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .clock-timeout-scene * { animation:none !important; }
+}
 .clock-friend-art,.clock-rabbit-art { display:block; width:100%; height:auto; }
 .clock-guest-trail { position:relative; display:flex; gap:2px; height:clamp(62px,10vw,80px); margin:14px auto 0; max-width:590px; overflow:hidden; border:1px solid #adca9a; border-radius:16px; pointer-events:none; background:radial-gradient(ellipse at 19% 103%,#d2e4a9 0 24%,transparent 25%),radial-gradient(ellipse at 85% 112%,#b8d597 0 40%,transparent 41%),linear-gradient(#e4f3dc,#fbf5dd); }
 .clock-guest-trail::before { content:""; position:absolute; left:-3%; right:-3%; bottom:-11px; height:29px; border-top:1px dashed #b9aa69; border-radius:50%; background:#f1dfa8; }

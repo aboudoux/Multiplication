@@ -225,9 +225,8 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
 });
 get('home').before(camp.root);
-const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), milestone => audio.success(milestone), correct => audio.clockAnswer(correct), () => localStorage);
+const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), milestone => audio.success(milestone), cue => audio.clockAnswer(cue), () => localStorage);
 get('home').before(clockArcade.root);
-document.querySelector('.page-wrap')!.append(clockArcade.companion);
 get('open-clock-arcade').addEventListener('click', () => {
   void audio.navigation();
   get('home').hidden = true;
@@ -917,7 +916,6 @@ function render(now: number): void {
   if (game.feedback && previousFeedback !== game.feedback) {
     previousFeedback = game.feedback;
     const { correct, timeout, pair } = game.feedback;
-    clockArcade.reactCompanion(correct ? 'cheer' : 'encourage');
     get("feedback").className =
       `feedback-line ${correct ? "correct" : "incorrect"}`;
     if (correct) {

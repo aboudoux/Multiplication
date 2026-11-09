@@ -189,7 +189,7 @@ test('les titres, consignes et réponses contrastent avec leur fond', async ({ p
   }
 });
 
-test('les niveaux faits débloquent un compagnon persistant et ne sont comptés qu’une fois', async ({ page }) => {
+test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const companion = page.locator('.clock-companion');
   const games = page.getByRole('button', { name: 'Tous les jeux' });
@@ -208,8 +208,15 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
   await expect(companion).toBeHidden();
+  const timeoutScene = page.locator('.clock-timeout-scene');
+  await expect(timeoutScene.locator('.clock-timeout-dial')).toHaveCSS('animation-name', 'clock-timeout-ring');
+  await expect(timeoutScene.locator('.clock-timeout-rabbit')).toHaveCSS('animation-name', 'clock-timeout-dance');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(timeoutScene.locator('.clock-timeout-rabbit')).toHaveCSS('animation-name', 'none');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
 
   await page.getByRole('button', { name: 'Rejouer' }).click();
+  await expect(timeoutScene).toHaveCount(0);
   for (let index = 0; index < 5; index++) {
     await answerClock(page, false);
     await advanceClockLesson(page);
@@ -247,15 +254,18 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await expect(companion).toContainText('2 / 18 niveaux faits');
   await levels.click();
   await games.click();
-  await page.getByRole('button', { name: 'Accueil', exact: false }).click();
   await expect(companion).toBeVisible();
   await expect(companion).toHaveCSS('position', 'fixed');
   await expect(companion).toHaveCSS('pointer-events', 'none');
+  await page.getByRole('button', { name: 'Accueil', exact: false }).click();
+  await expect(companion).toBeHidden();
   await page.locator('#open-training').click();
-  await expect(companion).toContainText('2 / 18 niveaux faits');
+  await expect(companion).toBeHidden();
   await page.reload();
-  await expect(companion).toContainText('2 / 18 niveaux faits');
+  await expect(companion).toBeHidden();
   await page.locator('#open-clock-arcade').click();
+  await expect(companion).toBeVisible();
+  await expect(companion).toContainText('2 / 18 niveaux faits');
   await page.locator('[data-game="match"]').click();
   await expect(firstLevel.locator('.clock-done')).toHaveText('✓ Fait');
 });

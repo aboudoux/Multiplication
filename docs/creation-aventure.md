@@ -222,6 +222,8 @@ Le 18e niveau lance cinq tableaux de cinq secondes chacun : les retrouvailles so
 
 Une bonne réponse enchaîne immédiatement sur la question suivante avec des personnages et des confettis en fête. Une erreur fige le chrono et ouvre une fiche avec la réponse et un cadran, une frise ou des durées à comparer. Après 4,5 secondes de lecture à l’écran, la manche avance et le décompte reprend automatiquement. La mélodie accompagne aussi la lecture de la fiche.
 
+Si le chrono expire, le bilan montre la montre qui sonne et le lapin qui danse sur une mesure de funk à la basse. Avec la réduction des animations, l’illustration reste fixe. Les compagnons apparaissent dans le Lapin chrono et disparaissent quand on revient à l’accueil, où la progression reste sauvegardée.
+
 ## Repères dans le code
 
 | Sujet | Source principale |

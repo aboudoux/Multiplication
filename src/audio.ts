@@ -2,6 +2,8 @@ import { themes, type ThemeId } from "./themes";
 import type { Calculation } from "./calculations";
 import { QuestionVoice, type VoiceStyle } from "./voice";
 
+export type ClockCue = 'correct' | 'mistake' | 'timeout' | 'stop';
+
 const clubMusic = {
   melody: [392,493.88,587.33,0,523.25,493.88,440,0,349.23,440,523.25,0,493.88,440,392,0],
   bass: [196,174.61,174.61,196], beat: .3, noteLength: .24, bassLength: .27,
@@ -124,7 +126,7 @@ export class GameAudio {
   private homePlaying = false;
   private rabbitPlaying = false;
   private menuSources = new Set<OscillatorNode>();
-  private readonly clockSources = new Set<OscillatorNode>();
+  private readonly clockSources = new Set<AudioScheduledSourceNode>();
   private homeBeat = 0;
   private nextHomeBeat = 0;
   /** Music-box loops for the menus and the rabbit arcade. */
@@ -154,7 +156,7 @@ export class GameAudio {
     length = 0.13,
     volume = 0.2,
     type: OscillatorType = "sine",
-    group?: Set<OscillatorNode>,
+    group?: Set<AudioScheduledSourceNode>,
   ): void {
     const ctx = this.context;
     if (!ctx || !this.master || ctx.state !== "running" || this.muted) return;
@@ -236,17 +238,18 @@ export class GameAudio {
     (milestone ? notes.slice(0,4) : [notes[1], notes[3]]).forEach((note,i) =>
       this.tone(note, i*.08, .24, .18, themes[this.theme].music.timbre));
   }
-  clockAnswer(correct: boolean): void {
+  clockAnswer(cue: ClockCue): void {
     for (const source of this.clockSources) { try { source.stop(); } catch { /* Already ended. */ } }
     this.clockSources.clear();
-    if (correct) {
+    if (cue === 'stop') return;
+    if (cue === 'correct') {
       const brass = [[369.99, 0, .15], [554.37, .15, .13], [739.99, .27, .14], [932.33, .41, .13], [739.99, .54, .36]];
       for (const [note, delay, length] of brass) {
         this.tone(note, delay, length, .16, 'triangle', this.clockSources);
         this.tone(note, delay, length, .052, 'sawtooth', this.clockSources);
       }
       [184.99, 233.08, 277.18].forEach(note => this.tone(note, .54, .33, .055, 'sine', this.clockSources));
-    } else {
+    } else if (cue === 'mistake') {
       // A syncopated cowbell pattern over a short, low bass beat.
       const step = .105;
       const cowbell = [[0, 440], [2, 392], [3, 440], [6, 349.23], [8, 440], [10, 466.16], [11, 392], [14, 349.23]];
@@ -257,6 +260,24 @@ export class GameAudio {
       for (const [beat, note] of [[0, 55], [4, 49], [7, 55], [10, 58.27], [12, 49]]) {
         this.tone(note, beat * step, .19, .20, 'sine', this.clockSources);
         this.tone(note * 2, beat * step, .078, .085, 'triangle', this.clockSources);
+      }
+    } else {
+      // One bar of E funk, with a syncopated electric bass and offbeat chords.
+      const step = 60 / 112 / 4;
+      const bass = [[0, 41.2, 2.4], [3, 82.41, .85], [4, 41.2, 1.1], [6, 49, 1.25], [8, 55, 1.6],
+        [10, 58.27, .85], [11, 61.74, .8], [13, 73.42, .85], [14, 41.2, 2.2]];
+      for (const [beat, note, length] of bass) {
+        this.tone(note, beat * step, length * step, .28, 'sine', this.clockSources);
+        this.tone(note * 2, beat * step, length * step, .16, 'triangle', this.clockSources);
+        this.tone(note * 4, beat * step, .055, .05, 'sawtooth', this.clockSources);
+      }
+      for (const beat of [2, 7, 10, 15]) {
+        for (const note of [207.65, 293.66, 369.99]) this.tone(note, beat * step, .08, .04, 'triangle', this.clockSources);
+      }
+      for (const beat of [0, 3, 8, 11, 14]) this.tone(62, beat * step, .1, .24, 'sine', this.clockSources);
+      for (const beat of [2, 4, 6, 10, 12, 14]) {
+        const snare = beat === 4 || beat === 12;
+        this.percussion(snare ? .14 : .06, snare, beat * step, this.clockSources);
       }
     }
   }
@@ -298,7 +319,7 @@ export class GameAudio {
     );
   }
 
-  private percussion(volume: number, snare: boolean, delay = 0): void {
+  private percussion(volume: number, snare: boolean, delay = 0, group?: Set<AudioScheduledSourceNode>): void {
     const ctx = this.context;
     if (!ctx || !this.master || this.muted) return;
     if (!this.percussionBuffer) {
@@ -326,8 +347,10 @@ export class GameAudio {
     filter.connect(gain);
     gain.connect(this.master);
     this.sources.add(source);
+    group?.add(source);
     source.start(start);
     source.onended = () => {
+      group?.delete(source);
       this.sources.delete(source);
       source.disconnect();
       filter.disconnect();
