@@ -76,6 +76,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-companion { position:fixed; inset-inline-end:max(8px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:15; display:flex; flex-direction:column; align-items:center; pointer-events:none; color:#2c193d; }
 .clock-companion > span { background:#fff5e2; border:1px solid #d879a0; border-radius:18px; padding:5px 9px; font-size:clamp(10px,2.5vw,13px); font-weight:700; box-shadow:0 2px 5px #49335e30; }
 .clock-companion-art img { display:block; width:clamp(54px,9vw,80px); height:auto; transform-origin:center bottom; animation:clock-companion-idle 7s ease-in-out infinite; }
+.clock-companion-crew,.clock-companion-friends { display:flex; align-items:end; }
+.clock-companion-friends { gap:2px; padding-bottom:6px; }
+.clock-companion-friend { display:block; width:clamp(28px,7vw,44px); }
+.clock-friend-art { display:block; width:100%; height:auto; }
+.clock-companion[data-gesture="finish"] .clock-companion-friend:last-child { animation:clock-companion-hop .6s ease-out both; }
 .clock-companion[data-gesture="cheer"] .clock-companion-art { animation:clock-companion-hop .48s ease-out both; }
 .clock-companion[data-gesture="encourage"] .clock-companion-art { animation:clock-companion-nod .55s ease-in-out both; }
 .clock-companion[data-gesture="finish"] .clock-companion-art { animation:clock-companion-hop .5s ease-out 2 both; }
@@ -92,6 +97,55 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   0%,100% { transform:rotate(0); }
   40% { transform:rotate(9deg); }
   75% { transform:rotate(-5deg); }
+}
+
+.clock-story-teaser,.clock-story-end { background:#ffe4d8; border:2px solid #dfa494; border-radius:20px; padding:14px 18px; }
+.clock-story-teaser { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; }
+.clock-story-teaser .secondary-button { flex-shrink:0; }
+.clock-arcade h3 { margin:0; font:700 clamp(21px,3.5vw,28px)/1.2 Kalam,cursive; }
+.clock-story-intro { margin-bottom:24px; }
+.clock-chapters { list-style:none; padding:0; margin:0 auto 20px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-width:860px; }
+.clock-chapter,.clock-arrival { display:grid; grid-template-columns:64px 1fr; gap:12px; align-items:center; background:#fff9ef; border:2px solid #d997b0; border-radius:18px; padding:12px; text-align:left; }
+.clock-chapter-locked { background:#f1e9f5; border-style:dashed; border-color:#bba6c5; }
+.clock-chapter p,.clock-arrival p { margin:5px 0 0; }
+.clock-mystery { display:grid; place-items:center; width:52px; height:52px; background:#e2cfea; border-radius:50%; color:#49335e; font:700 30px Kalam,cursive; }
+.clock-story-end { text-align:center; max-width:860px; margin:auto; }
+.clock-story-end .play-button { margin-top:10px; }
+.clock-arrival { margin:16px auto 0; max-width:450px; background:#edf6dd; border-color:#9bb581; }
+.clock-arrival .clock-friend-art { animation:clock-companion-hop .6s ease-out both; }
+
+.clock-finale-scene { position:relative; isolation:isolate; overflow:hidden; min-height:clamp(205px,35vw,350px); max-width:780px; margin:auto; border-radius:25px; border:3px solid #c8889d; background:linear-gradient(#a1d8ed,#ffe9a8 72%); }
+.clock-finale-sun { position:absolute; right:11%; top:9%; width:clamp(38px,9vw,75px); aspect-ratio:1; border-radius:50%; background:#ffda71; box-shadow:0 0 0 10px #fff1b677; }
+.clock-finale-hill { position:absolute; inset:60% -6% -31%; background:#91c886; border-radius:55% 68% 0 0; box-shadow:15vw -1vw 0 #a8d995; }
+.clock-finale-tree { position:absolute; right:14%; bottom:18%; height:59%; width:clamp(25px,7vw,66px); background:#a7755b; border-radius:70% 30% 9% 15%; transform:rotate(4deg); }
+.clock-finale-tree::before { content:""; position:absolute; top:-17%; left:-150%; width:400%; aspect-ratio:1.45; background:#6caa75; border-radius:55% 57% 47% 62%; box-shadow:-17px 12px 0 #84ba7c,14px 15px 0 #7ab77b; }
+.clock-finale-garland { position:absolute; top:19%; left:12%; font-size:clamp(14px,4vw,26px); letter-spacing:.35em; color:#954161; transform:rotate(-6deg); }
+.clock-finale-cast { position:absolute; left:5%; right:5%; bottom:20%; display:flex; gap:clamp(2px,1.2vw,12px); align-items:end; justify-content:center; }
+.clock-finale-cast .clock-friend-art,.clock-finale-cast img { width:14%; height:auto; filter:drop-shadow(0 3px 0 #3e623844); animation:clock-finale-enter .55s ease-out both; }
+.clock-finale-cast img { width:20%; }
+.clock-finale-cast .clock-friend-art:nth-child(even) { animation-delay:.19s; }
+.clock-finale-watch { position:absolute; top:13%; left:45%; width:clamp(45px,10vw,86px); aspect-ratio:1; border:6px solid #e5ad50; border-radius:50%; background:#fff8db; box-shadow:0 0 0 2px #83545f; }
+.clock-finale-watch::before,.clock-finale-watch i,.clock-finale-watch b { position:absolute; content:""; border-radius:7px; background:#663e61; }
+.clock-finale-watch::before { width:8px; height:8px; left:calc(50% - 4px); top:calc(50% - 4px); }
+.clock-finale-watch i,.clock-finale-watch b { left:calc(50% - 2px); bottom:50%; width:4px; height:34%; transform-origin:50% 100%; }
+.clock-finale-watch i { transition:transform .6s; }
+.clock-finale-watch b { height:27%; transform:rotate(90deg); transition:transform .6s; }
+.clock-finale-scene[data-step="1"] .clock-finale-watch { animation:clock-finale-fix .6s ease-in-out 2 both; }
+.clock-finale-scene[data-step="2"] .clock-finale-watch i { transform:rotate(60deg); }
+.clock-finale-scene[data-step="2"] .clock-finale-watch b { transform:rotate(125deg); }
+.clock-finale-cake { position:absolute; bottom:7%; left:43%; width:14%; min-width:46px; height:13%; border-radius:32% 32% 18% 18%; background:linear-gradient(#ffe5f1 0 36%,#b7755c 38% 65%,#ffe5a3 67%); border:2px solid #88546c; box-shadow:0 5px 0 #f9e1c7; opacity:0; }
+.clock-finale-cake i,.clock-finale-cake b { position:absolute; left:46%; bottom:100%; display:block; width:7px; height:15px; background:#b784c5; border-radius:4px; }
+.clock-finale-cake b { bottom:calc(100% + 16px); height:10px; background:#ff9d32; border-radius:65% 70% 50% 45%; }
+.clock-finale-stars { position:absolute; top:35%; right:14%; font-size:clamp(21px,6vw,50px); color:#a44167; opacity:0; }
+.clock-finale-scene[data-step="2"] :is(.clock-finale-cake,.clock-finale-stars) { opacity:1; animation:clock-finale-enter .75s ease-out both; }
+.clock-finale-scene[data-step="2"] .clock-finale-cast > * { animation:clock-companion-hop .6s ease-out 2 both; }
+.camp-background .clock-finale-scene * { animation-play-state:paused; }
+.clock-arcade .clock-finale-caption { text-align:center; min-height:3em; max-width:58ch; margin:14px auto 0; font-weight:700; }
+@keyframes clock-finale-enter { from { opacity:0; transform:translateY(18px) scale(.85); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes clock-finale-fix { 0%,100% { transform:rotate(0); } 30% { transform:rotate(-9deg); } 70% { transform:rotate(9deg); } }
+@media (max-width:580px) {
+  .clock-story-teaser { align-items:start; flex-direction:column; }
+  .clock-chapters { grid-template-columns:1fr; }
 }
 
 @media (701px <= width <= 920px) {

@@ -214,6 +214,12 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 - [ ] Pour les changements de parcours ou de récompenses, tests navigateur pertinents avec `npm run test:e2e -- <fichiers concernés>` ; un test simulé ne remplace pas un essai sur tablette physique.
 - [ ] Commit limité à la demande, message court en français, déploiement sur le site existant avec ses accès conservés et succès confirmé, conformément à `AGENTS.md`.
 
+## L’histoire des mini-jeux du Lapin chrono
+
+*Le goûter du tic-tac* suit les six mini-jeux existants du Lapin chrono, avec trois niveaux chacun. Le lapin a raté le goûter parce que sa montre est tombée dans une flaque et s’est arrêtée. Un animal rejoint le groupe après 3, 6, 9, 12 et 15 niveaux distincts terminés. Son portrait apparaît à côté du lapin et son chapitre raconte ce qu’il apporte à la réparation. Les chapitres, les compagnons et la fin se déduisent de la progression des niveaux.
+
+Le 18e niveau lance le dénouement en trois temps visibles : les retrouvailles sous le chêne, la réparation de la montre et le goûter. La scène utilise la mélodie du lapin et un carillon de réussite. Elle garde les légendes et les tableaux fixes avec la réduction des animations. Une fois débloquée, elle est rejouable depuis l’histoire.
+
 ## Repères dans le code
 
 | Sujet | Source principale |
