@@ -1,5 +1,7 @@
 import { CLOCK_PROGRESS_KEY, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
-import { clockFinaleChapterMs, clockFinaleChapters, clockFinaleScene, clockFriendArt, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend } from './clock-story';
+import clockRabbitArt from '/themes/lapin-chrono.svg?raw';
+import { clockFriendArt } from './clock-characters';
+import { clockFinaleChapterMs, clockFinaleChapters, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend } from './clock-story';
 
 type Level = Parameters<typeof clockRound>[1];
 type Screen = 'catalogue' | 'levels' | 'playing' | 'paused' | 'results' | 'story' | 'finale';
@@ -8,6 +10,10 @@ type Gesture = 'cheer' | 'encourage' | 'finish';
 const rabbitEvery = 5;
 const levelKey = (game: ClockGame, level: number) => `${game}:${level}`;
 const levelKeys = clockGameIds.flatMap(game => clockLevels.map((_, level) => levelKey(game, level)));
+const sparkleTrajectories = [[-88,-24],[-74,5],[-60,-41],[-37,13],[-29,-53],[-11,-20],[14,-56],[28,12],[42,-42],[59,6],[75,-22],[88,-1]];
+const successBurst = `<div class="clock-sparkles"><span class="clock-success-star">✦</span>${sparkleTrajectories.map(([x, y], index) =>
+  `<i style="--burst-x:${x}px;--burst-y:${y}px;--burst-delay:${(index % 4) * 32}ms"></i>`).join('')}</div>`;
+const rabbitParade = `<div class="clock-rabbit-runner"><span class="clock-rabbit-dust"><i></i><i></i><i></i></span>${clockRabbitArt}</div>`;
 
 export class ClockArcade {
   readonly root = document.createElement('section');
@@ -58,7 +64,7 @@ export class ClockArcade {
     this.root.append(this.content, this.guestTrail, this.feedback, this.burst, this.parade);
     this.companion.className = 'clock-companion';
     this.companion.setAttribute('aria-label', 'Le lapin chrono et ses amis');
-    this.companion.innerHTML = '<div class="clock-companion-crew"><div class="clock-companion-art"><img src="/themes/lapin-chrono.svg" alt="" width="80" height="80"></div></div>';
+    this.companion.innerHTML = `<div class="clock-companion-crew"><div class="clock-companion-art">${clockRabbitArt}</div></div>`;
     this.companionFriends.className = 'clock-companion-friends';
     this.companion.firstElementChild!.append(this.companionFriends);
     this.companion.append(this.progressLabel);
@@ -98,14 +104,17 @@ export class ClockArcade {
     this.completed = this.readProgress();
     this.totalCorrect = 0;
     delete this.companion.dataset.gesture;
+    delete this.guestTrail.dataset.gesture;
     this.updateCompanion();
   }
 
   reactCompanion(gesture: Gesture): void {
     if (this.companion.hidden) return;
     delete this.companion.dataset.gesture;
+    delete this.guestTrail.dataset.gesture;
     void this.companion.offsetWidth;
     this.companion.dataset.gesture = gesture;
+    if (this.playing) this.guestTrail.dataset.gesture = gesture;
   }
 
   private readProgress(): Set<string> {
@@ -136,7 +145,7 @@ export class ClockArcade {
     this.companionFriends.innerHTML = friends.map(friend =>
       `<span class="clock-companion-friend" role="img" aria-label="${friend.name}">${clockFriendArt(friend)}</span>`).join('');
     this.guestTrail.innerHTML = friends.map(friend =>
-      `<span class="clock-guest-spot" data-clock-friend="${friend.id}">${clockFriendArt(friend)}</span>`).join('');
+      `<span class="clock-guest-spot" data-clock-friend="${friend.id}"><span class="clock-guest-figure">${clockFriendArt(friend)}</span></span>`).join('');
   }
 
   open(): void {
@@ -170,6 +179,7 @@ export class ClockArcade {
 
   private start(now: number): void {
     this.clearCelebrations();
+    delete this.guestTrail.dataset.gesture;
     this.feedback.textContent = '';
     this.arrival = undefined;
     this.questions = clockRound(this.game, this.level);
@@ -208,15 +218,15 @@ export class ClockArcade {
     this.feedback.classList.toggle('clock-feedback-correct', correct);
     if (correct) {
       this.playSuccess(milestone);
-      this.celebrate(this.burst, '<div class="clock-sparkles">✦<span>✧</span><span>✦</span><span>✧</span><span>✦</span></div>');
-      if (milestone) this.celebrate(this.parade, '<img class="clock-rabbit-runner" src="/themes/lapin-chrono.svg" alt="" width="132" height="132">');
+      this.celebrate(this.burst, successBurst);
+      if (milestone) this.celebrate(this.parade, rabbitParade);
     } else this.burst.replaceChildren();
   }
 
   private celebrate(layer: HTMLElement, markup: string): void {
     layer.innerHTML = markup;
     const effect = layer.firstElementChild!;
-    effect.addEventListener('animationend', () => effect.remove(), { once: true });
+    effect.addEventListener('animationend', event => { if (event.target === effect) effect.remove(); });
   }
 
   private clearCelebrations(): void {

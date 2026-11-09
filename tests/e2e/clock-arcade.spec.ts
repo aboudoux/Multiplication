@@ -88,11 +88,13 @@ test('chaque réussite relance les étoiles et le lapin passe tous les cinq succ
       await answerClock(page);
       successes++;
       await expect(page.locator('.clock-sparkles')).toHaveCount(1);
+      await expect(page.locator('.clock-sparkles i')).toHaveCount(12);
       if (previous[0]) expect(await previous[0].evaluate(node => node.isConnected)).toBe(false);
       if (successes % 5 === 0) {
         await expect(page.locator('.clock-feedback')).toContainText(`${successes} bonnes réponses`);
         const runner = page.locator('.clock-rabbit-runner');
         await expect(runner).toHaveCSS('animation-name', successes === 5 ? 'clock-rabbit' : 'clock-celebration-fade');
+        await expect(runner.locator('.clock-rabbit-watch')).toHaveCSS('animation-name', successes === 5 ? 'clock-rabbit-tick' : 'none');
         await expect(page.locator('.clock-parade')).toHaveCSS('pointer-events', 'none');
         await runner.evaluate(element => element.dispatchEvent(new Event('animationend')));
         await page.emulateMedia({ reducedMotion: 'reduce' });

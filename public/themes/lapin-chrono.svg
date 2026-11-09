@@ -1,34 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220">
-  <defs>
-    <linearGradient id="fur" x1="0" x2="1" y1="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#fff8e7"/><stop offset="1" stop-color="#eebea4"/></linearGradient>
-    <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#ffdd73"/><stop offset="1" stop-color="#f5a745"/></linearGradient>
-  </defs>
-  <circle cx="109" cy="117" r="85" fill="#f1a8bf"/>
-  <ellipse cx="112" cy="196" rx="70" ry="9" fill="#b85f7b" opacity=".24"/>
-  <path fill="#fff0a0" d="M31 65l4 10 10 4-10 4-4 10-4-10-10-4 10-4zm155-23 3 8 8 3-8 3-3 8-3-8-8-3 8-3zm17 126 2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>
-  <g stroke="#69405a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="81" cy="161" rx="39" ry="35" fill="url(#fur)"/>
-    <ellipse cx="58" cy="186" rx="25" ry="11" fill="#fff0dc"/>
-    <path d="M64 86C46 71 29 34 39 23c13-13 34 24 43 52M94 73C87 50 97 13 109 14c16 1 16 42 4 66" fill="url(#fur)"/>
-    <path d="M64 65C53 53 43 31 46 31c6-1 18 17 23 31m33 1c-2-13 3-37 7-38 5 4 2 27-2 39" fill="#ef97a5" stroke="none"/>
-    <path d="M44 136c26-9 54-3 64 6l-11 20-18-9-25 4z" fill="#8b72cd"/>
-    <path d="M84 155q18 2 25 21l-15 7-14-19" fill="#a791e9"/>
-    <ellipse cx="83" cy="109" rx="51" ry="41" fill="url(#fur)"/>
-    <ellipse cx="72" cy="104" rx="4.5" ry="6" fill="#513449" stroke="none"/>
-    <ellipse cx="105" cy="104" rx="4.5" ry="6" fill="#513449" stroke="none"/>
-    <path d="M84 112q5-4 10 0l-5 5z" fill="#e17b90" stroke-width="2"/>
-    <path d="M89 117q-4 12-11 4m11-4q3 12 10 4" fill="none" stroke-width="2.5"/>
-    <path d="M87 126h5v5h-5z" fill="#fffaf0" stroke-width="1.4"/>
-    <ellipse cx="61" cy="117" rx="8" ry="4" fill="#ef9aa5" stroke="none"/>
-    <ellipse cx="114" cy="116" rx="8" ry="4" fill="#ef9aa5" stroke="none"/>
-    <path d="M106 161q12 10 29-4l-6-15q-12 5-17 4" fill="#fff0dc"/>
-    <path d="M128 112q14-21 29-18m-27 14q5-13 13-17" fill="none" stroke="#fff3c7" stroke-width="4"/>
-    <rect x="149" y="97" width="15" height="13" rx="4" fill="url(#gold)"/>
-    <circle cx="157" cy="144" r="39" fill="url(#gold)"/>
-    <circle cx="157" cy="144" r="30" fill="#fff8dd" stroke-width="2.5"/>
-    <path d="M157 121v4m23 19h-4m-19 23v-4m-23-19h4" fill="none" stroke-width="2.5"/>
-    <path d="M157 130v14l13 7" fill="none" stroke="#9d4472" stroke-width="4"/>
-    <circle cx="157" cy="144" r="3" fill="#69405a" stroke="none"/>
-    <ellipse cx="125" cy="157" rx="10" ry="7" transform="rotate(-23 125 157)" fill="#fff0dc"/>
+<svg xmlns="http://www.w3.org/2000/svg" class="clock-rabbit-art" viewBox="0 0 120 120" aria-hidden="true">
+  <circle cx="60" cy="62" r="54" fill="#f8d1dd" stroke="#d192af" stroke-width="2.5"/>
+  <path d="M11 73q49 15 96-4-9 39-46 47-38-2-50-43Z" fill="#eeb6c8"/>
+  <path d="m15 50 2 5 5 2-5 2-2 5-2-5-5-2 5-2zm86-23 2 6 6 2-6 2-2 6-2-6-6-2 6-2zm5 57 1 3 3 1-3 1-1 3-1-3-3-1 3-1Z" fill="#fff5c6"/>
+  <circle cx="22" cy="35" r="2.5" fill="#fff6de"/><circle cx="108" cy="51" r="2" fill="#fff6de"/>
+  <ellipse cx="60" cy="106" rx="42" ry="7" fill="#b87592" opacity=".3"/>
+  <g class="clock-rabbit-body" stroke="#765061" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 91q-13 1-15-7-2-7 5-10 8-4 14 4Z" fill="#fff1d7"/>
+    <ellipse cx="38" cy="102" rx="14" ry="6" fill="#f1ceb2"/><ellipse cx="70" cy="102" rx="15" ry="6" fill="#f1ceb2"/>
+    <path d="M31 94q0-22 23-27 21 2 29 24-5 14-28 13-17 0-24-10Z" fill="#8e7cc3"/>
+    <path d="M35 88q1-13 14-16l6 10-4 19q-11-1-16-13Z" fill="#b4a0dc" stroke="none"/>
+    <path d="m42 73 14 9 15-10-3 13-10 5-12-5Z" fill="#82b6a6"/>
+    <path d="M57 83q5-4 10 1l-5 17-8-2Z" fill="#a9d4b1"/><circle cx="59" cy="91" r="2" fill="#e7d48a" stroke-width="1.2"/>
+    <g class="clock-rabbit-head">
+      <g class="clock-rabbit-ears">
+        <path d="M35 44Q13 27 19 13q4-9 11-4 13 9 20 27M56 35q-1-23 10-29 8-4 11 7 2 14-8 27" fill="#fff0d6"/>
+        <path d="M38 33Q22 20 24 15q4-1 16 15m22 1q0-14 7-19 3 7-3 19" fill="#ed9fab" stroke="none"/>
+      </g>
+      <path d="M25 55q2-21 27-23 26-2 34 17 9 24-25 29-31 3-36-23Z" fill="#fff0d6"/>
+      <path d="M30 60q12-4 20-1 9-2 20 3 10 1 15-2-4 16-25 18-23 0-30-18Z" fill="#f2d2b8" stroke="none"/>
+      <g class="clock-rabbit-eyes" stroke="none">
+        <ellipse cx="44" cy="53" rx="6" ry="7" fill="#fffdf3"/><ellipse cx="67" cy="52" rx="6" ry="7" fill="#fffdf3"/>
+        <ellipse cx="45" cy="54" rx="3.7" ry="4.8" fill="#493447"/><ellipse cx="68" cy="53" rx="3.7" ry="4.8" fill="#493447"/>
+        <circle cx="44" cy="52" r="1.3" fill="#fffdf3"/><circle cx="67" cy="51" r="1.3" fill="#fffdf3"/>
+      </g>
+      <path d="M51 60q6-4 11-1l-5 5Z" fill="#e590a1" stroke-width="1.5"/><path d="M48 66q5 6 9 0 5 5 10-1" fill="none" stroke-width="1.7"/>
+      <path d="M55 69h6v5h-6Z" fill="#fffaf0" stroke-width="1"/>
+      <ellipse cx="35" cy="61" rx="5.5" ry="2.7" fill="#eaa4ae" stroke="none"/><ellipse cx="75" cy="60" rx="5.5" ry="2.7" fill="#eaa4ae" stroke="none"/>
+    </g>
+    <path d="M73 79q14 2 18-9" fill="none" stroke="#a57666" stroke-width="2.3"/>
+    <g class="clock-rabbit-watch">
+      <rect x="88" y="57" width="9" height="11" rx="3" fill="#e9ae54"/>
+      <circle cx="92" cy="82" r="19" fill="#efbb65"/><circle cx="92" cy="82" r="14.5" fill="#fff6da" stroke-width="1.6"/>
+      <path d="M92 70v3m11 9h-3m-8 11v-3m-11-8h3" fill="none" stroke="#ac796f" stroke-width="1.4"/>
+      <path d="M92 75v7h7" fill="none" stroke="#905375" stroke-width="2"/><circle cx="92" cy="82" r="1.6" fill="#905375" stroke="none"/>
+    </g>
+    <path d="M73 86q-2-6 5-8 7-1 9 4 0 5-7 6-5 1-7-2Z" fill="#fff0d6"/>
   </g>
 </svg>

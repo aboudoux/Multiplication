@@ -24,33 +24,42 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-feedback-correct { color:#236343; }
 .clock-burst,.clock-parade { pointer-events:none; z-index:14; }
 .clock-burst { position:absolute; inset:auto 0 0; height:75px; display:grid; place-items:center; }
-.clock-sparkles { position:relative; color:#a83267; font-size:clamp(30px,7vw,58px); text-shadow:0 2px 0 #fff2b0; animation:clock-sparkles 850ms ease-out both; }
-.clock-sparkles span { position:absolute; font-size:.52em; }
-.clock-sparkles span:nth-child(1) { top:-10%; left:-82%; color:#7357bc; }
-.clock-sparkles span:nth-child(2) { top:-26%; left:134%; color:#bd5928; }
-.clock-sparkles span:nth-child(3) { bottom:-12%; left:-52%; color:#31865d; }
-.clock-sparkles span:nth-child(4) { bottom:-20%; left:147%; color:#a83267; }
+.clock-sparkles { position:relative; display:grid; place-items:center; width:70px; height:48px; animation:clock-sparkles 1s ease-out both; }
+.clock-success-star { color:#b64c79; font-size:clamp(34px,8vw,62px); line-height:1; text-shadow:0 2px 0 #fff3b8; animation:clock-star-pop .64s cubic-bezier(.2,.85,.25,1.15) both; }
+.clock-sparkles i { position:absolute; inset:50% auto auto 50%; width:10px; height:10px; border-radius:3px; background:#d88aa8; animation:clock-burst-piece .78s ease-out var(--burst-delay) both; }
+.clock-sparkles i:nth-of-type(3n+1) { background:#e7a94b; clip-path:polygon(50% 0,63% 35%,100% 50%,63% 64%,50% 100%,37% 64%,0 50%,37% 35%); width:16px; height:16px; }
+.clock-sparkles i:nth-of-type(3n+2) { background:#83ac89; border-radius:50%; width:8px; height:8px; }
+.clock-sparkles i:nth-of-type(4n) { background:#9780c6; }
 .clock-parade { position:fixed; inset:0; overflow:hidden; }
-.clock-rabbit-runner { position:absolute; bottom:clamp(18px,8vh,84px); left:0; width:clamp(78px,15vw,132px); height:auto; animation:clock-rabbit 2.3s linear both; }
+.clock-rabbit-runner { position:absolute; bottom:clamp(18px,8vh,84px); left:0; width:clamp(88px,17vw,146px); animation:clock-rabbit 2.65s linear both; }
+.clock-rabbit-dust { position:absolute; left:-18%; bottom:8%; display:flex; align-items:end; gap:4px; }
+.clock-rabbit-dust i { width:10px; height:10px; background:#fff3cb; border-radius:50%; animation:clock-rabbit-puff .5s ease-out 5 both; }
+.clock-rabbit-dust i:nth-child(2) { animation-delay:.09s; width:8px; height:8px; }
+.clock-rabbit-dust i:nth-child(3) { animation-delay:.18s; width:6px; height:6px; }
 @keyframes clock-sparkles {
-  0% { opacity:0; transform:scale(.5); }
-  27% { opacity:1; transform:scale(1); }
-  100% { opacity:0; transform:scale(1.45); }
+  0%,76% { opacity:1; }
+  100% { opacity:0; }
 }
+@keyframes clock-star-pop { 0% { transform:scale(.25) rotate(-24deg); } 46% { transform:scale(1.15) rotate(8deg); } 100% { transform:scale(.88) rotate(0); } }
+@keyframes clock-burst-piece { 0% { opacity:0; transform:scale(.28); } 20% { opacity:1; } 70% { opacity:1; transform:translate(var(--burst-x),var(--burst-y)) rotate(95deg); } 100% { opacity:0; transform:translate(var(--burst-x),calc(var(--burst-y) + 18px)) rotate(155deg); } }
+@keyframes clock-rabbit-puff { from { opacity:.9; transform:scale(.45); } to { opacity:0; transform:translate(-16px,-9px) scale(1.75); } }
 @keyframes clock-rabbit {
   0% { transform:translateX(-110%); }
-  14% { transform:translate(11vw,-22px) rotate(-7deg); }
-  28% { transform:translate(24vw,0); }
-  42% { transform:translate(37vw,-22px) rotate(-7deg); }
-  56% { transform:translate(50vw,0); }
-  70% { transform:translate(66vw,-22px) rotate(-7deg); }
-  84% { transform:translate(82vw,0); }
+  12% { transform:translate(6vw,-31px) rotate(-8deg); }
+  25% { transform:translate(21vw,0) scale(1.06,.94); }
+  38% { transform:translate(33vw,-37px) rotate(-8deg); }
+  50% { transform:translate(46vw,0) scale(1.06,.94); }
+  63% { transform:translate(59vw,-32px) rotate(-8deg); }
+  75% { transform:translate(72vw,0) scale(1.06,.94); }
+  87% { transform:translate(86vw,-25px) rotate(-7deg); }
   100% { transform:translateX(101vw); }
 }
 @media (prefers-reduced-motion:reduce) {
   /* Keep only a stationary fade despite the global reduced-motion animation reset. */
   .clock-sparkles,.clock-rabbit-runner { animation:clock-celebration-fade 1.2s ease-out both !important; }
   .clock-rabbit-runner { left:auto; right:16px; }
+  .clock-sparkles i { transform:translate(var(--burst-x),var(--burst-y)); }
+  .clock-rabbit-dust { display:none; }
   @keyframes clock-celebration-fade { 0%,75% { opacity:1; } 100% { opacity:0; } }
 }
 .clock-games,.clock-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
@@ -75,29 +84,47 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .page-wrap:has(.clock-companion:not([hidden])) { padding-bottom:100px; }
 .clock-companion { position:fixed; inset-inline-end:max(8px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:15; display:flex; flex-direction:column; align-items:center; pointer-events:none; color:#2c193d; }
 .clock-companion > span { background:#fff5e2; border:1px solid #d879a0; border-radius:18px; padding:5px 9px; font-size:clamp(10px,2.5vw,13px); font-weight:700; box-shadow:0 2px 5px #49335e30; }
-.clock-companion-art img { display:block; width:clamp(54px,9vw,80px); height:auto; transform-origin:center bottom; animation:clock-companion-idle 7s ease-in-out infinite; }
+.clock-companion-art .clock-rabbit-art { width:clamp(57px,9vw,86px); transform-origin:center bottom; animation:clock-companion-idle 7s ease-in-out infinite; }
 .clock-companion-crew,.clock-companion-friends { display:flex; align-items:end; }
 .clock-companion-friends { gap:2px; padding-bottom:6px; }
 .clock-companion-friend { display:block; width:clamp(28px,7vw,44px); }
-.clock-friend-art { display:block; width:100%; height:auto; }
-.clock-guest-trail { display:flex; gap:2px; height:clamp(52px,9vw,68px); margin:14px auto 0; max-width:590px; overflow:hidden; border:1px solid #b0ca95; border-radius:16px; pointer-events:none; background:radial-gradient(circle,#fff5b6 0 2px,transparent 2.5px) 8px bottom / 27px 13px repeat-x,linear-gradient(#f2f8e4 0 68%,#d9edba 68%); }
-.clock-guest-spot { --guest-size:clamp(35px,9vw,52px); flex:1; min-width:0; position:relative; }
-.clock-guest-spot .clock-friend-art { position:absolute; left:0; bottom:3px; width:var(--guest-size); animation:clock-guest-stroll var(--trail-pace,9s) ease-in-out var(--animal-delay,-3s) infinite; }
+.clock-friend-art,.clock-rabbit-art { display:block; width:100%; height:auto; }
+.clock-guest-trail { position:relative; display:flex; gap:2px; height:clamp(62px,10vw,80px); margin:14px auto 0; max-width:590px; overflow:hidden; border:1px solid #adca9a; border-radius:16px; pointer-events:none; background:radial-gradient(ellipse at 19% 103%,#d2e4a9 0 24%,transparent 25%),radial-gradient(ellipse at 85% 112%,#b8d597 0 40%,transparent 41%),linear-gradient(#e4f3dc,#fbf5dd); }
+.clock-guest-trail::before { content:""; position:absolute; left:-3%; right:-3%; bottom:-11px; height:29px; border-top:1px dashed #b9aa69; border-radius:50%; background:#f1dfa8; }
+.clock-guest-trail::after { content:""; position:absolute; inset:auto 0 3px; height:9px; opacity:.85; background:radial-gradient(circle,#f7f0c5 0 2px,transparent 2.5px) 9px bottom / 29px 9px repeat-x; }
+.clock-guest-spot { --guest-size:clamp(35px,10.4vw,58px); flex:1; min-width:0; position:relative; z-index:1; }
+.clock-guest-figure { position:absolute; left:0; bottom:5px; width:var(--guest-size); animation:clock-guest-stroll var(--trail-pace,8s) ease-in-out var(--animal-delay,-3s) infinite; }
+.clock-guest-spot[data-clock-friend="turtle"] { --hop:2px; --lean:2deg; }
+.clock-guest-spot[data-clock-friend="owl"] { --hop:13px; --lean:5deg; }
+.clock-guest-spot[data-clock-friend="fox"] { --hop:7px; --lean:8deg; }
 :is(.clock-companion-friend,.clock-guest-spot):nth-child(2) { --animal-delay:-1.2s; --trail-pace:10.5s; }
 :is(.clock-companion-friend,.clock-guest-spot):nth-child(3) { --animal-delay:-4.6s; --trail-pace:13s; }
 :is(.clock-companion-friend,.clock-guest-spot):nth-child(4) { --animal-delay:-2.2s; --trail-pace:11s; }
 :is(.clock-companion-friend,.clock-guest-spot):nth-child(5) { --animal-delay:-5.5s; --trail-pace:8s; }
-:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-head { transform-box:fill-box; transform-origin:center 75%; animation:clock-animal-tilt 7.4s ease-in-out var(--animal-delay,-3s) infinite; }
-:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-look { animation:clock-animal-look 5.8s ease-in-out var(--animal-delay,-3s) infinite; }
-:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 6.2s ease-in-out var(--animal-delay,-3s) infinite; }
-:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-paw { transform-box:view-box; transform-origin:62px 56px; animation:clock-animal-wave 6.8s ease-in-out var(--animal-delay,-3s) infinite; }
-.camp-background :is(.clock-companion-friends,.clock-guest-trail) * { animation-play-state:paused; }
+:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-head { transform-box:fill-box; transform-origin:center 78%; animation:clock-animal-tilt 7.4s ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-look { animation:clock-animal-look 5.8s ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 6.2s ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-paw { transform-box:view-box; transform-origin:89px 81px; animation:clock-animal-wave 6.8s ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-detail { transform-box:fill-box; transform-origin:35% 90%; animation:clock-animal-sway var(--detail-pace,3.8s) ease-in-out var(--animal-delay,-3s) infinite; }
+[data-animal="turtle"] { --detail-pace:5.6s; }
+[data-animal="owl"] { --detail-pace:2.7s; }
+:is(.clock-companion,.clock-guest-trail)[data-gesture="cheer"] .clock-friend-art { animation:clock-friend-cheer .64s cubic-bezier(.22,.8,.35,1) both; }
+:is(.clock-companion,.clock-guest-trail)[data-gesture="cheer"] :is(.clock-companion-friend,.clock-guest-spot):nth-child(even) .clock-friend-art { animation-delay:.1s; }
+.clock-guest-trail[data-gesture="encourage"] .clock-friend-art { animation:clock-companion-nod .55s ease-in-out both; }
+:is(.clock-companion-art,.clock-rabbit-runner,.clock-finale-cast) .clock-rabbit-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 5.8s ease-in-out infinite; }
+:is(.clock-companion-art,.clock-rabbit-runner,.clock-finale-cast) .clock-rabbit-ears { transform-box:fill-box; transform-origin:center bottom; animation:clock-animal-sway 3.6s ease-in-out infinite; }
+:is(.clock-companion-art,.clock-rabbit-runner,.clock-finale-cast) .clock-rabbit-watch { transform-box:fill-box; transform-origin:center top; animation:clock-rabbit-tick var(--watch-pace,3.6s) ease-in-out infinite; }
+.clock-rabbit-runner { --watch-pace:.66s; }
+.camp-background :is(.clock-companion,.clock-guest-trail) * { animation-play-state:paused; }
 @keyframes clock-guest-stroll {
   0%,100% { left:0; transform:translateY(0) rotate(0); }
-  24% { left:calc((100% - var(--guest-size)) / 2); transform:translateY(-7px) rotate(5deg); }
+  24% { left:calc((100% - var(--guest-size)) / 2); transform:translateY(calc(-1 * var(--hop,8px))) rotate(var(--lean,6deg)); }
   46%,55% { left:calc(100% - var(--guest-size)); transform:translateY(0) rotate(0); }
-  77% { left:calc((100% - var(--guest-size)) / 2); transform:translateY(-5px) rotate(-5deg); }
+  77% { left:calc((100% - var(--guest-size)) / 2); transform:translateY(calc(-.7 * var(--hop,8px))) rotate(calc(-1 * var(--lean,6deg))); }
 }
+@keyframes clock-animal-sway { 0%,100% { transform:rotate(0); } 38% { transform:rotate(7deg); } 70% { transform:rotate(-5deg); } }
+@keyframes clock-rabbit-tick { 0%,100% { transform:rotate(0); } 38% { transform:rotate(-11deg); } 74% { transform:rotate(8deg); } }
+@keyframes clock-friend-cheer { 0%,100% { transform:translateY(0) scale(1); } 19% { transform:scale(1.08,.92); } 51% { transform:translateY(-11px) scale(.97,1.04) rotate(-7deg); } 78% { transform:translateY(-3px) rotate(4deg); } }
 @keyframes clock-animal-tilt {
   0%,23%,49%,77%,100% { transform:rotate(0); }
   34% { transform:rotate(-7deg); }
@@ -119,9 +146,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   54%,69% { opacity:1; transform:rotate(14deg); }
 }
 @media (prefers-reduced-motion:reduce) {
-  .clock-guest-spot .clock-friend-art { left:50%; transform:translateX(-50%); }
+  .clock-guest-figure { left:50%; transform:translateX(-50%); }
 }
-.clock-companion[data-gesture="finish"] .clock-companion-friend:last-child { animation:clock-companion-hop .6s ease-out both; }
+.clock-companion[data-gesture="finish"] .clock-companion-friend { animation:clock-friend-cheer .64s ease-out both; }
+.clock-companion[data-gesture="finish"] .clock-companion-friend:nth-child(even) { animation-delay:.15s; }
+.clock-companion[data-gesture="finish"] .clock-companion-friend:last-child { animation-iteration-count:2; }
 .clock-companion[data-gesture="cheer"] .clock-companion-art { animation:clock-companion-hop .48s ease-out both; }
 .clock-companion[data-gesture="encourage"] .clock-companion-art { animation:clock-companion-nod .55s ease-in-out both; }
 .clock-companion[data-gesture="finish"] .clock-companion-art { animation:clock-companion-hop .5s ease-out 2 both; }
@@ -155,17 +184,32 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-story-end { text-align:center; max-width:860px; margin:auto; }
 .clock-story-end .play-button { margin-top:10px; }
 .clock-arrival { margin:16px auto 0; max-width:450px; background:#edf6dd; border-color:#9bb581; }
-.clock-arrival .clock-friend-art { animation:clock-companion-hop .6s ease-out both; }
+.clock-arrival .clock-friend-art { animation:clock-friend-cheer .75s ease-out 2 both; }
 
 .clock-finale-scene { position:relative; isolation:isolate; overflow:hidden; min-height:clamp(224px,40vw,364px); max-width:780px; margin:auto; border-radius:24px; border:3px solid #c8889d; background:#d5eab1; }
 .clock-finale-grove,.clock-finale-late-light { position:absolute; inset:0; width:100%; height:100%; }
 .clock-finale-late-light { opacity:0; background:linear-gradient(125deg,#ffd18e60,#ffbf7860); }
+.clock-finale-fireflies { position:absolute; inset:18% 8% 25%; pointer-events:none; }
+.clock-finale-fireflies i { position:absolute; top:24%; left:8%; width:6px; height:6px; border-radius:50%; opacity:0; background:#fff3b4; box-shadow:0 0 12px 4px #ffdf7e9c; }
+.clock-finale-fireflies i:nth-child(2) { top:55%; left:23%; }
+.clock-finale-fireflies i:nth-child(3) { top:39%; left:69%; }
+.clock-finale-fireflies i:nth-child(4) { top:74%; left:86%; }
+.clock-finale-fireflies i:nth-child(5) { top:26%; left:91%; }
+.clock-finale-scene:is([data-step="3"],[data-step="4"]) .clock-finale-fireflies i { opacity:.55; animation:clock-finale-firefly 2.8s ease-in-out 2 both; }
+.clock-finale-scene:is([data-step="3"],[data-step="4"]) .clock-finale-fireflies i:nth-child(even) { animation-delay:.45s; }
 .clock-finale-cast { position:absolute; z-index:2; left:5%; right:5%; bottom:21%; display:flex; gap:clamp(2px,1.3vw,11px); align-items:end; justify-content:center; }
 .clock-finale-cast > * { width:14%; max-width:103px; height:auto; filter:drop-shadow(0 4px 0 #3e623844); }
-.clock-finale-cast img { width:20%; max-width:140px; }
+.clock-finale-actor[data-animal="rabbit"] { width:20%; max-width:140px; }
+.clock-finale-actor:nth-child(2n) { --animal-delay:-1.6s; }
+.clock-finale-actor:nth-child(3n) { --animal-delay:-4.5s; }
 .clock-finale-scene[data-step="0"] .clock-finale-cast > * { animation:clock-finale-enter .7s ease-out .32s both; }
-.clock-finale-scene[data-step="0"] .clock-finale-cast img { animation:clock-finale-rabbit-in 1.35s ease-out both; }
-.clock-finale-scene[data-step="0"] .clock-finale-cast .clock-friend-art:nth-child(odd) { animation-delay:.68s; }
+.clock-finale-scene[data-step="0"] .clock-finale-actor:nth-child(odd) { animation-delay:.68s; }
+.clock-finale-scene[data-step="0"] .clock-finale-actor[data-animal="rabbit"] { animation:clock-finale-rabbit-in 1.35s ease-out both; }
+.clock-finale-scene[data-step="1"] .clock-finale-actor:is([data-animal="squirrel"],[data-animal="hedgehog"],[data-animal="turtle"]) { animation:clock-finale-offer .9s ease-in-out .35s both; }
+.clock-finale-scene[data-step="1"] .clock-finale-actor[data-animal="hedgehog"] { animation-delay:.82s; }
+.clock-finale-scene[data-step="1"] .clock-finale-actor[data-animal="turtle"] { animation-delay:1.15s; }
+.clock-finale-scene[data-step="2"] .clock-finale-actor:is([data-animal="owl"],[data-animal="fox"]) { animation:clock-friend-cheer .75s ease-out .75s both; }
+.clock-finale-scene[data-step="3"] .clock-finale-actor[data-animal="rabbit"] { animation:clock-companion-hop .56s ease-out 2 both; }
 
 .clock-finale-workbench { position:absolute; z-index:3; top:7%; left:28%; width:44%; height:55%; display:grid; place-items:center; opacity:0; border:2px solid #c58b9f; border-radius:22px; background:radial-gradient(ellipse,#fff5d3 30%,#fce3c0); box-shadow:0 6px 0 #88536828; }
 .clock-finale-watch { width:auto; height:93%; max-width:92%; }
@@ -206,8 +250,10 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-finale-confetti i:nth-child(3n+1) { background:#e7ad46; }
 .clock-finale-scene[data-step="4"] :is(.clock-finale-blanket,.clock-finale-cake) { opacity:1; animation:clock-finale-enter .85s ease-out both; }
 .clock-finale-scene[data-step="4"] .clock-finale-cake { animation-delay:.42s; }
-.clock-finale-scene[data-step="4"] .clock-finale-cast > * { animation:clock-companion-hop .58s ease-out 2 both; }
-.clock-finale-scene[data-step="4"] .clock-finale-cast > :nth-child(even) { animation-delay:.2s; }
+.clock-finale-scene[data-step="4"] .clock-finale-actor { animation:clock-friend-cheer .66s ease-out 2 both; }
+.clock-finale-scene[data-step="4"] .clock-finale-actor:nth-child(even) { animation-delay:.24s; }
+.clock-finale-scene[data-step="4"] .clock-finale-actor[data-animal="turtle"] { animation:clock-companion-nod .95s ease-in-out .4s 2 both; }
+.clock-finale-scene[data-step="4"] .clock-finale-actor[data-animal="owl"] { animation:clock-friend-cheer .85s ease-in-out .3s 2 both; }
 .clock-finale-scene[data-step="4"] .clock-finale-flame { animation:clock-finale-flame .68s ease-in-out 6 alternate; }
 .clock-finale-scene[data-step="4"] .clock-finale-confetti i { animation:clock-finale-paper 1.75s ease-out var(--paper-delay) both; }
 .camp-background .clock-finale-scene *, .clock-finale-scene[data-paused] * { animation-play-state:paused !important; }
@@ -217,6 +263,8 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-arcade .clock-finale-caption { text-align:center; min-height:3em; max-width:60ch; margin:10px auto 0; font-weight:700; }
 @keyframes clock-finale-enter { from { opacity:0; transform:translateY(16px) scale(.89); } to { opacity:1; transform:translateY(0) scale(1); } }
 @keyframes clock-finale-rabbit-in { 0% { transform:translateX(-130%); } 44% { transform:translate(-53%,-12px) rotate(-7deg); } 100% { transform:translateX(0); } }
+@keyframes clock-finale-offer { 0%,100% { transform:translateY(0) rotate(0); } 42%,68% { transform:translateY(-10%) rotate(-7deg) scale(1.09); } }
+@keyframes clock-finale-firefly { 0%,100% { opacity:.55; transform:translate(0); } 50% { opacity:1; transform:translate(11px,-16px); } }
 @keyframes clock-finale-gear-fit { 0%,35% { opacity:1; transform:translateX(-35px) rotate(-80deg); } 82% { opacity:1; transform:translate(130%,12px) rotate(160deg) scale(.45); } 100% { opacity:0; transform:translate(145%,12px) rotate(190deg) scale(.18); } }
 @keyframes clock-finale-screw-fit { 0%,35% { opacity:1; transform:translateX(28px) rotate(0); } 82% { opacity:1; transform:translate(-200%,-15px) rotate(-130deg) scale(.45); } 100% { opacity:0; transform:translate(-220%,-15px) rotate(-160deg) scale(.18); } }
 @keyframes clock-finale-minute-set { 0% { transform:rotate(0); } 85% { transform:rotate(63deg); } 100% { transform:rotate(60deg); } }
