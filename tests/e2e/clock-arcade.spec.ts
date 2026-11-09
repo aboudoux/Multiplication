@@ -139,6 +139,7 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await page.setViewportSize({ width: 390, height: 844 });
   const companion = page.locator('.clock-companion');
   const games = page.getByRole('button', { name: 'Tous les jeux' });
+  const levels = page.getByRole('button', { name: 'Retour aux niveaux' });
   const firstLevel = page.locator('[data-level="0"]');
   const finishRound = async () => {
     for (let index = 0; index < 5; index++) await page.locator('[data-clock-action="answer"]').first().click();
@@ -160,6 +161,10 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await expect(companion).toContainText('1 / 18 niveaux faits');
   await expect(companion).toHaveAttribute('data-gesture', 'finish');
 
+  await expect(games).toHaveCount(0);
+  await levels.click();
+  await expect(page.getByRole('heading', { name: 'Trouve le cadran' })).toBeVisible();
+  await expect(firstLevel.locator('.clock-done')).toHaveText('✓ Fait');
   await games.click();
   await expect(page.locator('[data-game="match"]')).toContainText('1 / 3 niveaux faits');
   await page.locator('[data-game="match"]').click();
@@ -174,12 +179,14 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   for (let index = 0; index < 3; index++) await answerClock(page);
   await expect(companion).toContainText('1 / 18 niveaux faits');
 
+  await levels.click();
   await games.click();
   await page.locator('[data-game="elapsed"]').click();
   await expect(page.locator('.clock-levels .clock-done')).toHaveCount(0);
   await firstLevel.click();
   await finishRound();
   await expect(companion).toContainText('2 / 18 niveaux faits');
+  await levels.click();
   await games.click();
   await page.getByRole('button', { name: 'Accueil', exact: false }).click();
   await expect(companion).toBeVisible();

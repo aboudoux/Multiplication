@@ -41,6 +41,8 @@ test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ p
   await expect(page.locator('.clock-chapter[data-friend="squirrel"]')).toContainText('Une dent d’or');
   await expect(page.locator('.clock-chapter-locked')).toHaveCount(4);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.getByRole('button', { name: 'Retour aux niveaux' }).click();
+  await expect(page.getByRole('heading', { name: 'Lis l’horloge' })).toBeVisible();
 
   await page.reload();
   await expect(friends).toHaveCount(1);
@@ -56,8 +58,14 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await expect(page.getByRole('heading', { name: 'Enfin l’heure du goûter !' })).toBeVisible();
   await expect(scene.locator('.clock-finale-cast svg')).toHaveCount(5);
   await expect(scene).toHaveAttribute('data-step', '0');
-  await page.clock.fastForward(4100);
+  await page.clock.fastForward(5100);
   await expect(caption).toContainText('Noisette et Pique');
+  await expect(scene.locator('.clock-finale-gear')).toHaveCSS('animation-name', 'clock-finale-gear-fit');
+  await page.getByRole('button', { name: 'Pause du film' }).click();
+  await expect(scene.locator('.clock-finale-gear')).toHaveCSS('animation-play-state', 'paused');
+  await page.clock.fastForward(30_000);
+  await expect(scene).toHaveAttribute('data-step', '1');
+  await page.getByRole('button', { name: 'Reprendre le film' }).click();
 
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
@@ -70,9 +78,17 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await page.clock.runFor(50);
-  await page.clock.fastForward(4100);
+  await page.clock.fastForward(5100);
+  await expect(caption).toContainText('quatre heures dix');
+  await expect(scene.locator('.clock-finale-minute')).toHaveCSS('animation-name', 'clock-finale-minute-set');
+  await page.clock.fastForward(5100);
+  await expect(caption).toContainText('Les lanternes s’allument');
+  await expect(scene.locator('.clock-finale-bell')).toHaveCSS('animation-name', 'clock-finale-bell-swing');
+  await page.clock.fastForward(5100);
   await expect(caption).toContainText('partage enfin son gâteau');
-  await expect(scene).toHaveAttribute('data-step', '2');
+  await expect(scene).toHaveAttribute('data-step', '4');
+  await expect(page.getByRole('progressbar', { name: 'Tableau du film' })).toHaveAttribute('value', '5');
+  await expect(scene.locator('.clock-finale-confetti i')).toHaveCount(12);
   await expect(page.getByRole('button', { name: 'Revoir l’animation' })).toBeVisible();
   await page.getByRole('button', { name: 'Mon bilan' }).click();
   await expect(page.getByText('Niveau fait', { exact: false })).toBeVisible();
@@ -83,8 +99,8 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await page.locator('#open-clock-arcade').click();
   await page.getByRole('button', { name: 'Lire l’histoire' }).click();
   await page.getByRole('button', { name: 'Voir la fin animée' }).click();
-  await page.clock.fastForward(9000);
-  await expect(scene).toHaveAttribute('data-step', '2');
+  await page.clock.fastForward(21_000);
+  await expect(scene).toHaveAttribute('data-step', '4');
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('animation-name', 'none');
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('opacity', '1');
 });

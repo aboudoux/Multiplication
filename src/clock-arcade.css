@@ -155,35 +155,74 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-arrival { margin:16px auto 0; max-width:450px; background:#edf6dd; border-color:#9bb581; }
 .clock-arrival .clock-friend-art { animation:clock-companion-hop .6s ease-out both; }
 
-.clock-finale-scene { position:relative; isolation:isolate; overflow:hidden; min-height:clamp(205px,35vw,350px); max-width:780px; margin:auto; border-radius:25px; border:3px solid #c8889d; background:linear-gradient(#a1d8ed,#ffe9a8 72%); }
-.clock-finale-sun { position:absolute; right:11%; top:9%; width:clamp(38px,9vw,75px); aspect-ratio:1; border-radius:50%; background:#ffda71; box-shadow:0 0 0 10px #fff1b677; }
-.clock-finale-hill { position:absolute; inset:60% -6% -31%; background:#91c886; border-radius:55% 68% 0 0; box-shadow:15vw -1vw 0 #a8d995; }
-.clock-finale-tree { position:absolute; right:14%; bottom:18%; height:59%; width:clamp(25px,7vw,66px); background:#a7755b; border-radius:70% 30% 9% 15%; transform:rotate(4deg); }
-.clock-finale-tree::before { content:""; position:absolute; top:-17%; left:-150%; width:400%; aspect-ratio:1.45; background:#6caa75; border-radius:55% 57% 47% 62%; box-shadow:-17px 12px 0 #84ba7c,14px 15px 0 #7ab77b; }
-.clock-finale-garland { position:absolute; top:19%; left:12%; font-size:clamp(14px,4vw,26px); letter-spacing:.35em; color:#954161; transform:rotate(-6deg); }
-.clock-finale-cast { position:absolute; left:5%; right:5%; bottom:20%; display:flex; gap:clamp(2px,1.2vw,12px); align-items:end; justify-content:center; }
-.clock-finale-cast .clock-friend-art,.clock-finale-cast img { width:14%; height:auto; filter:drop-shadow(0 3px 0 #3e623844); animation:clock-finale-enter .55s ease-out both; }
-.clock-finale-cast img { width:20%; }
-.clock-finale-cast .clock-friend-art:nth-child(even) { animation-delay:.19s; }
-.clock-finale-watch { position:absolute; top:13%; left:45%; width:clamp(45px,10vw,86px); aspect-ratio:1; border:6px solid #e5ad50; border-radius:50%; background:#fff8db; box-shadow:0 0 0 2px #83545f; }
-.clock-finale-watch::before,.clock-finale-watch i,.clock-finale-watch b { position:absolute; content:""; border-radius:7px; background:#663e61; }
-.clock-finale-watch::before { width:8px; height:8px; left:calc(50% - 4px); top:calc(50% - 4px); }
-.clock-finale-watch i,.clock-finale-watch b { left:calc(50% - 2px); bottom:50%; width:4px; height:34%; transform-origin:50% 100%; }
-.clock-finale-watch i { transition:transform .6s; }
-.clock-finale-watch b { height:27%; transform:rotate(90deg); transition:transform .6s; }
-.clock-finale-scene[data-step="1"] .clock-finale-watch { animation:clock-finale-fix .6s ease-in-out 2 both; }
-.clock-finale-scene[data-step="2"] .clock-finale-watch i { transform:rotate(60deg); }
-.clock-finale-scene[data-step="2"] .clock-finale-watch b { transform:rotate(125deg); }
-.clock-finale-cake { position:absolute; bottom:7%; left:43%; width:14%; min-width:46px; height:13%; border-radius:32% 32% 18% 18%; background:linear-gradient(#ffe5f1 0 36%,#b7755c 38% 65%,#ffe5a3 67%); border:2px solid #88546c; box-shadow:0 5px 0 #f9e1c7; opacity:0; }
-.clock-finale-cake i,.clock-finale-cake b { position:absolute; left:46%; bottom:100%; display:block; width:7px; height:15px; background:#b784c5; border-radius:4px; }
-.clock-finale-cake b { bottom:calc(100% + 16px); height:10px; background:#ff9d32; border-radius:65% 70% 50% 45%; }
-.clock-finale-stars { position:absolute; top:35%; right:14%; font-size:clamp(21px,6vw,50px); color:#a44167; opacity:0; }
-.clock-finale-scene[data-step="2"] :is(.clock-finale-cake,.clock-finale-stars) { opacity:1; animation:clock-finale-enter .75s ease-out both; }
-.clock-finale-scene[data-step="2"] .clock-finale-cast > * { animation:clock-companion-hop .6s ease-out 2 both; }
-.camp-background .clock-finale-scene * { animation-play-state:paused; }
-.clock-arcade .clock-finale-caption { text-align:center; min-height:3em; max-width:58ch; margin:14px auto 0; font-weight:700; }
-@keyframes clock-finale-enter { from { opacity:0; transform:translateY(18px) scale(.85); } to { opacity:1; transform:translateY(0) scale(1); } }
-@keyframes clock-finale-fix { 0%,100% { transform:rotate(0); } 30% { transform:rotate(-9deg); } 70% { transform:rotate(9deg); } }
+.clock-finale-scene { position:relative; isolation:isolate; overflow:hidden; min-height:clamp(224px,40vw,364px); max-width:780px; margin:auto; border-radius:24px; border:3px solid #c8889d; background:#d5eab1; }
+.clock-finale-grove,.clock-finale-late-light { position:absolute; inset:0; width:100%; height:100%; }
+.clock-finale-late-light { opacity:0; background:linear-gradient(125deg,#ffd18e60,#ffbf7860); }
+.clock-finale-cast { position:absolute; z-index:2; left:5%; right:5%; bottom:21%; display:flex; gap:clamp(2px,1.3vw,11px); align-items:end; justify-content:center; }
+.clock-finale-cast > * { width:14%; max-width:103px; height:auto; filter:drop-shadow(0 4px 0 #3e623844); }
+.clock-finale-cast img { width:20%; max-width:140px; }
+.clock-finale-scene[data-step="0"] .clock-finale-cast > * { animation:clock-finale-enter .7s ease-out .32s both; }
+.clock-finale-scene[data-step="0"] .clock-finale-cast img { animation:clock-finale-rabbit-in 1.35s ease-out both; }
+.clock-finale-scene[data-step="0"] .clock-finale-cast .clock-friend-art:nth-child(odd) { animation-delay:.68s; }
+
+.clock-finale-workbench { position:absolute; z-index:3; top:7%; left:28%; width:44%; height:55%; display:grid; place-items:center; opacity:0; border:2px solid #c58b9f; border-radius:22px; background:radial-gradient(ellipse,#fff5d3 30%,#fce3c0); box-shadow:0 6px 0 #88536828; }
+.clock-finale-watch { width:auto; height:93%; max-width:92%; }
+.clock-finale-minute,.clock-finale-hour { transform-origin:60px 66px; transform-box:view-box; }
+.clock-finale-hour { transform:rotate(90deg); }
+.clock-finale-gear,.clock-finale-screw,.clock-finale-glints { position:absolute; opacity:0; }
+.clock-finale-gear { left:14%; top:37%; color:#a35d42; font:700 clamp(27px,6vw,52px)/1 system-ui,sans-serif; }
+.clock-finale-screw { right:15%; top:47%; width:clamp(8px,2vw,16px); aspect-ratio:1; border:2px solid #84576a; border-radius:50%; background:linear-gradient(45deg,#d7b7c5 43%,#805568 44% 56%,#ebcdd5 57%); }
+.clock-finale-glints { right:7%; top:15%; color:#a25479; font-size:clamp(15px,3.2vw,29px); }
+.clock-finale-scene:is([data-step="1"],[data-step="2"]) .clock-finale-workbench { opacity:1; }
+.clock-finale-scene[data-step="1"] .clock-finale-workbench { animation:clock-finale-enter .48s ease-out both; }
+.clock-finale-scene[data-step="1"] .clock-finale-gear { opacity:1; animation:clock-finale-gear-fit 2.2s ease-in-out .6s both; }
+.clock-finale-scene[data-step="1"] .clock-finale-screw { opacity:1; animation:clock-finale-screw-fit 2s ease-in-out 1.35s both; }
+.clock-finale-scene[data-step="2"] .clock-finale-minute { transform:rotate(60deg); animation:clock-finale-minute-set 1.25s ease-out both; }
+.clock-finale-scene[data-step="2"] .clock-finale-hour { transform:rotate(125deg); animation:clock-finale-hour-set 1.25s ease-out both; }
+.clock-finale-scene[data-step="2"] .clock-finale-glints { opacity:1; animation:clock-finale-enter .6s ease-out .9s both; }
+
+.clock-finale-lanterns { position:absolute; top:17%; left:13%; right:13%; display:flex; justify-content:space-between; align-items:start; border-top:2px solid #755568; transform:rotate(-4deg); }
+.clock-finale-lanterns i { --lamp:#ffd579; width:clamp(10px,2.4vw,23px); height:clamp(15px,3.2vw,31px); border-radius:45% 45% 36% 36%; border:1px solid #8d6174; background:#e3ba956e; margin-top:4px; }
+.clock-finale-lanterns i:nth-child(even) { --lamp:#ffb7cc; }
+.clock-finale-lanterns i:nth-child(3) { --lamp:#ffe9a5; }
+.clock-finale-bell { position:absolute; z-index:3; top:24%; right:13%; width:clamp(40px,10vw,91px); opacity:0; transform-origin:center 12%; }
+.clock-finale-scene:is([data-step="3"],[data-step="4"]) .clock-finale-late-light { opacity:1; }
+.clock-finale-scene:is([data-step="3"],[data-step="4"]) .clock-finale-lanterns i { background:var(--lamp); box-shadow:0 0 12px 5px #ffefaa9e; }
+.clock-finale-scene[data-step="3"] .clock-finale-lanterns i { animation:clock-finale-lamp .55s ease-out .25s both; }
+.clock-finale-scene[data-step="3"] .clock-finale-lanterns i:nth-child(2) { animation-delay:.55s; }
+.clock-finale-scene[data-step="3"] .clock-finale-lanterns i:nth-child(3) { animation-delay:.85s; }
+.clock-finale-scene[data-step="3"] .clock-finale-lanterns i:nth-child(4) { animation-delay:1.15s; }
+.clock-finale-scene[data-step="3"] .clock-finale-lanterns i:nth-child(5) { animation-delay:1.45s; }
+.clock-finale-scene[data-step="3"] .clock-finale-bell { opacity:1; animation:clock-finale-bell-swing .85s ease-in-out 3 both; }
+
+.clock-finale-blanket { position:absolute; z-index:1; bottom:3%; left:17%; right:17%; height:23%; opacity:0; border-radius:54% 48% 24% 28%; border:2px solid #b96e85; background:repeating-linear-gradient(90deg,#fff4e68a 0 10px,transparent 10px 20px),repeating-linear-gradient(#fff4e68a 0 10px,#e8a4b5 10px 20px); }
+.clock-finale-cake { position:absolute; z-index:4; left:41%; bottom:4%; width:18%; min-width:54px; opacity:0; }
+.clock-finale-flame { transform-box:fill-box; transform-origin:center bottom; }
+.clock-finale-confetti { position:absolute; inset:0; z-index:5; pointer-events:none; }
+.clock-finale-confetti i { position:absolute; top:17%; left:var(--paper-left); width:8px; height:12px; border-radius:3px; background:#d378a0; opacity:0; }
+.clock-finale-confetti i:nth-child(3n) { background:#8d77c0; }
+.clock-finale-confetti i:nth-child(3n+1) { background:#e7ad46; }
+.clock-finale-scene[data-step="4"] :is(.clock-finale-blanket,.clock-finale-cake) { opacity:1; animation:clock-finale-enter .85s ease-out both; }
+.clock-finale-scene[data-step="4"] .clock-finale-cake { animation-delay:.42s; }
+.clock-finale-scene[data-step="4"] .clock-finale-cast > * { animation:clock-companion-hop .58s ease-out 2 both; }
+.clock-finale-scene[data-step="4"] .clock-finale-cast > :nth-child(even) { animation-delay:.2s; }
+.clock-finale-scene[data-step="4"] .clock-finale-flame { animation:clock-finale-flame .68s ease-in-out 6 alternate; }
+.clock-finale-scene[data-step="4"] .clock-finale-confetti i { animation:clock-finale-paper 1.75s ease-out var(--paper-delay) both; }
+.camp-background .clock-finale-scene *, .clock-finale-scene[data-paused] * { animation-play-state:paused !important; }
+.clock-finale-strip { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; max-width:780px; margin:12px auto 0; }
+.clock-finale-beat { font:700 clamp(19px,3vw,25px) Kalam,cursive; }
+.clock-finale-progress { width:clamp(86px,25%,166px); accent-color:#a85278; }
+.clock-arcade .clock-finale-caption { text-align:center; min-height:3em; max-width:60ch; margin:10px auto 0; font-weight:700; }
+@keyframes clock-finale-enter { from { opacity:0; transform:translateY(16px) scale(.89); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes clock-finale-rabbit-in { 0% { transform:translateX(-130%); } 44% { transform:translate(-53%,-12px) rotate(-7deg); } 100% { transform:translateX(0); } }
+@keyframes clock-finale-gear-fit { 0%,35% { opacity:1; transform:translateX(-35px) rotate(-80deg); } 82% { opacity:1; transform:translate(130%,12px) rotate(160deg) scale(.45); } 100% { opacity:0; transform:translate(145%,12px) rotate(190deg) scale(.18); } }
+@keyframes clock-finale-screw-fit { 0%,35% { opacity:1; transform:translateX(28px) rotate(0); } 82% { opacity:1; transform:translate(-200%,-15px) rotate(-130deg) scale(.45); } 100% { opacity:0; transform:translate(-220%,-15px) rotate(-160deg) scale(.18); } }
+@keyframes clock-finale-minute-set { 0% { transform:rotate(0); } 85% { transform:rotate(63deg); } 100% { transform:rotate(60deg); } }
+@keyframes clock-finale-hour-set { 0% { transform:rotate(90deg); } 85% { transform:rotate(128deg); } 100% { transform:rotate(125deg); } }
+@keyframes clock-finale-lamp { from { filter:brightness(.68); box-shadow:none; } to { filter:brightness(1); box-shadow:0 0 12px 5px #ffefaa9e; } }
+@keyframes clock-finale-bell-swing { 0%,100% { transform:rotate(0); } 27% { transform:rotate(-20deg); } 72% { transform:rotate(17deg); } }
+@keyframes clock-finale-flame { from { transform:rotate(-7deg) scale(.91); } to { transform:rotate(7deg) scale(1.1); } }
+@keyframes clock-finale-paper { 0% { opacity:0; transform:translateY(-26px) rotate(0); } 19% { opacity:1; } 100% { opacity:0; transform:translate(19px,135px) rotate(165deg); } }
 @media (max-width:580px) {
   .clock-story-teaser { align-items:start; flex-direction:column; }
   .clock-chapters { grid-template-columns:1fr; }
