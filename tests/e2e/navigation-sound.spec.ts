@@ -3,6 +3,8 @@ import {defaults,STORAGE_KEY} from '../../src/storage';
 import { CLOCK_PROGRESS_KEY } from '../../src/clock-games';
 import { answerClock } from './clock-helpers';
 
+const funkBassRiff = [41.2, 82.41, 41.2, 49, 55, 58.27, 61.74, 73.42, 41.2];
+
 async function prepare(page:Page,muted=false) {
  await page.addInitScript(({key,saved})=>{
   localStorage.setItem(key,JSON.stringify(saved));
@@ -125,15 +127,13 @@ test('la mélodie du lapin continue pendant la correction, la pause et le bilan'
   const effects = (type: OscillatorType, frequencies: number[]) => page.evaluate(({ waveform, values }) =>
     (window as any).navigationProbe.filter((note: any) => note.type === waveform && values.includes(note.frequency)).map((note: any) => note.frequency), { waveform: type, values: frequencies });
   const fanfare = [369.99, 554.37, 739.99, 932.33, 739.99];
-  const cowbell = [440, 392, 440, 349.23, 440, 466.16, 392, 349.23];
   await answerClock(page);
   await expect.poll(() => effects('triangle', fanfare)).toEqual(fanfare);
   await expect.poll(() => effects('sawtooth', fanfare)).toEqual(fanfare);
   const start = (await notes()).length;
   await answerClock(page, false);
   await expect(page.locator('.clock-lesson')).toBeVisible();
-  await expect.poll(() => effects('square', cowbell)).toEqual(cowbell);
-  await expect.poll(() => effects('sine', [55, 49, 58.27])).toEqual([55, 49, 55, 58.27, 49]);
+  await expect.poll(() => effects('sine', funkBassRiff)).toEqual(funkBassRiff);
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(start);
   await expect(page.locator('.clock-lesson')).toBeHidden({ timeout: 8000 });
   await page.locator('[data-clock-action="pause"]').click();
@@ -157,13 +157,13 @@ test('le chrono expiré joue un riff de basse funk et le rejeu le coupe', async 
   await page.locator('#open-clock-arcade').click();
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
-  const bass = () => page.evaluate(() => (window as any).navigationProbe.filter((note: any) =>
-    note.type === 'sine' && [41.2, 82.41, 49, 55, 58.27, 61.74, 73.42].includes(note.frequency)));
+  const bass = () => page.evaluate(frequencies => (window as any).navigationProbe.filter((note: any) =>
+    note.type === 'sine' && frequencies.includes(note.frequency)), funkBassRiff);
   expect(await bass()).toHaveLength(0);
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
   const riff = await bass();
-  expect(riff.map((note: any) => note.frequency)).toEqual([41.2, 82.41, 41.2, 49, 55, 58.27, 61.74, 73.42, 41.2]);
+  expect(riff.map((note: any) => note.frequency)).toEqual(funkBassRiff);
   expect(riff.at(-1).delay).toBeGreaterThan(1.8);
   await page.getByRole('button', { name: 'Rejouer' }).click();
   expect((await bass()).at(-1).cancelled).toBe(true);

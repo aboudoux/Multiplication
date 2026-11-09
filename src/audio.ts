@@ -249,18 +249,6 @@ export class GameAudio {
         this.tone(note, delay, length, .052, 'sawtooth', this.clockSources);
       }
       [184.99, 233.08, 277.18].forEach(note => this.tone(note, .54, .33, .055, 'sine', this.clockSources));
-    } else if (cue === 'mistake') {
-      // A syncopated cowbell pattern over a short, low bass beat.
-      const step = .105;
-      const cowbell = [[0, 440], [2, 392], [3, 440], [6, 349.23], [8, 440], [10, 466.16], [11, 392], [14, 349.23]];
-      for (const [beat, note] of cowbell) {
-        this.tone(note, beat * step, .078, .073, 'square', this.clockSources);
-        this.tone(note * 1.49, beat * step, .062, .033, 'square', this.clockSources);
-      }
-      for (const [beat, note] of [[0, 55], [4, 49], [7, 55], [10, 58.27], [12, 49]]) {
-        this.tone(note, beat * step, .19, .20, 'sine', this.clockSources);
-        this.tone(note * 2, beat * step, .078, .085, 'triangle', this.clockSources);
-      }
     } else {
       // One bar of E funk, with a syncopated electric bass and offbeat chords.
       const step = 60 / 112 / 4;
