@@ -136,7 +136,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-arcade .clock-results > p { margin-inline:auto; }
 .clock-results .result-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .clock-results .result-stats span { font-size:12px; }
-.clock-done { justify-self:start; display:inline-block; padding:3px 9px; border-radius:16px; background:#d5f2dc; color:#204e35; font-weight:700; font-size:14px; }
+.clock-done,.clock-next,.clock-locked { align-self:start; justify-self:start; display:inline-block; padding:3px 9px; border-radius:16px; font-weight:700; font-size:14px; }
+.clock-done { background:#d5f2dc; color:#204e35; }
+.clock-next { background:#f7d87f; color:#46331c; }
+.clock-locked { background:#e2d8c0; color:#4b4638; }
+.clock-levels button:disabled { background:#e8e2cf; border-color:transparent; box-shadow:none; transform:none; }
 .page-wrap:has(.clock-arcade:not([hidden]) .clock-companion:not([hidden])) { padding-bottom:100px; }
 .clock-companion { position:fixed; inset-inline-end:max(8px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:15; display:flex; flex-direction:column; align-items:center; pointer-events:none; color:#2c193d; }
 .clock-companion > span { background:#fff5e2; border:1px solid #d879a0; border-radius:18px; padding:5px 9px; font-size:clamp(10px,2.5vw,13px); font-weight:700; box-shadow:0 2px 5px #49335e30; }
@@ -371,7 +375,7 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 }
 @media (max-width:700px) {
   html[data-theme="club"] .destinations { grid-template-columns:1fr; }
-  .clock-games .clock-done { grid-column:2; }
+  .clock-games :is(.clock-done,.clock-next,.clock-locked) { grid-column:2; }
   .clock-options { gap:8px; }
   .clock-options button { padding:8px 4px; }
 }

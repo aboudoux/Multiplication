@@ -155,7 +155,7 @@ test('le chrono expiré joue un riff de basse funk et le rejeu le coupe', async 
   await page.clock.install();
   await prepare(page);
   await page.locator('#open-clock-arcade').click();
-  await page.locator('[data-game="match"]').click();
+  await page.locator('[data-game="read"]').click();
   await page.locator('[data-level="0"]').click();
   const bass = () => page.evaluate(frequencies => (window as any).navigationProbe.filter((note: any) =>
     note.type === 'sine' && frequencies.includes(note.frequency)), funkBassRiff);

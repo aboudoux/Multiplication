@@ -2,6 +2,14 @@ import type { Page } from '@playwright/test';
 import { clockCorrectionMs } from '../../src/clock-games';
 
 export async function answerClock(page: Page, correct = true) {
+  const questionFace = await page.locator('.clock-question .question-content').evaluate(content => content.querySelector('.clock-face')?.getAttribute('aria-label'));
+  if (questionFace) {
+    const hour = questionFace.match(/Petite aiguille sur le (\d+)/)![1];
+    const answer = page.getByRole('button', { name: `${hour} h`, exact: true });
+    const wrong = page.locator('.clock-options button').filter({ hasNotText: new RegExp(`^${hour} h$`) }).first();
+    await (correct ? answer : wrong).click();
+    return;
+  }
   const hour = (await page.locator('#clock-heading').textContent())!.match(/(\d+) h/)![1];
   const face = `Petite aiguille sur le ${hour}, grande aiguille sur le 12`;
   const answer = page.getByRole('button', { name: face, exact: true });
