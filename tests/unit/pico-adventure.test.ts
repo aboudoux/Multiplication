@@ -72,7 +72,7 @@ describe('two independent adventures',()=>{
  });
  test('Pico has two object surprises, consistent identity and a separate 30-second finale',()=>{
   expect(Object.keys(picoRewards)).toHaveLength(24);
-  for(const c of picoCast){const t=themes[c.id];expect(t.voices).toEqual(['classic']);expect(t.surprises).toHaveLength(2);expect(t.home).toContain(`keypad-${c.id}.png`);expect(t.surprises[0].artwork).toContain('data-pico-cell="6"');expect(t.surprises[1].artwork).toContain('data-pico-cell="7"');}
+  for(const c of picoCast){const t=themes[c.id];expect(t.voices).toEqual(['classic']);expect(t.surprises).toHaveLength(2);expect(t.home).toContain(`sprite-${c.id}`);expect(t.surprises[0].artwork).toContain('data-pico-cell="6"');expect(t.surprises[1].artwork).toContain('data-pico-cell="7"');}
   expect(LIGHTHOUSE_DURATION_MS).toBe(30000);
   expect([0,7000,17000,22000,30000].map(lighthouseChapter)).toEqual(['arrival','assembly','light','boats','finished']);
  });

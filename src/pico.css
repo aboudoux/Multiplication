@@ -1,4 +1,12 @@
 .pico-sprite { background-size:300% 300%; }
+.sprite-pico { --sprite-sheet:url('./adventure-art/keypad-pico.webp?inline'); }
+.sprite-tika { --sprite-sheet:url('./adventure-art/keypad-tika.webp?inline'); }
+.sprite-mistral { --sprite-sheet:url('./adventure-art/keypad-mistral.webp?inline'); }
+.sprite-octave { --sprite-sheet:url('./adventure-art/keypad-octave.webp?inline'); }
+.sprite-brico { --sprite-sheet:url('./adventure-art/keypad-brico.webp?inline'); }
+.sprite-corail { --sprite-sheet:url('./adventure-art/keypad-corail.webp?inline'); }
+.sprite-nami { --sprite-sheet:url('./adventure-art/keypad-nami.webp?inline'); }
+.sprite-alba { --sprite-sheet:url('./adventure-art/keypad-alba.webp?inline'); }
 .adventure-choice { padding:30px 0; }
 .adventure-choice h1 { font-size:clamp(32px,5vw,52px); margin:14px 0; line-height:1.2; text-wrap:balance; }
 .adventure-choice > p { color:var(--muted); line-height:1.6; }

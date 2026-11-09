@@ -2752,12 +2752,13 @@ html[data-theme] :is(.party-note, .victory-screen h2) { text-shadow: 0 4px 0 var
 html[data-theme] :is(.defeat-screen .eyebrow, .defeat-screen h2) { color: var(--world-secondary); }
 html[data-theme] .defeat-dots span { background: var(--world-secondary); }
 .theme-sprite { display:block; width:100%; aspect-ratio:1; background-repeat:no-repeat; background-size:300% 200%; background-image:var(--sprite-sheet); }
-.sprite-christmas { --sprite-sheet:url('/themes/christmas.png'); }
-.sprite-wizard { --sprite-sheet:url('/themes/wizard.png'); }
-.sprite-unicorn { --sprite-sheet:url('/themes/unicorn.png'); }
-.sprite-dragon { --sprite-sheet:url('/themes/dragon.png'); }
-.sprite-alien { --sprite-sheet:url('/themes/alien.png'); }
-.sprite-kitten { --sprite-sheet:url('/themes/kitten.png'); }
+/* Bundle the artwork with the CSS so private-site previews can render it without separate asset requests. */
+.sprite-christmas { --sprite-sheet:url('./adventure-art/christmas.webp?inline'); }
+.sprite-wizard { --sprite-sheet:url('./adventure-art/wizard.webp?inline'); }
+.sprite-unicorn { --sprite-sheet:url('./adventure-art/unicorn.webp?inline'); }
+.sprite-dragon { --sprite-sheet:url('./adventure-art/dragon.webp?inline'); }
+.sprite-alien { --sprite-sheet:url('./adventure-art/alien.webp?inline'); }
+.sprite-kitten { --sprite-sheet:url('./adventure-art/kitten.webp?inline'); }
 /* Keep the calculation legible when a bright kitten or yarn ball passes behind it. */
 [data-theme="kitten"] .board:has(#theme-surprise:not(:empty)) .question-content { isolation:isolate; }
 [data-theme="kitten"] .board:has(#theme-surprise:not(:empty)) .question-content::before { content:""; position:absolute; inset:-10px -20px; z-index:-1; pointer-events:none; border-radius:28px; background:var(--world-board); filter:blur(10px); }

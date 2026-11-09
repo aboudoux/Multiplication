@@ -8,6 +8,7 @@ for(const [index,stage] of stages.entries()) test(`reward ${stage.id}: story, te
  test.setTimeout(150000);
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  const adventure=adventures.find(a=>a.stages.some(s=>s.id===stage.id))!;
+ if(['kitten-1','pico-1'].includes(stage.id))await page.route('**/themes/*.png',route=>route.fulfill({status:401}));
  const width=[390,768,1365][index%3];await page.setViewportSize({width,height:950});
  const reduced=['alien-3','nami-3'].includes(stage.id);if(reduced)await page.emulateMedia({reducedMotion:'reduce'});
  if(stage.id==='kitten-2')await page.addInitScript(()=>{
@@ -65,10 +66,11 @@ for(const [index,stage] of stages.entries()) test(`reward ${stage.id}: story, te
  }
  await expect(page.locator('.reward-caption')).toHaveText(missionRewards[stage.id].captions[2]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- // The actual alpha PNG props must be decodable, not just present in CSS.
- expect(await page.locator(adventure.id==='pico'?'.reward-actor .pico-sprite':'.reward-prop').evaluateAll(async elements=>{
+ // Both the characters and the props must still decode when separate image requests are denied.
+ const art=page.locator(adventure.id==='pico'?'.reward-actor .pico-sprite':'.reward-actor .theme-sprite, .reward-prop');
+ expect(await art.evaluateAll(async elements=>{
   const urls=[...new Set(elements.map(el=>getComputedStyle(el).backgroundImage.slice(5,-2)))];
-  return Promise.all(urls.map(async src=>{const img=new Image();img.src=src;await img.decode();return img.naturalWidth;}));
+  return Promise.all(urls.map(async src=>{if(!src.startsWith('data:image/webp;'))throw Error('Reward artwork is not bundled');const img=new Image();img.src=src;await img.decode();return img.naturalWidth;}));
  })).toEqual(expect.arrayContaining([adventure.id==='pico'?1254:1536]));
  await page.screenshot({path:info.outputPath(`${stage.id}-${width}.png`),fullPage:true});
  await page.clock.runFor(['dragon','alien','kitten','christmas','unicorn'].includes(stage.world.id)?2000:2400);await expect(scene).toBeVisible();

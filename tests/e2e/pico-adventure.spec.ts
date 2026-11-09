@@ -16,11 +16,17 @@ async function setup(page:Page,completed=false){
  },{adventures,key:STORAGE_KEY,saved:{...defaults(),muted:true,voiceEnabled:false},completed});
  await page.clock.install({time:new Date('2026-10-01T12:00:00Z')});await page.goto('/');await page.clock.pauseAt(new Date('2026-10-01T12:00:10Z'));
 }
-for(const width of [390,768,1365])test(`two destinations and adventure chooser at ${width}px`,async({page},info)=>{
+for(const width of [390,768,1365])test(`adventure chooser displays both portraits at ${width}px`,async({page},info)=>{
+ await page.route('**/themes/*.png',route=>route.fulfill({status:401}));
  await page.setViewportSize({width,height:950});await setup(page);
- await expect(page.locator('.destination-card')).toHaveCount(2);await page.locator('#open-adventure').click();
+ await expect(page.locator('.destination-card')).toHaveCount(3);await page.locator('#open-adventure').click();
  await expect(page.locator('.adventure-choice-card')).toHaveCount(2);
  await expect(page.locator('[data-choice="pico"]')).toContainText('Pico et le phare des îles');
+ expect(await page.locator('.choice-portrait .theme-sprite').evaluateAll(elements=>Promise.all(elements.map(async element=>{
+  const src=getComputedStyle(element).backgroundImage.slice(5,-2);
+  if(!src.startsWith('data:image/webp;'))throw Error('Adventure portrait is not bundled');
+  const img=new Image();img.src=src;await img.decode();return img.naturalWidth;
+ })))).toEqual([1536,1254]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:info.outputPath('chooser.png'),fullPage:true});
  await page.locator('[data-adventure="pico"]').click();await expect(page.locator('#map-title')).toHaveText('Un phare, huit compagnons !');

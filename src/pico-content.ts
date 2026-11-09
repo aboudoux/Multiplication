@@ -16,5 +16,5 @@ export function isPicoTheme(id: string): id is PicoThemeId { return (picoThemeId
 
 /** The same nine-cell illustrations serve the keypad, portraits and stories. */
 export function picoSprite(id: PicoThemeId, cell = 2, className = ''): string {
- return `<span class="theme-sprite pico-sprite sprite-${id} ${className}" data-pico-cell="${cell}" style="--sprite-sheet:url('${(import.meta.env?.BASE_URL ?? '/')}themes/keypad-${id}.png');background-position:${cell%3*50}% ${Math.floor(cell/3)*50}%" aria-hidden="true"></span>`;
+ return `<span class="theme-sprite pico-sprite sprite-${id} ${className}" data-pico-cell="${cell}" style="background-position:${cell%3*50}% ${Math.floor(cell/3)*50}%" aria-hidden="true"></span>`;
 }
