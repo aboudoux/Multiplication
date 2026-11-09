@@ -15,6 +15,7 @@ export class ClockArcade {
   private readonly feedback = document.createElement('p');
   private readonly burst = document.createElement('div');
   private readonly parade = document.createElement('div');
+  private readonly guestTrail = document.createElement('div');
   private readonly progressLabel = document.createElement('span');
   private readonly companionFriends = document.createElement('div');
   private completed = new Set<string>();
@@ -48,7 +49,10 @@ export class ClockArcade {
     this.parade.className = 'clock-parade';
     this.burst.setAttribute('aria-hidden', 'true');
     this.parade.setAttribute('aria-hidden', 'true');
-    this.root.append(this.content, this.feedback, this.burst, this.parade);
+    this.guestTrail.className = 'clock-guest-trail';
+    this.guestTrail.setAttribute('aria-hidden', 'true');
+    this.guestTrail.hidden = true;
+    this.root.append(this.content, this.guestTrail, this.feedback, this.burst, this.parade);
     this.companion.className = 'clock-companion';
     this.companion.setAttribute('aria-label', 'Le lapin chrono et ses amis');
     this.companion.innerHTML = '<div class="clock-companion-crew"><div class="clock-companion-art"><img src="/themes/lapin-chrono.svg" alt="" width="80" height="80"></div></div>';
@@ -117,8 +121,11 @@ export class ClockArcade {
   private updateCompanion(): void {
     this.companion.hidden = this.completed.size === 0;
     this.progressLabel.textContent = `${this.completed.size} / ${levelKeys.length} niveaux faits`;
-    this.companionFriends.innerHTML = clockFriends.filter(friend => friend.at <= this.completed.size).map(friend =>
+    const friends = clockFriends.filter(friend => friend.at <= this.completed.size);
+    this.companionFriends.innerHTML = friends.map(friend =>
       `<span class="clock-companion-friend" role="img" aria-label="${friend.name}">${clockFriendArt(friend)}</span>`).join('');
+    this.guestTrail.innerHTML = friends.map(friend =>
+      `<span class="clock-guest-spot" data-clock-friend="${friend.id}">${clockFriendArt(friend)}</span>`).join('');
   }
 
   open(): void {
@@ -232,6 +239,7 @@ export class ClockArcade {
   private show(screen: Screen): void {
     this.screen = screen;
     this.content.innerHTML = this.markup();
+    this.guestTrail.hidden = screen !== 'playing' || !this.guestTrail.childElementCount;
     this.feedback.hidden = screen !== 'playing' && screen !== 'results';
     if (screen === 'playing') {
       this.displayedSeconds = -1;

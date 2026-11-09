@@ -80,6 +80,47 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-companion-friends { gap:2px; padding-bottom:6px; }
 .clock-companion-friend { display:block; width:clamp(28px,7vw,44px); }
 .clock-friend-art { display:block; width:100%; height:auto; }
+.clock-guest-trail { display:flex; gap:2px; height:clamp(52px,9vw,68px); margin:14px auto 0; max-width:590px; overflow:hidden; border:1px solid #b0ca95; border-radius:16px; pointer-events:none; background:radial-gradient(circle,#fff5b6 0 2px,transparent 2.5px) 8px bottom / 27px 13px repeat-x,linear-gradient(#f2f8e4 0 68%,#d9edba 68%); }
+.clock-guest-spot { --guest-size:clamp(35px,9vw,52px); flex:1; min-width:0; position:relative; }
+.clock-guest-spot .clock-friend-art { position:absolute; left:0; bottom:3px; width:var(--guest-size); animation:clock-guest-stroll var(--trail-pace,9s) ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friend,.clock-guest-spot):nth-child(2) { --animal-delay:-1.2s; --trail-pace:10.5s; }
+:is(.clock-companion-friend,.clock-guest-spot):nth-child(3) { --animal-delay:-4.6s; --trail-pace:13s; }
+:is(.clock-companion-friend,.clock-guest-spot):nth-child(4) { --animal-delay:-2.2s; --trail-pace:11s; }
+:is(.clock-companion-friend,.clock-guest-spot):nth-child(5) { --animal-delay:-5.5s; --trail-pace:8s; }
+:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-head { transform-box:fill-box; transform-origin:center 75%; animation:clock-animal-tilt 7.4s ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-look { animation:clock-animal-look 5.8s ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 6.2s ease-in-out var(--animal-delay,-3s) infinite; }
+:is(.clock-companion-friends,.clock-guest-trail) .clock-animal-paw { transform-box:view-box; transform-origin:62px 56px; animation:clock-animal-wave 6.8s ease-in-out var(--animal-delay,-3s) infinite; }
+.camp-background :is(.clock-companion-friends,.clock-guest-trail) * { animation-play-state:paused; }
+@keyframes clock-guest-stroll {
+  0%,100% { left:0; transform:translateY(0) rotate(0); }
+  24% { left:calc((100% - var(--guest-size)) / 2); transform:translateY(-7px) rotate(5deg); }
+  46%,55% { left:calc(100% - var(--guest-size)); transform:translateY(0) rotate(0); }
+  77% { left:calc((100% - var(--guest-size)) / 2); transform:translateY(-5px) rotate(-5deg); }
+}
+@keyframes clock-animal-tilt {
+  0%,23%,49%,77%,100% { transform:rotate(0); }
+  34% { transform:rotate(-7deg); }
+  64% { transform:rotate(6deg); }
+}
+@keyframes clock-animal-look {
+  0%,35%,61%,100% { transform:translate(0); }
+  17% { transform:translate(-2px,-1px); }
+  49% { transform:translate(2px,-2px); }
+  78% { transform:translate(0,-2px); }
+}
+@keyframes clock-animal-blink {
+  0%,43%,49%,78%,84%,100% { transform:scaleY(1); }
+  46%,81% { transform:scaleY(.16); }
+}
+@keyframes clock-animal-wave {
+  0%,40%,74%,100% { opacity:0; transform:rotate(18deg); }
+  46%,62% { opacity:1; transform:rotate(-24deg); }
+  54%,69% { opacity:1; transform:rotate(14deg); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .clock-guest-spot .clock-friend-art { left:50%; transform:translateX(-50%); }
+}
 .clock-companion[data-gesture="finish"] .clock-companion-friend:last-child { animation:clock-companion-hop .6s ease-out both; }
 .clock-companion[data-gesture="cheer"] .clock-companion-art { animation:clock-companion-hop .48s ease-out both; }
 .clock-companion[data-gesture="encourage"] .clock-companion-art { animation:clock-companion-nod .55s ease-in-out both; }

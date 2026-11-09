@@ -1,5 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {defaults,STORAGE_KEY} from '../../src/storage';
+import { CLOCK_PROGRESS_KEY } from '../../src/clock-games';
 
 async function prepare(page:Page,muted=false) {
  await page.addInitScript(({key,saved})=>{
@@ -107,13 +108,19 @@ test('menu music continues through camp and adventure, stops on launch and resum
 });
 
 test('la mélodie du lapin continue pendant les questions, la pause et le bilan', async ({ page }) => {
+  await page.addInitScript(key => localStorage.setItem(key, '["read:0","read:1","read:2"]'), CLOCK_PROGRESS_KEY);
   await prepare(page);
   const notes = () => page.evaluate(() => (window as any).navigationProbe.filter((note: any) =>
     note.type === 'sine' && [261.63, 329.63, 293.66, 130.81, 110, 146.83, 98].includes(note.frequency)));
   await page.locator('#open-clock-arcade').click();
   await expect.poll(async () => (await notes()).some((note: any) => note.frequency === 130.81)).toBe(true);
+  await page.getByRole('button', { name: 'Lire l’histoire' }).click();
+  const story = (await notes()).length;
+  await expect.poll(async () => (await notes()).length).toBeGreaterThan(story);
+  await page.getByRole('button', { name: 'Tous les jeux' }).click();
   await page.locator('[data-game="elapsed"]').click();
   await page.locator('[data-level="0"]').click();
+  await expect(page.locator('.clock-guest-trail')).toBeVisible();
   const start = (await notes()).length;
   await page.locator('[data-clock-action="answer"]').first().click();
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(start);

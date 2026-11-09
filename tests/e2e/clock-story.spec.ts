@@ -88,3 +88,47 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('animation-name', 'none');
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('opacity', '1');
 });
+
+test('les cinq amis regardent, saluent et avancent sous les réponses sans bloquer le jeu', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openStoryGame(page, 15);
+  const trail = page.locator('.clock-guest-trail');
+  await expect(trail).toBeHidden();
+  await page.locator('[data-game="read"]').click();
+  await page.locator('[data-level="0"]').click();
+  await expect(trail).toBeVisible();
+  await expect(trail).toHaveCSS('pointer-events', 'none');
+  await expect(trail.locator('.clock-guest-spot')).toHaveCount(5);
+  const squirrel = trail.locator('[data-clock-friend="squirrel"] .clock-friend-art');
+  const movement = await squirrel.evaluate(svg => {
+    const seek = (node: Element, name: string, fraction: number) => {
+      const animation = node.getAnimations().find(animation => (animation as CSSAnimation).animationName === name)!;
+      const { delay, duration } = animation.effect!.getTiming();
+      animation.pause();
+      animation.currentTime = delay + Number(duration) * (1 + fraction);
+      return getComputedStyle(node);
+    };
+    const left = parseFloat(seek(svg, 'clock-guest-stroll', 0).left);
+    const right = parseFloat(seek(svg, 'clock-guest-stroll', .5).left);
+    const eyes = svg.querySelector('.clock-animal-look')!;
+    const look = seek(eyes, 'clock-animal-look', .17).transform;
+    const paw = svg.querySelector('.clock-animal-paw')!;
+    const raised = Number(seek(paw, 'clock-animal-wave', .54).opacity);
+    return { distance: right - left, look, raised };
+  });
+  expect(movement.distance).toBeGreaterThan(8);
+  expect(movement.look).toBe('matrix(1, 0, 0, 1, -2, -1)');
+  expect(movement.raised).toBe(1);
+  await expect(squirrel.locator('.clock-animal-eyes')).toHaveCSS('animation-name', 'clock-animal-blink');
+  const actor = await squirrel.elementHandle();
+  await page.locator('[data-clock-action="answer"]').first().click();
+  await expect(page.getByText('Question 2 sur 5')).toBeVisible();
+  expect(await actor!.evaluate(node => node.isConnected)).toBe(true);
+  await page.locator('[data-clock-action="pause"]').click();
+  await expect(trail).toBeHidden();
+  await page.locator('[data-clock-action="resume"]').click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(squirrel).toHaveCSS('animation-name', 'none');
+  await expect(squirrel.locator('.clock-animal-paw')).toHaveCSS('opacity', '0');
+  await expect(trail).toBeVisible();
+});
