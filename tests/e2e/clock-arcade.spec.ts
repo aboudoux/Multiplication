@@ -42,6 +42,7 @@ test('une réussite avance immédiatement et une erreur attend que la fiche soit
   await answerClock(page);
   await expect(page.getByText('Question 2 sur 5')).toBeVisible();
   await expect(page.locator('.clock-feedback')).toHaveText('Bravo, bonne réponse !');
+  await expect(page.locator('.clock-quick-runner')).toHaveCSS('animation-name', 'clock-quick-sprint');
   await page.clock.runFor(1500);
   await expect(timer).toHaveText('89 s');
   await answerClock(page, false);
@@ -50,6 +51,12 @@ test('une réussite avance immédiatement et une erreur attend que la fiche soit
   await expect(page.locator('.clock-options')).toHaveCount(0);
   await expect(page.locator('.clock-lesson .clock-face')).toBeVisible();
   await expect(page.locator('.clock-sparkles')).toHaveCount(0);
+  const mistake = page.locator('.clock-mistake-effect');
+  await expect(mistake.locator('i')).toHaveCount(12);
+  await expect(mistake).toHaveCSS('animation-duration', '2.4s');
+  await expect(mistake).toHaveCSS('pointer-events', 'none');
+  await mistake.evaluate(element => element.dispatchEvent(new Event('animationend')));
+  await expect(mistake).toHaveCount(0);
   await page.clock.fastForward(100_000);
   await expect(page.locator('.clock-lesson')).toContainText('89 S RESTANTES');
   await page.getByRole('button', { name: 'J’ai compris, on continue' }).click();
@@ -93,7 +100,7 @@ test('chaque mini-jeu montre une fiche illustrée avec la bonne réponse', async
   }
 });
 
-test('chaque réussite relance les étoiles et le lapin passe tous les cinq succès', async ({ page }) => {
+test('le bonhomme et les étoiles repartent à chaque réussite, le lapin tous les cinq succès', async ({ page }) => {
   await page.locator('#open-clock-arcade').click();
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
@@ -107,11 +114,18 @@ test('chaque réussite relance les étoiles et le lapin passe tous les cinq succ
         continue;
       }
       const previous = await page.locator('.clock-sparkles').elementHandles();
+      const previousRunner = await page.locator('.clock-quick-runner').last().elementHandles();
+      if (previousRunner[0]) await previousRunner[0].evaluate(node => (node as HTMLElement).style.animationPlayState = 'paused');
       await answerClock(page);
       successes++;
       await expect(page.locator('.clock-sparkles')).toHaveCount(1);
       await expect(page.locator('.clock-sparkles i')).toHaveCount(12);
+      await expect(page.locator('.clock-quick-runner').last()).toHaveCSS('animation-name', successes <= 5 ? 'clock-quick-sprint' : 'clock-celebration-fade');
       if (previous[0]) expect(await previous[0].evaluate(node => node.isConnected)).toBe(false);
+      if (previousRunner[0]) {
+        expect(await previousRunner[0].evaluate(node => node.isConnected)).toBe(true);
+        await previousRunner[0].evaluate(node => node.dispatchEvent(new Event('animationend')));
+      }
       if (successes % 5 === 0) {
         await expect(page.locator('.clock-feedback')).toContainText(`${successes} bonnes réponses`);
         const runner = page.locator('.clock-rabbit-runner');

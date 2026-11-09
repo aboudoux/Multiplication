@@ -124,6 +124,7 @@ export class GameAudio {
   private homePlaying = false;
   private rabbitPlaying = false;
   private menuSources = new Set<OscillatorNode>();
+  private readonly clockSources = new Set<OscillatorNode>();
   private homeBeat = 0;
   private nextHomeBeat = 0;
   /** Music-box loops for the menus and the rabbit arcade. */
@@ -141,8 +142,9 @@ export class GameAudio {
     const music = rabbit ? rabbitMusic : clubMusic;
     this.nextHomeBeat=ctx.currentTime+music.beat;
     const note=music.melody[this.homeBeat%music.melody.length];
-    if (note) this.tone(note,0,music.noteLength,.055,'sine',true);
-    if (this.homeBeat%4===0) this.tone(music.bass[Math.floor(this.homeBeat/4)%music.bass.length],0,music.bassLength,.025,'sine',true);
+    if (note) this.tone(note,0,music.noteLength,rabbit ? .087 : .055,'sine',this.menuSources);
+    if (this.homeBeat%4===0) this.tone(music.bass[Math.floor(this.homeBeat/4)%music.bass.length],0,music.bassLength,rabbit ? .042 : .025,'sine',this.menuSources);
+    if (rabbit && this.homeBeat%4===2) this.tone(note * 1.5,.12,.25,.028,'triangle',this.menuSources);
     this.homeBeat++;
   }
 
@@ -152,7 +154,7 @@ export class GameAudio {
     length = 0.13,
     volume = 0.2,
     type: OscillatorType = "sine",
-    menu = false,
+    group?: Set<OscillatorNode>,
   ): void {
     const ctx = this.context;
     if (!ctx || !this.master || ctx.state !== "running" || this.muted) return;
@@ -166,12 +168,12 @@ export class GameAudio {
     envelope.gain.exponentialRampToValueAtTime(0.001, start + length);
     oscillator.connect(envelope);
     envelope.connect(this.master);
-    if (menu) this.menuSources.add(oscillator);
-    else this.sources.add(oscillator);
+    group?.add(oscillator);
+    if (group !== this.menuSources) this.sources.add(oscillator);
     oscillator.start(start);
     oscillator.stop(start + length + 0.02);
     oscillator.onended = () => {
-      this.menuSources.delete(oscillator);
+      group?.delete(oscillator);
       this.sources.delete(oscillator);
       oscillator.disconnect();
       envelope.disconnect();
@@ -233,6 +235,20 @@ export class GameAudio {
     const notes = themes[this.theme].danceNotes;
     (milestone ? notes.slice(0,4) : [notes[1], notes[3]]).forEach((note,i) =>
       this.tone(note, i*.08, .24, .18, themes[this.theme].music.timbre));
+  }
+  clockAnswer(correct: boolean): void {
+    for (const source of this.clockSources) { try { source.stop(); } catch { /* Already ended. */ } }
+    this.clockSources.clear();
+    if (correct) {
+      [698.46, 880, 1046.5, 1396.91].forEach((note, index) =>
+        this.tone(note, index * .07, .17, .18, 'triangle', this.clockSources));
+      this.tone(174.61, .08, .16, .12, 'sine', this.clockSources);
+    } else {
+      [124, 92].forEach((note, index) => {
+        this.tone(note, index * .22, .16, .25, 'triangle', this.clockSources);
+        this.tone(note / 2, index * .22, .19, .15, 'sine', this.clockSources);
+      });
+    }
   }
   error(): void {
     // A long, low double buzzer with a square-wave growl, not a piercing beep.

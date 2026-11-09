@@ -16,6 +16,16 @@ const sparkleTrajectories = [[-88,-24],[-74,5],[-60,-41],[-37,13],[-29,-53],[-11
 const successBurst = `<div class="clock-sparkles"><span class="clock-success-star">✦</span>${sparkleTrajectories.map(([x, y], index) =>
   `<i style="--burst-x:${x}px;--burst-y:${y}px;--burst-delay:${(index % 4) * 32}ms"></i>`).join('')}</div>`;
 const rabbitParade = `<div class="clock-rabbit-runner"><span class="clock-rabbit-dust"><i></i><i></i><i></i></span>${clockRabbitArt}</div>`;
+const quickParade = `<div class="clock-quick-runner"><svg viewBox="0 0 100 100" aria-hidden="true">
+  <path d="M4 41h15M0 54h14M8 66h12" fill="none" stroke="#e8aa46" stroke-width="4" stroke-linecap="round"/>
+  <path d="m35 67-5 14-10 4m44-17 11 11 12-3M30 43l-13 7m51-10 14-10" fill="none" stroke="#685077" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m50 13 10 19 21 3-15 15 4 21-20-10-19 10 3-21-15-15 21-3Z" fill="#ffdc74" stroke="#a25b70" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="43" cy="43" r="2.8" fill="#52364f"/><circle cx="57" cy="43" r="2.8" fill="#52364f"/>
+  <path d="M44 50q6 8 12 0" fill="none" stroke="#52364f" stroke-width="2" stroke-linecap="round"/>
+</svg></div>`;
+const crossPositions = [[8,13],[27,6],[51,10],[77,6],[92,15],[6,36],[94,39],[7,66],[93,68],[12,89],[48,93],[85,89]];
+const mistakeEffect = `<div class="clock-mistake-effect">${crossPositions.map(([x, y], index) =>
+  `<i style="--cross-x:${x}%;--cross-y:${y}%;--cross-delay:${(index % 4) * 65}ms">×</i>`).join('')}</div>`;
 
 export class ClockArcade {
   readonly root = document.createElement('section');
@@ -23,6 +33,7 @@ export class ClockArcade {
   private readonly content = document.createElement('div');
   private readonly feedback = document.createElement('p');
   private readonly burst = document.createElement('div');
+  private readonly quick = document.createElement('div');
   private readonly parade = document.createElement('div');
   private readonly guestTrail = document.createElement('div');
   private readonly progressLabel = document.createElement('span');
@@ -50,6 +61,7 @@ export class ClockArcade {
   constructor(
     private readonly goHome: () => void,
     private readonly playSuccess: (milestone: boolean) => void,
+    private readonly playAnswer: (correct: boolean) => void,
     private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
   ) {
     this.root.className = 'clock-arcade';
@@ -58,13 +70,15 @@ export class ClockArcade {
     this.feedback.className = 'clock-feedback';
     this.feedback.setAttribute('role', 'status');
     this.burst.className = 'clock-burst';
+    this.quick.className = 'clock-quick-layer';
     this.parade.className = 'clock-parade';
     this.burst.setAttribute('aria-hidden', 'true');
+    this.quick.setAttribute('aria-hidden', 'true');
     this.parade.setAttribute('aria-hidden', 'true');
     this.guestTrail.className = 'clock-guest-trail';
     this.guestTrail.setAttribute('aria-hidden', 'true');
     this.guestTrail.hidden = true;
-    this.root.append(this.content, this.guestTrail, this.feedback, this.burst, this.parade);
+    this.root.append(this.content, this.guestTrail, this.feedback, this.burst, this.quick, this.parade);
     this.companion.className = 'clock-companion';
     this.companion.setAttribute('aria-label', 'Le lapin chrono et ses amis');
     this.companion.innerHTML = `<div class="clock-companion-crew"><div class="clock-companion-art">${clockRabbitArt}</div></div>`;
@@ -212,6 +226,8 @@ export class ClockArcade {
       this.clearCelebrations();
       this.show('correction');
       this.reactCompanion('encourage');
+      this.playAnswer(false);
+      this.celebrate(this.burst, mistakeEffect);
       return;
     }
     this.score++;
@@ -221,13 +237,15 @@ export class ClockArcade {
     if (this.playing) this.reactCompanion('cheer');
     this.feedback.textContent = milestone ? `Bravo, ${this.totalCorrect} bonnes réponses ! Voilà le lapin !` : 'Bravo, bonne réponse !';
     this.feedback.classList.add('clock-feedback-correct');
-    this.playSuccess(milestone);
+    this.playAnswer(true);
     this.celebrate(this.burst, successBurst);
+    this.celebrate(this.quick, quickParade, true);
     if (milestone) this.celebrate(this.parade, rabbitParade);
   }
 
   private continueAfterCorrection(now: number): void {
     if (this.screen !== 'correction') return;
+    this.clearCelebrations();
     this.mistakenOption = null;
     this.deadline = now + this.remaining;
     this.advance(now);
@@ -243,14 +261,16 @@ export class ClockArcade {
     if (finished) this.reactCompanion('finish');
   }
 
-  private celebrate(layer: HTMLElement, markup: string): void {
-    layer.innerHTML = markup;
-    const effect = layer.firstElementChild!;
+  private celebrate(layer: HTMLElement, markup: string, append = false): void {
+    if (!append) layer.replaceChildren();
+    layer.insertAdjacentHTML('beforeend', markup);
+    const effect = layer.lastElementChild!;
     effect.addEventListener('animationend', event => { if (event.target === effect) effect.remove(); });
   }
 
   private clearCelebrations(): void {
     this.burst.replaceChildren();
+    this.quick.replaceChildren();
     this.parade.replaceChildren();
   }
 

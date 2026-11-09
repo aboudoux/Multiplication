@@ -225,7 +225,7 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
 });
 get('home').before(camp.root);
-const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), milestone => audio.success(milestone), () => localStorage);
+const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), milestone => audio.success(milestone), correct => audio.clockAnswer(correct), () => localStorage);
 get('home').before(clockArcade.root);
 document.querySelector('.page-wrap')!.append(clockArcade.companion);
 get('open-clock-arcade').addEventListener('click', () => {

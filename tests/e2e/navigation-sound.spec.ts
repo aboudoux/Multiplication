@@ -122,16 +122,22 @@ test('la mélodie du lapin continue pendant la correction, la pause et le bilan'
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   await expect(page.locator('.clock-guest-trail')).toBeVisible();
+  const effects = (frequencies: number[]) => page.evaluate(values =>
+    (window as any).navigationProbe.filter((note: any) => note.type === 'triangle' && values.includes(note.frequency)).map((note: any) => note.frequency), frequencies);
+  const fanfare = [698.46, 880, 1046.5, 1396.91];
+  await answerClock(page);
+  await expect.poll(() => effects(fanfare)).toEqual(fanfare);
   const start = (await notes()).length;
   await answerClock(page, false);
   await expect(page.locator('.clock-lesson')).toBeVisible();
+  await expect.poll(() => effects([124, 92])).toEqual([124, 92]);
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(start);
   await continueClockLesson(page);
   await page.locator('[data-clock-action="pause"]').click();
   const paused = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(paused);
   await page.locator('[data-clock-action="resume"]').click();
-  for (let index = 0; index < 4; index++) await answerFirstClockOption(page);
+  for (let index = 0; index < 3; index++) await answerFirstClockOption(page);
   await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
   const finished = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(finished);
