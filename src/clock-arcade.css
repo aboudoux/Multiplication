@@ -22,6 +22,35 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-center { max-width:620px; margin:24px auto 18px; text-align:center; }
 .clock-arcade .clock-feedback { min-height:2.8em; margin:16px auto 0; max-width:60ch; text-align:center; font-weight:700; }
 .clock-feedback-correct { color:#236343; }
+.clock-lesson { max-width:790px; margin:8px auto; padding:clamp(14px,3vw,30px); border:2px solid #d18ca8; border-radius:24px; background:#fffaf0; box-shadow:0 5px 0 #b67b9829; }
+.clock-lesson-header,.clock-story-invite { display:flex; align-items:center; gap:12px; }
+.clock-kitten-sticker.theme-sprite { flex:none; width:clamp(45px,10vw,84px); border-radius:18px; }
+.clock-story-invite .clock-kitten-sticker { width:clamp(46px,8vw,70px); }
+.clock-lesson-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(12px,3vw,26px); align-items:center; margin:18px 0; }
+.clock-lesson-question { font-weight:700; }
+.clock-lesson-answer { display:grid; gap:3px; padding:9px 13px; border-radius:13px; background:#e1f1d7; color:#234f36; }
+.clock-lesson-answer span { font-size:12px; font-weight:700; letter-spacing:.075em; }
+.clock-lesson-answer strong { font:700 clamp(25px,5vw,39px)/1.15 Kalam,cursive; }
+.clock-lesson-figure { margin:0; padding:14px; border:1px solid #d8a8bc; border-radius:17px; background:#f8ecf3; }
+.clock-lesson-figure figcaption { font-weight:700; text-align:center; }
+.clock-lesson-face .clock-face { max-width:clamp(116px,22vw,174px); margin:0 auto 10px; }
+.clock-lesson-face figcaption { display:grid; gap:4px; font-size:14px; }
+.clock-lesson-face figcaption span:first-child { color:#49335e; }
+.clock-lesson-face figcaption span:last-child { color:#8c3458; }
+.clock-lesson-line,.clock-lesson-bars { list-style:none; padding:0; margin:10px 0 0; }
+.clock-lesson-line { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; font-weight:700; }
+.clock-lesson-line > * { padding:5px 7px; text-align:center; border-radius:8px; background:#fffbef; }
+.clock-lesson-line li + li::before { content:"→ "; }
+.clock-lesson-line .clock-lesson-highlight { background:#dcefd2; color:#234f36; }
+.clock-lesson-bars li + li { margin-top:8px; }
+.clock-lesson-bars i { display:block; width:var(--clock-duration); height:12px; border-radius:8px; background:#a8648b; margin-top:4px; }
+.clock-lesson-bars li + li i { background:#538877; }
+.clock-lesson-footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.clock-lesson-footer .play-button { white-space:normal; }
+@media (max-width:600px) {
+  .clock-lesson-body { grid-template-columns:1fr; }
+  .clock-lesson-footer .play-button { width:100%; }
+}
 .clock-burst,.clock-parade { pointer-events:none; z-index:14; }
 .clock-burst { position:absolute; inset:auto 0 0; height:75px; display:grid; place-items:center; }
 .clock-sparkles { position:relative; display:grid; place-items:center; width:70px; height:48px; animation:clock-sparkles 1s ease-out both; }

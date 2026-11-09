@@ -1,6 +1,7 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { defaults, STORAGE_KEY } from '../../src/storage';
-import { clockGameIds } from '../../src/clock-games';
+import { clockGameIds, clockRound, clockTime } from '../../src/clock-games';
+import { answerClock, answerFirstClockOption, continueClockLesson } from './clock-helpers';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(({ key, settings }) => localStorage.setItem(key, JSON.stringify(settings)), {
@@ -32,13 +33,7 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await expect(page.locator('#open-training')).toBeVisible();
 });
 
-async function answerClock(page: Page, correct = true) {
-  const hour = (await page.locator('#clock-heading').textContent())!.match(/(\d+) h/)![1];
-  const answer = page.getByRole('button', { name: `Petite aiguille sur le ${hour}, grande aiguille sur le 12`, exact: true });
-  await (correct ? answer : page.locator('.clock-options button').filter({ hasNot: page.locator(`svg[aria-label="Petite aiguille sur le ${hour}, grande aiguille sur le 12"]`) }).first()).click();
-}
-
-test('la prochaine question est immédiatement jouable et le chrono respecte la pause', async ({ page }) => {
+test('une réussite avance immédiatement et une erreur attend que la fiche soit lue', async ({ page }) => {
   await page.locator('#open-clock-arcade').click();
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
@@ -47,11 +42,18 @@ test('la prochaine question est immédiatement jouable et le chrono respecte la 
   await answerClock(page);
   await expect(page.getByText('Question 2 sur 5')).toBeVisible();
   await expect(page.locator('.clock-feedback')).toHaveText('Bravo, bonne réponse !');
-  await answerClock(page, false);
-  await expect(page.getByText('Question 3 sur 5')).toBeVisible();
-  await expect(page.locator('.clock-feedback')).toContainText('Pour la question précédente');
-  await expect(page.locator('.clock-sparkles')).toHaveCount(0);
   await page.clock.runFor(1500);
+  await expect(timer).toHaveText('89 s');
+  await answerClock(page, false);
+  await expect(page.getByRole('heading', { name: 'Regardons ensemble' })).toBeFocused();
+  await expect(page.locator('.clock-lesson')).toContainText('89 S RESTANTES');
+  await expect(page.locator('.clock-options')).toHaveCount(0);
+  await expect(page.locator('.clock-lesson .clock-face')).toBeVisible();
+  await expect(page.locator('.clock-sparkles')).toHaveCount(0);
+  await page.clock.fastForward(100_000);
+  await expect(page.locator('.clock-lesson')).toContainText('89 S RESTANTES');
+  await page.getByRole('button', { name: 'J’ai compris, on continue' }).click();
+  await expect(page.getByText('Question 3 sur 5')).toBeVisible();
   await expect(timer).toHaveText('89 s');
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
@@ -72,6 +74,25 @@ test('la prochaine question est immédiatement jouable et le chrono respecte la 
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
 });
 
+test('chaque mini-jeu montre une fiche illustrée avec la bonne réponse', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => { Math.random = () => 0; });
+  for (const game of clockGameIds) {
+    await page.locator('#open-clock-arcade').click();
+    await page.locator(`[data-game="${game}"]`).click();
+    await page.locator('[data-level="0"]').click();
+    const question = clockRound(game, 0, () => 0)[0];
+    const wrong = question.options.findIndex(option => option !== question.correct);
+    await page.locator(`[data-option="${wrong}"]`).click();
+    await expect(page.locator('.clock-lesson')).toHaveAttribute('data-lesson-kind', question.correction.kind);
+    await expect(page.locator('.clock-lesson-answer strong')).toHaveText(typeof question.correct === 'number' ? clockTime(question.correct, true) : question.correct);
+    await expect(page.locator('.clock-lesson-figure')).toBeVisible();
+    await expect(page.locator('.clock-lesson .sprite-kitten')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    await page.locator('.brand').click();
+  }
+});
+
 test('chaque réussite relance les étoiles et le lapin passe tous les cinq succès', async ({ page }) => {
   await page.locator('#open-clock-arcade').click();
   await page.locator('[data-game="match"]').click();
@@ -82,6 +103,7 @@ test('chaque réussite relance les étoiles et le lapin passe tous les cinq succ
       await expect(page.getByText(`Question ${index} sur 5`)).toBeVisible();
       if (wrongFirst && index === 1) {
         await answerClock(page, false);
+        await continueClockLesson(page);
         continue;
       }
       const previous = await page.locator('.clock-sparkles').elementHandles();
@@ -144,7 +166,7 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   const levels = page.getByRole('button', { name: 'Retour aux niveaux' });
   const firstLevel = page.locator('[data-level="0"]');
   const finishRound = async () => {
-    for (let index = 0; index < 5; index++) await page.locator('[data-clock-action="answer"]').first().click();
+    for (let index = 0; index < 5; index++) await answerFirstClockOption(page);
   };
 
   await expect(companion).toBeHidden();
@@ -152,12 +174,16 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await page.locator('[data-game="match"]').click();
   await firstLevel.click();
   await answerClock(page, false);
+  await continueClockLesson(page);
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
   await expect(companion).toBeHidden();
 
   await page.getByRole('button', { name: 'Rejouer' }).click();
-  for (let index = 0; index < 5; index++) await answerClock(page, false);
+  for (let index = 0; index < 5; index++) {
+    await answerClock(page, false);
+    await continueClockLesson(page);
+  }
   await expect(page.getByText('Niveau fait', { exact: false })).toBeVisible();
   await expect(companion).toBeVisible();
   await expect(companion).toContainText('1 / 18 niveaux faits');
@@ -178,6 +204,7 @@ test('les niveaux faits débloquent un compagnon persistant et ne sont comptés 
   await expect(companion.locator('.clock-companion-art')).toHaveCSS('animation-name', 'clock-companion-hop');
   await answerClock(page, false);
   await expect(companion).toHaveAttribute('data-gesture', 'encourage');
+  await continueClockLesson(page);
   for (let index = 0; index < 3; index++) await answerClock(page);
   await expect(companion).toContainText('1 / 18 niveaux faits');
 

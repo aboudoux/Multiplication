@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { CLOCK_PROGRESS_KEY, clockGameIds, clockLevels, roundLength } from '../../src/clock-games';
 import { defaults, STORAGE_KEY } from '../../src/storage';
+import { answerFirstClockOption } from './clock-helpers';
 
 const levelKeys = clockGameIds.flatMap(game => clockLevels.map((_, level) => `${game}:${level}`));
 
@@ -18,7 +19,7 @@ async function openStoryGame(page: Page, completed: number) {
 async function finishLevel(page: Page, game: string, level: number) {
   await page.locator(`[data-game="${game}"]`).click();
   await page.locator(`[data-level="${level}"]`).click();
-  for (let index = 0; index < roundLength; index++) await page.locator('[data-clock-action="answer"]').first().click();
+  for (let index = 0; index < roundLength; index++) await answerFirstClockOption(page);
 }
 
 test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ page }) => {

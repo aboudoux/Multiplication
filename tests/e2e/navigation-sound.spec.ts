@@ -1,6 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 import {defaults,STORAGE_KEY} from '../../src/storage';
 import { CLOCK_PROGRESS_KEY } from '../../src/clock-games';
+import { answerClock, answerFirstClockOption, continueClockLesson } from './clock-helpers';
 
 async function prepare(page:Page,muted=false) {
  await page.addInitScript(({key,saved})=>{
@@ -107,7 +108,7 @@ test('menu music continues through camp and adventure, stops on launch and resum
  await page.waitForTimeout(1000);expect(await music()).toBe(adventureCountdown);
 });
 
-test('la mélodie du lapin continue pendant les questions, la pause et le bilan', async ({ page }) => {
+test('la mélodie du lapin continue pendant la correction, la pause et le bilan', async ({ page }) => {
   await page.addInitScript(key => localStorage.setItem(key, '["read:0","read:1","read:2"]'), CLOCK_PROGRESS_KEY);
   await prepare(page);
   const notes = () => page.evaluate(() => (window as any).navigationProbe.filter((note: any) =>
@@ -118,17 +119,19 @@ test('la mélodie du lapin continue pendant les questions, la pause et le bilan'
   const story = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(story);
   await page.getByRole('button', { name: 'Tous les jeux' }).click();
-  await page.locator('[data-game="elapsed"]').click();
+  await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   await expect(page.locator('.clock-guest-trail')).toBeVisible();
   const start = (await notes()).length;
-  await page.locator('[data-clock-action="answer"]').first().click();
+  await answerClock(page, false);
+  await expect(page.locator('.clock-lesson')).toBeVisible();
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(start);
+  await continueClockLesson(page);
   await page.locator('[data-clock-action="pause"]').click();
   const paused = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(paused);
   await page.locator('[data-clock-action="resume"]').click();
-  for (let index = 0; index < 4; index++) await page.locator('[data-clock-action="answer"]').first().click();
+  for (let index = 0; index < 4; index++) await answerFirstClockOption(page);
   await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
   const finished = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(finished);
