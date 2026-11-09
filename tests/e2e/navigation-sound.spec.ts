@@ -106,6 +106,32 @@ test('menu music continues through camp and adventure, stops on launch and resum
  await page.waitForTimeout(1000);expect(await music()).toBe(adventureCountdown);
 });
 
+test('la mélodie du lapin continue pendant les questions, la pause et le bilan', async ({ page }) => {
+  await prepare(page);
+  const notes = () => page.evaluate(() => (window as any).navigationProbe.filter((note: any) =>
+    note.type === 'sine' && [261.63, 329.63, 293.66, 130.81, 110, 146.83, 98].includes(note.frequency)));
+  await page.locator('#open-clock-arcade').click();
+  await expect.poll(async () => (await notes()).some((note: any) => note.frequency === 130.81)).toBe(true);
+  await page.locator('[data-game="elapsed"]').click();
+  await page.locator('[data-level="0"]').click();
+  const start = (await notes()).length;
+  await page.locator('[data-clock-action="answer"]').first().click();
+  await expect.poll(async () => (await notes()).length).toBeGreaterThan(start);
+  await page.locator('[data-clock-action="pause"]').click();
+  const paused = (await notes()).length;
+  await expect.poll(async () => (await notes()).length).toBeGreaterThan(paused);
+  await page.locator('[data-clock-action="resume"]').click();
+  for (let index = 0; index < 4; index++) await page.locator('[data-clock-action="answer"]').first().click();
+  await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
+  const finished = (await notes()).length;
+  await expect.poll(async () => (await notes()).length).toBeGreaterThan(finished);
+  expect((await notes()).filter((note: any) => [130.81, 110, 146.83, 98].includes(note.frequency)).every((note: any) => !note.cancelled)).toBe(true);
+  await page.locator('#sound').click();
+  const muted = (await notes()).length;
+  await page.waitForTimeout(700);
+  expect((await notes()).length).toBe(muted);
+});
+
 test.describe('audible autoplay permitted',()=>{
  test('home music starts on arrival without any click',async({playwright})=>{
   const browser=await playwright.chromium.launch({channel:'msedge',args:['--autoplay-policy=no-user-gesture-required']});

@@ -225,7 +225,7 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
 });
 get('home').before(camp.root);
-const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), () => audio.success());
+const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), milestone => audio.success(milestone));
 get('home').before(clockArcade.root);
 get('open-clock-arcade').addEventListener('click', () => {
   void audio.navigation();
@@ -635,7 +635,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) clockArcade.suspend(performance.now());
+  if (document.hidden) clockArcade.pause(performance.now());
   activeFinale.setBackground(document.hidden);
   document.documentElement.classList.toggle('camp-background',document.hidden);
   if ((activeStage || trainingActive) && game.phase === 'victory') {
@@ -651,7 +651,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
-  clockArcade.suspend(performance.now());
+  clockArcade.pause(performance.now());
   activeFinale.setBackground(true);
   document.documentElement.classList.add('camp-background');
   audio.stopSpeech();
@@ -974,10 +974,11 @@ if (new URLSearchParams(location.search).get('fete') === '1') {
   showMap(); showFinale();
 }
 function frame(now: number): void {
+  const clockOpen = !clockArcade.root.hidden;
   const inMenus=!activeFinale.active && !previewVictory && !trainingActive && !activeStage
-    && game.phase==='welcome' && (campOpen || mapOpen || chooserOpen || !get('home').hidden || !clockArcade.root.hidden);
+    && game.phase==='welcome' && (campOpen || mapOpen || chooserOpen || !get('home').hidden || clockOpen);
   get('menu-audio-enable').hidden=!inMenus || (!saved.muted && audio.ready);
-  audio.homeMusic(!document.hidden && inMenus);
+  audio.homeMusic(!document.hidden && inMenus, clockOpen);
   if (!document.hidden) {
     clockArcade.tick(now);
     activeFinale.update(now);

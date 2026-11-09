@@ -2,6 +2,15 @@ import { themes, type ThemeId } from "./themes";
 import type { Calculation } from "./calculations";
 import { QuestionVoice, type VoiceStyle } from "./voice";
 
+const clubMusic = {
+  melody: [392,493.88,587.33,0,523.25,493.88,440,0,349.23,440,523.25,0,493.88,440,392,0],
+  bass: [196,174.61,174.61,196], beat: .3, noteLength: .24, bassLength: .27,
+};
+const rabbitMusic = {
+  melody: [261.63,0,329.63,392,440,0,392,329.63,293.66,0,349.23,440,392,0,329.63,293.66],
+  bass: [130.81,110,146.83,98], beat: .48, noteLength: .76, bassLength: 1.85,
+};
+
 /** Original synthesized arcade sounds and bundled French voice prompts. */
 export class GameAudio {
   private context: AudioContext | null = null;
@@ -113,23 +122,27 @@ export class GameAudio {
   get ready(): boolean { return this.context?.state==='running'; }
 
   private homePlaying = false;
+  private rabbitPlaying = false;
   private menuSources = new Set<OscillatorNode>();
   private homeBeat = 0;
   private nextHomeBeat = 0;
-  /** The same music-box loop throughout the menus, separate from game music. */
-  homeMusic(active: boolean): void {
+  /** Music-box loops for the menus and the rabbit arcade. */
+  homeMusic(active: boolean, rabbit = false): void {
     const ctx=this.context;
-    if (!active || this.muted || !ctx || ctx.state!=='running') {
+    const audible=active && !this.muted && ctx?.state==='running';
+    if (!audible || this.rabbitPlaying !== rabbit) {
       for (const source of this.menuSources) { try {source.stop();} catch { /* Already ended. */ } }
-      this.menuSources.clear();this.homePlaying=false;this.homeBeat=0;return;
+      this.menuSources.clear();this.homePlaying=false;this.homeBeat=0;
+      this.rabbitPlaying=rabbit;
     }
-    if (!this.homePlaying) { this.homePlaying=true; this.nextHomeBeat=ctx.currentTime+.65; }
+    if (!audible) return;
+    if (!this.homePlaying) { this.homePlaying=true; this.nextHomeBeat=ctx.currentTime+(rabbit ? 0 : .65); }
     if (ctx.currentTime<this.nextHomeBeat) return;
-    this.nextHomeBeat=ctx.currentTime+.3;
-    const melody=[392,493.88,587.33,0,523.25,493.88,440,0,349.23,440,523.25,0,493.88,440,392,0];
-    const note=melody[this.homeBeat%melody.length];
-    if (note) this.tone(note,0,.24,.055,'sine',true);
-    if (this.homeBeat%4===0) this.tone([196,174.61,174.61,196][Math.floor(this.homeBeat/4)%4],0,.27,.025,'sine',true);
+    const music = rabbit ? rabbitMusic : clubMusic;
+    this.nextHomeBeat=ctx.currentTime+music.beat;
+    const note=music.melody[this.homeBeat%music.melody.length];
+    if (note) this.tone(note,0,music.noteLength,.055,'sine',true);
+    if (this.homeBeat%4===0) this.tone(music.bass[Math.floor(this.homeBeat/4)%music.bass.length],0,music.bassLength,.025,'sine',true);
     this.homeBeat++;
   }
 

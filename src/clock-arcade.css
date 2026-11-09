@@ -20,7 +20,39 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-arcade h2 { color:inherit; margin:0; font:700 clamp(28px,5vw,45px)/1.14 Kalam,cursive; }
 .clock-arcade p { margin:8px 0; line-height:1.55; }
 .clock-center { max-width:620px; margin:24px auto 18px; text-align:center; }
-.clock-feedback-note { font-size:14px; font-weight:700; }
+.clock-arcade .clock-feedback { min-height:2.8em; margin:16px auto 0; max-width:60ch; text-align:center; font-weight:700; }
+.clock-feedback-correct { color:#236343; }
+.clock-burst,.clock-parade { pointer-events:none; z-index:14; }
+.clock-burst { position:absolute; inset:auto 0 0; height:75px; display:grid; place-items:center; }
+.clock-sparkles { position:relative; color:#a83267; font-size:clamp(30px,7vw,58px); text-shadow:0 2px 0 #fff2b0; animation:clock-sparkles 850ms ease-out both; }
+.clock-sparkles span { position:absolute; font-size:.52em; }
+.clock-sparkles span:nth-child(1) { top:-10%; left:-82%; color:#7357bc; }
+.clock-sparkles span:nth-child(2) { top:-26%; left:134%; color:#bd5928; }
+.clock-sparkles span:nth-child(3) { bottom:-12%; left:-52%; color:#31865d; }
+.clock-sparkles span:nth-child(4) { bottom:-20%; left:147%; color:#a83267; }
+.clock-parade { position:fixed; inset:0; overflow:hidden; }
+.clock-rabbit-runner { position:absolute; bottom:clamp(18px,8vh,84px); left:0; width:clamp(78px,15vw,132px); height:auto; animation:clock-rabbit 2.3s linear both; }
+@keyframes clock-sparkles {
+  0% { opacity:0; transform:scale(.5); }
+  27% { opacity:1; transform:scale(1); }
+  100% { opacity:0; transform:scale(1.45); }
+}
+@keyframes clock-rabbit {
+  0% { transform:translateX(-110%); }
+  14% { transform:translate(11vw,-22px) rotate(-7deg); }
+  28% { transform:translate(24vw,0); }
+  42% { transform:translate(37vw,-22px) rotate(-7deg); }
+  56% { transform:translate(50vw,0); }
+  70% { transform:translate(66vw,-22px) rotate(-7deg); }
+  84% { transform:translate(82vw,0); }
+  100% { transform:translateX(101vw); }
+}
+@media (prefers-reduced-motion:reduce) {
+  /* Keep only a stationary fade despite the global reduced-motion animation reset. */
+  .clock-sparkles,.clock-rabbit-runner { animation:clock-celebration-fade 1.2s ease-out both !important; }
+  .clock-rabbit-runner { left:auto; right:16px; }
+  @keyframes clock-celebration-fade { 0%,75% { opacity:1; } 100% { opacity:0; } }
+}
 .clock-games,.clock-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
 .clock-games button,.clock-options button { display:grid; gap:6px; align-content:start; text-align:left; min-height:58px; padding:14px; color:inherit; background:#fff7e9; border:2px solid #cf8ba9; border-radius:16px; box-shadow:0 4px 0 #b9789570; cursor:pointer; font:inherit; }
 .clock-games button:nth-child(3n + 2) { background:#f8edff; border-color:#a890cb; }
@@ -32,7 +64,6 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-timer { justify-content:flex-end; margin-top:14px; }
 .clock-progress { flex:1; min-width:100px; height:18px; accent-color:#a85278; }
 #clock-time { min-width:4ch; text-align:right; font-variant-numeric:tabular-nums; }
-.clock-timer-wait { font-size:14px; }
 .clock-options { max-width:590px; margin:0 auto; }
 .clock-options button { place-content:center; text-align:center; font-weight:700; }
 .clock-options button:has(.clock-face) { display:flex; justify-content:center; padding:6px; }

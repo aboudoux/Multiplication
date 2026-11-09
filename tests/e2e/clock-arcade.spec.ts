@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { defaults, STORAGE_KEY } from '../../src/storage';
 import { clockGameIds } from '../../src/clock-games';
 
@@ -32,38 +32,39 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await expect(page.locator('#open-training')).toBeVisible();
 });
 
-test('le chrono attend les corrections et la pause, puis termine la partie à zéro', async ({ page }) => {
+async function answerClock(page: Page, correct = true) {
+  const hour = (await page.locator('#clock-heading').textContent())!.match(/(\d+) h/)![1];
+  const answer = page.getByRole('button', { name: `Petite aiguille sur le ${hour}, grande aiguille sur le 12`, exact: true });
+  await (correct ? answer : page.locator('.clock-options button').filter({ hasNot: page.locator(`svg[aria-label="Petite aiguille sur le ${hour}, grande aiguille sur le 12"]`) }).first()).click();
+}
+
+test('la prochaine question est immédiatement jouable et le chrono respecte la pause', async ({ page }) => {
   await page.locator('#open-clock-arcade').click();
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   const timer = page.getByRole('timer');
   await expect(timer).toHaveText('90 s');
-  const prompt = await page.locator('#clock-heading').textContent();
-  const hour = prompt!.match(/(\d+) h/)![1];
-  await page.getByRole('button', { name: `Petite aiguille sur le ${hour}, grande aiguille sur le 12`, exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Bravo !' })).toBeVisible();
-  const remaining = await timer.textContent();
-  await page.clock.fastForward(1500);
-  await expect(timer).toHaveText(remaining!);
-  await expect(page.getByRole('button', { name: 'Question suivante' })).toHaveCount(0);
+  await answerClock(page);
+  await expect(page.getByText('Question 2 sur 5')).toBeVisible();
+  await expect(page.locator('.clock-feedback')).toHaveText('Bravo, bonne réponse !');
+  await answerClock(page, false);
+  await expect(page.getByText('Question 3 sur 5')).toBeVisible();
+  await expect(page.locator('.clock-feedback')).toContainText('Pour la question précédente');
+  await expect(page.locator('.clock-sparkles')).toHaveCount(0);
+  await page.clock.runFor(1500);
+  await expect(timer).toHaveText('89 s');
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await page.clock.fastForward(100_000);
-  await expect(timer).toHaveText(remaining!);
-  await expect(page.getByRole('heading', { name: 'Bravo !' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Petite pause' })).toBeVisible();
   await page.evaluate(() => {
     Reflect.deleteProperty(document, 'hidden');
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await page.clock.runFor(2700);
-  await expect(page.getByText('Question 2 sur 5')).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('heading', { name: 'Petite pause' })).toBeVisible();
-  await page.clock.fastForward(100_000);
   await page.getByRole('button', { name: 'On continue !' }).click();
-  await expect(timer).toHaveText(remaining!);
+  await expect(timer).toHaveText('89 s');
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
   await expect(page.getByText('1 bonne réponse')).toBeVisible();
@@ -71,18 +72,37 @@ test('le chrono attend les corrections et la pause, puis termine la partie à z�
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
 });
 
-test('une manche complète propose cinq corrections et un bilan', async ({ page }) => {
+test('chaque réussite relance les étoiles et le lapin passe tous les cinq succès', async ({ page }) => {
   await page.locator('#open-clock-arcade').click();
-  await page.locator('[data-game="elapsed"]').click();
-  await page.locator('[data-level="2"]').click();
-  for (let index = 1; index <= 5; index++) {
-    await expect(page.getByText(`Question ${index} sur 5`)).toBeVisible();
-    await page.locator('[data-clock-action="answer"]').first().click();
-    await expect(page.getByText(/il s’écoule/)).toBeVisible();
-    await page.clock.fastForward(5000);
+  await page.locator('[data-game="match"]').click();
+  await page.locator('[data-level="0"]').click();
+  let successes = 0;
+  for (const wrongFirst of [true, false, false]) {
+    for (let index = 1; index <= 5; index++) {
+      await expect(page.getByText(`Question ${index} sur 5`)).toBeVisible();
+      if (wrongFirst && index === 1) {
+        await answerClock(page, false);
+        continue;
+      }
+      const previous = await page.locator('.clock-sparkles').elementHandles();
+      await answerClock(page);
+      successes++;
+      await expect(page.locator('.clock-sparkles')).toHaveCount(1);
+      if (previous[0]) expect(await previous[0].evaluate(node => node.isConnected)).toBe(false);
+      if (successes % 5 === 0) {
+        await expect(page.locator('.clock-feedback')).toContainText(`${successes} bonnes réponses`);
+        const runner = page.locator('.clock-rabbit-runner');
+        await expect(runner).toHaveCSS('animation-name', successes === 5 ? 'clock-rabbit' : 'clock-celebration-fade');
+        await expect(page.locator('.clock-parade')).toHaveCSS('pointer-events', 'none');
+        await runner.evaluate(element => element.dispatchEvent(new Event('animationend')));
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+      }
+      await expect(page.locator('.clock-rabbit-runner')).toHaveCount(0);
+    }
+    await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
+    await expect(page.getByText('5 questions jouées sur 5', { exact: false })).toBeVisible();
+    await page.getByRole('button', { name: 'Rejouer' }).click();
   }
-  await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
-  await expect(page.getByText('5 questions jouées sur 5', { exact: false })).toBeVisible();
 });
 
 test('les titres, consignes et réponses contrastent avec leur fond', async ({ page }) => {

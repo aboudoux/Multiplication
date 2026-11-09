@@ -1,35 +1,44 @@
 import { clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
 
 type Level = Parameters<typeof clockRound>[1];
-type Screen = 'catalogue' | 'levels' | 'playing' | 'feedback' | 'paused' | 'results';
-const correctFeedbackMs = 2500;
-const correctionMs = 4500;
+type Screen = 'catalogue' | 'levels' | 'playing' | 'paused' | 'results';
+const rabbitEvery = 5;
 
 export class ClockArcade {
   readonly root = document.createElement('section');
+  private readonly content = document.createElement('div');
+  private readonly feedback = document.createElement('p');
+  private readonly burst = document.createElement('div');
+  private readonly parade = document.createElement('div');
   private screen: Screen = 'catalogue';
   private game: ClockGame = 'read';
   private level: Level = 0;
   private questions: ClockQuestion[] = [];
   private index = 0;
   private score = 0;
-  private correct = false;
+  private totalCorrect = 0;
   private remaining = 0;
   private deadline = 0;
-  private feedbackUntil: number | null = null;
   private displayedSeconds = -1;
 
-  constructor(private readonly goHome: () => void, private readonly playSuccess: () => void) {
+  constructor(private readonly goHome: () => void, private readonly playSuccess: (milestone: boolean) => void) {
     this.root.className = 'clock-arcade';
     this.root.setAttribute('aria-labelledby', 'clock-heading');
     this.root.hidden = true;
+    this.feedback.className = 'clock-feedback';
+    this.feedback.setAttribute('role', 'status');
+    this.burst.className = 'clock-burst';
+    this.parade.className = 'clock-parade';
+    this.burst.setAttribute('aria-hidden', 'true');
+    this.parade.setAttribute('aria-hidden', 'true');
+    this.root.append(this.content, this.feedback, this.burst, this.parade);
     this.root.addEventListener('click', event => {
       const button = (event.target as Element).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
       const now = performance.now();
       switch (button.dataset.clockAction) {
         case 'home': this.goHome(); break;
-        case 'catalogue': this.show('catalogue'); break;
+        case 'catalogue': this.open(); break;
         case 'game': this.game = button.dataset.game as ClockGame; this.show('levels'); break;
         case 'level': this.level = Number(button.dataset.level) as Level; this.start(now); break;
         case 'pause': this.pause(now); break;
@@ -43,19 +52,17 @@ export class ClockArcade {
   get playing(): boolean { return !this.root.hidden && this.screen === 'playing'; }
 
   open(): void {
+    this.clearCelebrations();
     this.root.hidden = false;
     this.show('catalogue');
   }
 
-  close(): void { this.root.hidden = true; }
+  close(): void {
+    this.clearCelebrations();
+    this.root.hidden = true;
+  }
 
   tick(now: number): void {
-    if (this.root.hidden) return;
-    if (this.screen === 'feedback') {
-      this.feedbackUntil ??= now + (this.correct ? correctFeedbackMs : correctionMs);
-      if (now >= this.feedbackUntil) this.advance(now);
-      return;
-    }
     if (!this.playing) return;
     this.remaining = Math.max(0, this.deadline - now);
     if (this.remaining === 0) this.show('results');
@@ -65,16 +72,15 @@ export class ClockArcade {
   pause(now: number): void {
     if (!this.playing) return;
     this.tick(now);
-    if (this.playing) this.show('paused');
-  }
-
-  suspend(now: number): void {
-    // Give the child the full reading time again after returning to this tab.
-    this.feedbackUntil = null;
-    this.pause(now);
+    if (this.playing) {
+      this.clearCelebrations();
+      this.show('paused');
+    }
   }
 
   private start(now: number): void {
+    this.clearCelebrations();
+    this.feedback.textContent = '';
     this.questions = clockRound(this.game, this.level);
     this.index = 0;
     this.score = 0;
@@ -92,29 +98,45 @@ export class ClockArcade {
     this.tick(now);
     if (!this.playing) return;
     const question = this.questions[this.index];
-    this.correct = question.options[option] === question.correct;
-    if (this.correct) {
+    const correct = question.options[option] === question.correct;
+    if (correct) {
       this.score++;
-      this.playSuccess();
+      this.totalCorrect++;
     }
-    this.feedbackUntil = now + (this.correct ? correctFeedbackMs : correctionMs);
-    this.show('feedback');
+    const milestone = correct && this.totalCorrect % rabbitEvery === 0;
+    this.index++;
+    this.show(this.index === this.questions.length ? 'results' : 'playing');
+    this.feedback.textContent = correct
+      ? milestone ? `Bravo, ${this.totalCorrect} bonnes réponses ! Voilà le lapin !` : 'Bravo, bonne réponse !'
+      : `Pour la question précédente : ${question.explanation}`;
+    this.feedback.classList.toggle('clock-feedback-correct', correct);
+    if (correct) {
+      this.playSuccess(milestone);
+      this.celebrate(this.burst, '<div class="clock-sparkles">✦<span>✧</span><span>✦</span><span>✧</span><span>✦</span></div>');
+      if (milestone) this.celebrate(this.parade, '<img class="clock-rabbit-runner" src="/themes/lapin-chrono.svg" alt="" width="132" height="132">');
+    } else this.burst.replaceChildren();
   }
 
-  private advance(now: number): void {
-    this.index++;
-    if (this.index === this.questions.length) this.show('results');
-    else this.resume(now);
+  private celebrate(layer: HTMLElement, markup: string): void {
+    layer.innerHTML = markup;
+    const effect = layer.firstElementChild!;
+    effect.addEventListener('animationend', () => effect.remove(), { once: true });
+  }
+
+  private clearCelebrations(): void {
+    this.burst.replaceChildren();
+    this.parade.replaceChildren();
   }
 
   private show(screen: Screen): void {
     this.screen = screen;
-    this.root.innerHTML = this.markup();
-    if (screen === 'playing' || screen === 'feedback') {
+    this.content.innerHTML = this.markup();
+    this.feedback.hidden = screen !== 'playing' && screen !== 'results';
+    if (screen === 'playing') {
       this.displayedSeconds = -1;
       this.updateTimer();
     }
-    this.root.querySelector<HTMLElement>('#clock-heading')!.focus();
+    this.content.querySelector<HTMLElement>('#clock-heading')!.focus();
   }
 
   private updateTimer(): void {
@@ -140,7 +162,7 @@ export class ClockArcade {
             return `<button type="button" data-clock-action="game" data-game="${id}"><span class="clock-icon" aria-hidden="true">${item.icon}</span><strong>${item.name}</strong><span>${item.description}</span></button>`;
           }).join('')}</div>`;
       case 'levels':
-        return `<div class="clock-top">${catalogue}</div><div class="clock-center"><span class="clock-icon" aria-hidden="true">${game.icon}</span>${title(game.name)}<p>${game.description}</p><p>Choisis ton niveau. Tu as ${roundLength} questions et le chrono s’arrête pendant les corrections.</p></div>
+        return `<div class="clock-top">${catalogue}</div><div class="clock-center"><span class="clock-icon" aria-hidden="true">${game.icon}</span>${title(game.name)}<p>${game.description}</p><p>Choisis ton niveau. Les ${roundLength} questions s’enchaînent pendant que le chrono tourne.</p></div>
           <div class="clock-games clock-levels">${clockLevels.map((level, index) => `<button type="button" data-clock-action="level" data-level="${index}"><span class="clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small>${level.seconds} secondes</small></button>`).join('')}</div>`;
       case 'paused':
         return `<div class="clock-center"><span class="clock-icon" aria-hidden="true">⏸️</span>${title('Petite pause')}
@@ -153,15 +175,11 @@ export class ClockArcade {
           <p><strong>${successes}</strong> · ${answered} sur ${roundLength}</p><p>Chaque essai t’aide à mieux apprivoiser le temps.</p>
           <div class="clock-actions"><button type="button" class="play-button" data-clock-action="replay">Rejouer</button>${catalogue}</div></div>`;
       }
-      case 'playing':
-      case 'feedback': {
-        const feedback = this.screen === 'feedback';
+      case 'playing': {
         const question = this.questions[this.index];
         const banner = `<div class="clock-top"><span>${game.name} · ${clockLevels[this.level].name}</span><span>Question ${this.index + 1} sur ${roundLength}</span></div>
           <div class="clock-timer"><progress class="clock-progress" aria-label="Temps restant" max="${clockLevels[this.level].seconds}"></progress><span id="clock-time" role="timer"></span>
-          ${feedback ? '<span class="clock-timer-wait">En pause</span>' : '<button type="button" class="secondary-button" data-clock-action="pause">Pause</button>'}</div>`;
-        if (feedback) return `${banner}<div class="clock-center"><span class="clock-icon" aria-hidden="true">${this.correct ? '⭐' : '💡'}</span>${title(this.correct ? 'Bravo !' : 'Regarde bien !')}<p>${question.explanation}</p>
-          <p class="clock-feedback-note">${this.index + 1 === roundLength ? 'Ton résultat arrive…' : 'La prochaine question arrive…'}</p></div>`;
+          <button type="button" class="secondary-button" data-clock-action="pause">Pause</button></div>`;
         return `${banner}<div class="clock-center">${title(question.prompt)}${question.detail ? `<p>${question.detail}</p>` : ''}${question.face === undefined ? '' : clockFace(question.face)}</div>
           <div class="clock-options">${question.options.map((option, index) => `<button type="button" data-clock-action="answer" data-option="${index}">${typeof option === 'number' ? clockFace(option) : option}</button>`).join('')}</div>`;
       }
