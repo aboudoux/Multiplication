@@ -145,7 +145,7 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.locator('#open-clock-arcade').click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await replay.click();
+  await page.getByRole('button', { name: 'Voir le goûter' }).click();
   await expect(scene).toHaveAttribute('data-step', '0');
   await page.getByRole('button', { name: 'Tous les jeux' }).click();
   await expect(replay).toBeVisible();

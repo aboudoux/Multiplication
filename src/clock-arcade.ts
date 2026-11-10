@@ -1,5 +1,6 @@
 import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
 import { clockRabbitArt, clockFriendArt } from './clock-characters';
+import { clockMapCompass, clockMapLandmark, clockMapTreasure } from './clock-map-art';
 import { clockCorrectionMarkup } from './clock-correction';
 import { clockArrivalScene, clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend, type ClockStoryFilm } from './clock-story';
 import { arrivalVoiceClips } from './clock-arrival-voice-clips';
@@ -11,6 +12,10 @@ type Screen = 'catalogue' | 'levels' | 'playing' | 'correction' | 'paused' | 're
 type FinaleOrigin = 'catalogue' | 'results' | 'story';
 type Gesture = 'cheer' | 'encourage' | 'finish';
 const rabbitEvery = 5;
+const clockMapPlaces: Record<ClockGame, string> = {
+  read: 'Le petit arbre', match: 'L’arche des horloges', order: 'La colline du soleil',
+  compare: 'Le pont du sablier', elapsed: 'Le ruisseau', next: 'Le portail du goûter',
+};
 const levelKey = (game: ClockGame, level: number) => `${game}:${level}`;
 const orderedLevels = clockGameIds.flatMap(game => clockLevels.map((_, level) => ({ game, level: level as Level, key: levelKey(game, level) })));
 const sparkleTrajectories = [[-88,-24],[-74,5],[-60,-41],[-37,13],[-29,-53],[-11,-20],[14,-56],[28,12],[42,-42],[59,6],[75,-22],[88,-1]];
@@ -453,7 +458,7 @@ export class ClockArcade {
 
   private routeMap(): string {
     const next = this.nextLevel;
-    return `<ol class="clock-route" aria-label="Carte des dix-huit niveaux">${clockGameIds.map((id, index) => {
+    return `<ol class="clock-route" role="list" aria-label="Carte des dix-huit niveaux">${clockGameIds.map((id, index) => {
       const item = clockGames[id];
       const done = clockLevels.filter((_, level) => this.completed.has(levelKey(id, level))).length;
       const state = next?.game === id ? 'next' : done === clockLevels.length ? 'done' : done ? 'started' : 'locked';
@@ -461,7 +466,8 @@ export class ClockArcade {
       return `<li class="clock-map-stop" data-map-state="${state}">
         <span class="clock-map-pin" aria-hidden="true">${index + 1}</span>
         <div class="clock-map-card"><button type="button" class="clock-map-heading" data-clock-action="game" data-game="${id}">
-          <span class="clock-map-icon" aria-hidden="true">${item.icon}</span><span><strong>${item.name}</strong><small>${done} / ${clockLevels.length} niveaux faits</small></span>
+          <span class="clock-map-landscape">${clockMapLandmark(id)}${id === 'read' ? clockRabbitArt : ''}</span>
+          <span><span class="clock-map-place">${clockMapPlaces[id]}</span><strong>${item.name}</strong><small>${done} / ${clockLevels.length} niveaux faits</small></span>
           ${friend && friend.at <= this.completed.size ? clockFriendArt(friend.id) : ''}
         </button>
         <div class="clock-map-steps" role="group" aria-label="Niveaux de ${item.name}">${clockLevels.map((level, n) => {
@@ -488,7 +494,13 @@ export class ClockArcade {
         return `<div class="camp-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span class="camp-materials">${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
           <header class="camp-heading clock-intro"><div><span class="eyebrow">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure et compare les durées. Termine chaque niveau pour débloquer le suivant.</p></div>${clockRabbitArt}</header>
           <div class="clock-story-teaser"><div><span class="clock-kicker">L’HISTOIRE DU LAPIN</span><h3>${clockStoryTitle}</h3><p>Sa montre s’est arrêtée et il a raté le goûter. Retrouve ses amis en suivant la carte !</p></div><div class="clock-story-actions">${story}${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Revoir l’animation</button>' : ''}</div></div>
-          <section class="clock-map" aria-labelledby="clock-map-title"><header><span aria-hidden="true">✦</span><h3 id="clock-map-title">Le chemin du goûter</h3><p>Suis les étapes jusqu’au grand chêne.</p></header>${this.routeMap()}<p class="clock-map-end"><span aria-hidden="true">🎂</span> Le goûter sous le grand chêne</p></section>`;
+          <section class="clock-map" aria-labelledby="clock-map-title">
+            <header>${clockMapCompass}<span class="clock-map-kicker">CARTE AU TRÉSOR</span><h3 id="clock-map-title">Le chemin du goûter</h3><p>Pars du petit arbre et suis les pointillés jusqu’au coffre.</p></header>
+            ${this.routeMap()}
+            <div class="clock-map-end">${clockMapTreasure}<span>Le goûter sous le grand chêne</span>
+              ${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Voir le goûter</button>' : '<small>Au bout des 18 niveaux</small>'}
+            </div>
+          </section>`;
       case 'story':
         return `<div class="clock-top">${this.storyReturn === 'levels' ? levels : catalogue}<span>${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
           <header class="clock-center clock-story-intro"><span class="clock-kicker">L’HISTOIRE DU LAPIN</span>${title(clockStoryTitle)}<p>${clockStoryIntro}</p></header>
