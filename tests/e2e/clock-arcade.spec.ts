@@ -111,6 +111,7 @@ test('une réussite avance immédiatement et une fiche d’erreur se ferme seule
   await expect(mistake).toHaveCSS('animation-duration', '4.5s');
   await expect(mistake).toHaveCSS('pointer-events', 'none');
   await expect(page.getByRole('button', { name: 'J’ai compris, on continue' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Passer' })).toHaveCount(0);
   await page.clock.runFor(1700);
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
@@ -147,13 +148,6 @@ test('une réussite avance immédiatement et une fiche d’erreur se ferme seule
   await expect(page.locator('.clock-results .result-stats > div')).toHaveCount(3);
   await page.getByRole('button', { name: 'Rejouer' }).click();
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
-  await answerClock(page, false);
-  await page.getByRole('button', { name: 'Passer' }).click();
-  await expect(page.getByText('Question 2 sur 5')).toBeVisible();
-  await expect(timer).toHaveText('90 s');
-  await expect(page.locator('.clock-mistake-effect')).toHaveCount(0);
-  await page.clock.runFor(4600);
-  await expect(page.getByText('Question 2 sur 5')).toBeVisible();
 });
 
 test('chaque mini-jeu montre une fiche illustrée avec la bonne réponse', async ({ page }) => {
@@ -381,7 +375,10 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await page.getByRole('button', { name: 'Niveau suivant' }).click();
   const nextLevel = page.getByRole('button', { name: 'Niveau 3, Défi, À jouer' });
   const rabbit = nextLevel.locator('.clock-map-rabbit');
-  expect(await rabbit.evaluate(element => element.getAnimations().length)).toBe(1);
+  const route = await rabbit.evaluate(element =>
+    (element.getAnimations()[0].effect as KeyframeEffect).getKeyframes()
+      .map(frame => new DOMMatrix(frame.transform as string).m42));
+  expect(Math.max(...route)).toBeGreaterThan(Math.max(route[0], route.at(-1)!) + 20);
   await expect(nextLevel).toBeFocused();
   await expect(nextLevel).toHaveAccessibleDescription('Niveau débloqué !');
   await expect(nextLevel.locator('.clock-map-marker')).toHaveCSS('animation-name', 'clock-map-unlock');

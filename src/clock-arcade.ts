@@ -163,7 +163,6 @@ export class ClockArcade {
         case 'pause': this.pause(now); break;
         case 'resume': this.resume(now); break;
         case 'answer': this.answer(Number(button.dataset.option), now); break;
-        case 'skip-correction': this.continueAfterCorrection(now); break;
         case 'practice-next': if (this.practice) this.continueAfterCorrection(now); break;
         case 'replay': this.start(now); break;
       }
@@ -558,17 +557,36 @@ export class ClockArcade {
     const rabbit = destination.querySelector<HTMLElement>('.clock-map-rabbit');
     const origin = this.content.querySelector<HTMLElement>(`[data-map-game="${this.game}"][data-map-level="${this.level}"]`);
     if (!rabbit || !origin) return;
-    const from = origin.getBoundingClientRect();
-    const to = destination.getBoundingClientRect();
-    const x = from.left + from.width / 2 - to.left - to.width / 2;
-    const y = from.top - to.top;
-    rabbit.animate([
-      { transform: `translate(${x}px, ${y}px)` },
-      { transform: `translate(${x * .75}px, ${y * .75 - 18}px)` },
-      { transform: `translate(${x * .5}px, ${y * .5}px)` },
-      { transform: `translate(${x * .25}px, ${y * .25 - 16}px)` },
-      { transform: 'translate(0, 0)' },
-    ], { duration: 850, easing: 'ease-in-out' });
+    const markerCenter = (button: HTMLElement) => {
+      const bounds = button.querySelector('.clock-map-marker')!.getBoundingClientRect();
+      return new DOMPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+    };
+    const from = markerCenter(origin);
+    const to = markerCenter(destination);
+    const stops = [...this.content.querySelectorAll('.clock-map-stop')];
+    const startStop = stops.indexOf(origin.closest('.clock-map-stop')!);
+    const endStop = stops.indexOf(destination.closest('.clock-map-stop')!);
+    const route = stops.slice(startStop, endStop + 1);
+    const closestPoint = (points: DOMPoint[], target: DOMPoint) => {
+      const distance = (point: DOMPoint) => Math.hypot(point.x - target.x, point.y - target.y);
+      return points.reduce((closest, point, index) => distance(point) < distance(points[closest]) ? index : closest, 0);
+    };
+    const trailPoints = route.flatMap((stop, index) => {
+      const trail = stop.querySelector<SVGPathElement>('.clock-map-trail-dots');
+      const matrix = trail?.getScreenCTM();
+      if (!trail || !matrix) return [];
+      const length = trail.getTotalLength();
+      const points = Array.from({ length: 101 }, (_, step) =>
+        trail.getPointAtLength(length * step / 100).matrixTransform(matrix));
+      const start = index === 0 ? closestPoint(points, from) : 0;
+      const end = index === route.length - 1 ? closestPoint(points, to) : points.length - 1;
+      return points.slice(start, end + 1);
+    });
+    // Use screen coordinates so the rabbit follows the trail through mirrored regions too.
+    const keyframes = [from, ...trailPoints, to].map(point => ({
+      transform: `translate(${point.x - to.x}px, ${point.y - to.y}px)`,
+    }));
+    rabbit.animate(keyframes, { duration: Math.min(2100, 850 + (route.length - 1) * 450), easing: 'ease-in-out' });
   }
 
   private routeMap(): string {
