@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {clockPracticePreset,preset,TRAINING_KEY} from '../../src/training';
 import {defaults,STORAGE_KEY} from '../../src/storage';
 
-for(const width of [390,768,1365]) test(`le camp conserve ses réglages et présente trois espaces à ${width} px`,async({page},info)=>{
+for(const width of [390,768,1365]) test(`les deux sujets restent dans S’entraîner à ${width} px`,async({page},info)=>{
  const data={settings:{...preset('mix'),length:30,add:{min:1,max:50,carry:'without'}},materials:230,colony:{built:2,spent:150,stars:0},records:{saved:{timeMs:45000,mistakes:1}}};
  const normalized={...data,clock:clockPracticePreset()};
  await page.setViewportSize({width,height:900});
@@ -12,7 +12,7 @@ for(const width of [390,768,1365]) test(`le camp conserve ses réglages et prés
  },{key:TRAINING_KEY,legacyKey:STORAGE_KEY,data,saved:{...defaults(),muted:true,voiceEnabled:false}});
  await page.goto('/');await page.locator('#open-training').click();
  const nav=page.locator('.camp-nav button');
- await expect(nav).toHaveText(['⚒S’entraîner','◷L’heure et les durées','⌂La fourmilière']);
+ await expect(nav).toHaveText(['⚒S’entraîner','⌂La fourmilière']);
  await expect(page.locator('[data-tab="workshop"]')).toHaveAttribute('aria-current','page');
  await expect(page.locator('#camp-length-30')).toBeChecked();
  await expect(page.locator('#camp-add-ceiling-50')).toBeChecked();
@@ -34,14 +34,20 @@ for(const width of [390,768,1365]) test(`le camp conserve ses réglages et prés
   if(kind!=='mix')await quick.locator('summary').click();
  }
  await page.locator('#camp-length-5').check();
- await page.locator('[data-tab="time"]').click();
- await expect(page.locator('[data-tab="time"]')).toHaveAttribute('aria-current','page');
+ await page.locator('[data-topic="time"]').click();
+ await expect(page.locator('[data-topic="time"]')).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('[data-tab="workshop"]')).toHaveAttribute('aria-current','page');
  await expect(page.locator('#camp-clock-level-0')).toBeChecked();
+ await expect(page.locator('#camp-session-title')).toBeHidden();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.locator('[data-tab="colony"]').click();
  await expect(page.locator('.camp-buildings .built')).toHaveCount(2);
  await expect(page.locator('.camp-materials')).toContainText('80 matériaux');
- await page.locator('[data-tab="workshop"]').click();await expect(page.locator('#camp-length-5')).toBeChecked();
+ await page.locator('[data-tab="workshop"]').click();
+ await expect(page.locator('[data-topic="time"]')).toHaveAttribute('aria-pressed','true');
+ await page.locator('[data-topic="calculations"]').click();
+ await expect(page.locator('#camp-time-title')).toBeHidden();
+ await expect(page.locator('#camp-length-5')).toBeChecked();
  await page.locator('#camp-home').click();await page.locator('#open-training').click();
  await expect(page.locator('#camp-length-5')).toBeChecked();
  await page.reload();await page.locator('#open-training').click();await expect(page.locator('#camp-length-5')).toBeChecked();

@@ -1,5 +1,5 @@
 import { ant, campScene } from './ants';
-import { TrainingUI, type CampTab } from './training-ui';
+import { TrainingUI, type CampTab, type CampTopic } from './training-ui';
 import { readTraining, saveTraining, awardMaterials, clockPracticeRecordKey, colonyStatus, trainingQuestions, trainingLabel, trainingRecordKey, inspectTraining, type TrainingData } from './training';
 import { ThemeSurprises } from "./surprises";
 import { themes } from "./themes";
@@ -233,7 +233,7 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
 });
 get('home').before(camp.root);
 const clockArcade = new ClockArcade(() => {
-  if (clockArcade.isPractice) openCamp('time');
+  if (clockArcade.isPractice) openCamp('workshop', 'time');
   else showAdventureChoice('open-clock-arcade');
 }, milestone => audio.success(milestone), cue => {
   if (cue !== 'rabbit-late' || saved.voiceEnabled) audio.clockAnswer(cue);
@@ -259,12 +259,12 @@ get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory"
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
 get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="camp-results-exit" class="secondary-button" type="button" hidden>Retour au camp</button>');
 get('camp-results-exit').insertAdjacentHTML('afterend','<button id="camp-colony-ready" class="play-button" type="button" hidden>Un chantier est prêt ! Aller construire →</button>');
-function openCamp(tab: CampTab = 'workshop'): void {
+function openCamp(tab: CampTab = 'workshop', topic: CampTopic = 'calculations'): void {
   clockArcade.close();
   trainingActive=false; activeStage=null; mapOpen=false; chooserOpen=false; campOpen=true; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
-  persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored);
+  persistTraining(); applyTheme(); render(performance.now()); camp.open(tab,trainingStored,topic);
 }
 function showLanding(focusId = 'open-training'): void {
   clockArcade.close();

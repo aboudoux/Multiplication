@@ -22,10 +22,14 @@
 .camp-heading p { line-height:1.6; color:#d5e5d8; }
 .camp-guide { width:190px; flex-shrink:0; transform:rotate(5deg); }
 .ant-character { width:100%; height:100%; }
-.camp-nav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:26px; }
+.camp-nav,.camp-topics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.camp-nav { margin-bottom:26px; }
 .camp-nav button { background:#193c33; border:1px solid #88ac9477; border-radius:15px; padding:15px 8px; min-height:52px; color:#e9f0db; }
 .camp-nav button[aria-current="page"] { background:#f4d080; color:#304737; border-color:#f4d080; font-weight:bold; }
 .camp-nav button span { margin-right:9px; }
+.camp-topics button { min-width:0; padding:12px 8px; border:2px solid #88ac9477; border-radius:15px; background:#153c32; color:#e9f0db; overflow-wrap:anywhere; }
+.camp-topics button[aria-pressed="true"] { border-color:#f4d080; color:#ffe3a3; background:#1b483c; }
+.camp-topics strong { display:block; margin-bottom:4px; }
 .camp-content h2 { font:700 28px Kalam,cursive; margin:16px 0 8px; }
 .camp-content p { line-height:1.6; }
 .camp-presets { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:22px 0; }

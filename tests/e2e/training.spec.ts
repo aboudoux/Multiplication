@@ -55,6 +55,8 @@ test('les ateliers du temps reprennent les réglages, les corrections et les ré
   await expect(page.getByText('Question 1 sur 3')).toBeVisible();
   await page.getByRole('button', { name: 'Pause' }).click();
   await page.getByRole('button', { name: 'Retour aux ateliers' }).click();
+  await expect(page.locator('[data-tab="workshop"]')).toHaveAttribute('aria-current','page');
+  await expect(page.locator('[data-topic="time"]')).toHaveAttribute('aria-pressed','true');
   await expect(page.getByRole('heading', { name: 'Personnaliser ma séance sur le temps' })).toBeFocused();
   await expect(page.locator('#camp-custom-length')).toHaveValue('3');
   await expect(page.locator('#camp-voice-classic')).toBeChecked();
@@ -92,7 +94,7 @@ test('le chrono des ateliers repart à chaque question et une fiche précède la
   await page.getByRole('button', { name: 'Retour aux ateliers' }).click();
   await expect(page.locator('#camp-duration')).toHaveAttribute('data-duration','5');
   await expect(page.locator('#camp-life-2')).toHaveAttribute('aria-pressed','true');
-  await page.getByRole('button', { name: 'S’entraîner' }).click();
+  await page.locator('[data-topic="calculations"]').click();
   await expect(page.locator('#camp-duration')).toHaveAttribute('data-duration',arithmeticRhythm!);
 });
 test('guided setup, exact tables, completion, materials, replay and independent adventure',async({page})=>{
