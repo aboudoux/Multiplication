@@ -1,6 +1,6 @@
 import { ant, campScene } from './ants';
 import { TrainingUI, type CampTab } from './training-ui';
-import { readTraining, saveTraining, awardMaterials, colonyStatus, trainingQuestions, trainingLabel, trainingRecordKey, inspectTraining, type TrainingData } from './training';
+import { readTraining, saveTraining, awardMaterials, clockPracticeRecordKey, colonyStatus, trainingQuestions, trainingLabel, trainingRecordKey, inspectTraining, type TrainingData } from './training';
 import { ThemeSurprises } from "./surprises";
 import { themes } from "./themes";
 import { mascot, dancingMascot, disappointedMascot } from "./mascots";
@@ -225,9 +225,9 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
     const tableCount=Number(tables), lifeCount=Number(lives);
     return `<tr><th scope="row"><strong>${modes[mode as Mode]?.name??'Ancienne partie'}</strong><span>${Number(count)} calculs${tableCount?` · ${tableCount} table${tableCount===1?'':'s'}`:''}</span><span>Chrono ${Number(duration)} s · ${lifeCount} vie${lifeCount===1?'':'s'}</span></th><td>${formatTime(r.timeMs)}</td><td>${r.mistakes}</td></tr>`;
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
-}, game => {
+}, settings => {
   campOpen = false;
-  clockArcade.openPractice(game);
+  clockArcade.openPractice(settings);
   applyTheme();
   render(performance.now());
 });
@@ -237,11 +237,21 @@ const clockArcade = new ClockArcade(() => {
   else showAdventureChoice('open-clock-arcade');
 }, milestone => audio.success(milestone), cue => {
   if (cue !== 'rabbit-late' || saved.voiceEnabled) audio.clockAnswer(cue);
-}, () => localStorage, tokens => {
-  if (tokens && saved.voiceEnabled && !saved.muted) audio.speakClockQuestion(tokens);
+}, () => localStorage, (tokens, voice) => {
+  if (tokens && saved.voiceEnabled && !saved.muted) audio.speakClockQuestion(tokens, voice);
   else audio.stopSpeech();
 }, (film, step, elapsedMs) => {
   if (saved.voiceEnabled && !saved.muted) audio.speakClockStory(film, step, elapsedMs);
+}, {
+  material: () => { awardMaterials(trainingData, 1, 0); persistTraining(); },
+  record: (settings, timeMs, mistakes) => {
+    const key = clockPracticeRecordKey(settings);
+    const best = trainingData.records[key];
+    if (best && best.timeMs <= timeMs) return best.timeMs;
+    trainingData.records[key] = {timeMs,mistakes};
+    persistTraining();
+    return timeMs;
+  },
 });
 get('home').before(clockArcade.root);
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);

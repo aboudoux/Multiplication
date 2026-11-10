@@ -78,8 +78,8 @@ export class GameAudio {
     this.voice?.stop();
   }
 
-  speakClockQuestion(tokens: readonly ClockVoiceToken[]): void {
-    if (!this.muted && this.ready) void this.voice?.clockQuestion(tokens);
+  speakClockQuestion(tokens: readonly ClockVoiceToken[], style?: VoiceStyle): void {
+    if (!this.muted && this.ready) void this.voice?.clockQuestion(tokens, style);
   }
 
   speakClockStory(film: ClockStoryFilm, step: number, elapsedMs: number): void {

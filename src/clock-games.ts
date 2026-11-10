@@ -131,21 +131,41 @@ function travelQuestion(index: number, game: 'elapsed' | 'next', level: Level): 
   };
 }
 
-export function clockRound(game: ClockGame, level: Level, random = Math.random): ClockQuestion[] {
+const faceStep = (game: ClockGame, level: Level) => level === 2 && game === 'match' ? 5 : [60, 30, 15][level];
+
+export function clockQuestionCount(game: ClockGame, level: Level): number {
+  switch (game) {
+    case 'read':
+    case 'match': return 720 / faceStep(game, level);
+    case 'order': return 18;
+    case 'compare': return 12;
+    case 'elapsed':
+    case 'next': return level === 0 ? 14 : 21;
+  }
+}
+
+export function clockRound(game: ClockGame, level: Level, random = Math.random, length: number | 'all' = roundLength): ClockQuestion[] {
+  const indices = range(clockQuestionCount(game, level));
   let questions: ClockQuestion[];
   switch (game) {
     case 'read':
     case 'match': {
-      const step = level === 2 && game === 'match' ? 5 : [60, 30, 15][level];
-      questions = range(720 / step).map(index => faceQuestion(index * step, game, level));
+      questions = indices.map(index => faceQuestion(index * faceStep(game, level), game, level));
       break;
     }
-    case 'order': questions = range(18).map(index => orderQuestion(index, level)); break;
-    case 'compare': questions = range(12).map(index => compareQuestion(index, level)); break;
+    case 'order': questions = indices.map(index => orderQuestion(index, level)); break;
+    case 'compare': questions = indices.map(index => compareQuestion(index, level)); break;
     case 'elapsed':
-    case 'next': questions = range(level === 0 ? 14 : 21).map(index => travelQuestion(index, game, level)); break;
+    case 'next': questions = indices.map(index => travelQuestion(index, game, level)); break;
   }
-  return shuffle(questions, random).slice(0, roundLength).map(question => ({ ...question, options: shuffle(question.options, random) }));
+  const count = length === 'all' ? questions.length : length;
+  const session: ClockQuestion[] = [];
+  while (session.length < count) {
+    const batch = shuffle(questions, random);
+    if (batch[0] === session.at(-1)) batch.push(batch.shift()!);
+    session.push(...batch.slice(0, count - session.length));
+  }
+  return session.map(question => ({ ...question, options: shuffle(question.options, random) }));
 }
 
 export function clockFace(time: number): string {

@@ -1,4 +1,4 @@
-import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
+import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, type ClockGame, type ClockQuestion } from './clock-games';
 import { clockRabbitArt, clockFriendArt } from './clock-characters';
 import { ant } from './ants';
 import { clockMapCompass, clockMapLandscape, clockMapTrail, clockMapTreasure } from './clock-map-art';
@@ -7,6 +7,8 @@ import { clockArrivalScene, clockFinaleChapterStarts, clockFinaleChapters, clock
 import { arrivalVoiceClips } from './clock-arrival-voice-clips';
 import type { ClockCue } from './audio';
 import type { ClockVoiceToken } from './clock-voice';
+import type { ClockPracticeSettings } from './training';
+import { formatTime } from './storage';
 
 type Level = Parameters<typeof clockRound>[1];
 type Screen = 'catalogue' | 'levels' | 'playing' | 'correction' | 'paused' | 'results' | 'story' | 'arrival' | 'finale';
@@ -65,7 +67,10 @@ export class ClockArcade {
   private readonly progressLabel = document.createElement('span');
   private readonly companionFriends = document.createElement('div');
   private completed = new Set<string>();
-  private practice = false;
+  private practice: ClockPracticeSettings | null = null;
+  private practiceElapsed = 0;
+  private practiceQuestionStarted = 0;
+  private practiceRecord: number | undefined;
   private screen: Screen = 'catalogue';
   private game: ClockGame = 'read';
   private level: Level = 0;
@@ -94,8 +99,12 @@ export class ClockArcade {
     private readonly playSuccess: (milestone: boolean) => void,
     private readonly playCue: (cue: ClockCue) => void,
     private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
-    private readonly narrate: (tokens: readonly ClockVoiceToken[] | null) => void,
+    private readonly narrate: (tokens: readonly ClockVoiceToken[] | null, voice?: ClockPracticeSettings['voice']) => void,
     private readonly narrateStory: (film: ClockStoryFilm, step: number, elapsedMs: number) => void,
+    private readonly practiceRewards: {
+      material: () => void;
+      record: (settings: ClockPracticeSettings, timeMs: number, mistakes: number) => number;
+    },
   ) {
     this.root.className = 'clock-arcade';
     this.root.setAttribute('aria-labelledby', 'clock-heading');
@@ -128,7 +137,7 @@ export class ClockArcade {
       switch (button.dataset.clockAction) {
         case 'leave-arcade': this.leaveArcade(); break;
         case 'catalogue': this.open(); break;
-        case 'levels': this.show('levels'); break;
+        case 'levels': if (this.practice) this.leaveArcade(); else this.show('levels'); break;
         case 'story':
           this.storyReturn = this.screen === 'results' ? 'levels' : 'catalogue';
           this.show('story');
@@ -163,11 +172,15 @@ export class ClockArcade {
   }
 
   get playing(): boolean { return !this.root.hidden && this.screen === 'playing'; }
-  get isPractice(): boolean { return !this.root.hidden && this.practice; }
+  get isPractice(): boolean { return !this.root.hidden && this.practice !== null; }
+  private get timerSeconds(): number | null { return this.practice ? this.practice.duration : clockLevels[this.level].seconds; }
+  private get livesLeft(): number | null {
+    return this.practice?.lives != null ? Math.max(0, this.practice.lives - (this.index - this.score)) : null;
+  }
   readCurrentNarration(): boolean {
     if (this.root.hidden) return false;
     if (this.playing) {
-      if (!document.hidden) this.narrate(this.questions[this.index].narration);
+      if (!document.hidden) this.narrate(this.questions[this.index].narration, this.practice?.voice);
       return true;
     }
     if (this.screen !== 'finale' && this.screen !== 'arrival') return false;
@@ -221,7 +234,7 @@ export class ClockArcade {
   }
 
   private updateCompanion(): void {
-    this.companion.hidden = this.practice || this.completed.size === 0;
+    this.companion.hidden = this.practice !== null || this.completed.size === 0;
     this.progressLabel.textContent = this.progressSummary;
     const friends = clockFriends.filter(friend => friend.at <= this.completed.size);
     this.companionFriends.innerHTML = friends.map(friend =>
@@ -231,20 +244,18 @@ export class ClockArcade {
   }
 
   open(): void {
-    this.practice = false;
+    this.practice = null;
     this.clearCelebrations();
     this.companion.hidden = this.completed.size === 0;
     this.root.hidden = false;
     this.show('catalogue');
   }
 
-  openPractice(game: ClockGame): void {
-    this.practice = true;
-    this.game = game;
-    this.clearCelebrations();
+  openPractice(settings: ClockPracticeSettings): void {
+    this.practice = settings;
     this.companion.hidden = true;
     this.root.hidden = false;
-    this.show('levels');
+    this.start(performance.now(), settings.game, settings.level);
   }
 
   close(): void {
@@ -256,18 +267,25 @@ export class ClockArcade {
   }
 
   tick(now: number): void {
-    if (this.root.hidden || this.practice) return;
+    if (this.root.hidden) return;
     if (this.screen === 'finale') this.tickFinale(now);
     if (this.screen === 'arrival') this.tickArrival(now);
     if (this.screen === 'correction') {
+      if (this.practice) return;
       this.lessonElapsed += now - (this.lessonFrameAt ?? now);
       this.lessonFrameAt = now;
       if (this.lessonElapsed >= clockCorrectionMs) this.continueAfterCorrection(now);
       return;
     }
-    if (!this.playing) return;
+    if (!this.playing || this.timerSeconds === null) return;
     this.remaining = Math.max(0, this.deadline - now);
     if (this.remaining === 0) {
+      if (this.practice) {
+        this.practiceElapsed += Math.max(0, this.deadline - this.practiceQuestionStarted);
+        this.showCorrection(null, now);
+        if (!document.hidden) this.playCue('timeout');
+        return;
+      }
       this.clearCelebrations();
       this.feedback.textContent = '';
       this.show('results');
@@ -281,6 +299,7 @@ export class ClockArcade {
     if (!this.playing) return;
     this.tick(now);
     if (this.playing) {
+      if (this.practice) this.practiceElapsed += now - this.practiceQuestionStarted;
       this.clearCelebrations();
       this.show('paused');
     }
@@ -294,16 +313,20 @@ export class ClockArcade {
     this.clearCelebrations();
     delete this.guestTrail.dataset.gesture;
     this.feedback.textContent = '';
+    this.feedback.classList.toggle('clock-feedback-correct', this.practice !== null);
     this.mistakenOption = null;
     this.arrival = undefined;
-    this.questions = clockRound(this.game, this.level);
+    this.questions = clockRound(this.game, this.level, Math.random, this.practice?.length);
     this.index = 0;
     this.score = 0;
-    this.remaining = clockLevels[this.level].seconds * 1000;
+    this.practiceElapsed = 0;
+    this.practiceRecord = undefined;
+    this.remaining = (this.timerSeconds ?? 0) * 1000;
     this.resume(now);
   }
 
   private resume(now: number): void {
+    this.practiceQuestionStarted = now;
     this.deadline = now + this.remaining;
     this.show('playing');
   }
@@ -315,13 +338,9 @@ export class ClockArcade {
     const question = this.questions[this.index];
     const selected = question.options[option];
     if (selected === undefined) return;
+    if (this.practice) this.practiceElapsed += now - this.practiceQuestionStarted;
     if (selected !== question.correct) {
-      this.mistakenOption = selected;
-      this.lessonElapsed = 0;
-      this.lessonFrameAt = now;
-      this.feedback.textContent = '';
-      this.clearCelebrations();
-      this.show('correction');
+      this.showCorrection(selected, now);
       if (this.practice) return;
       this.reactCompanion('encourage');
       this.playCue('mistake');
@@ -330,8 +349,10 @@ export class ClockArcade {
     }
     this.score++;
     if (this.practice) {
+      this.practiceRewards.material();
       this.advance(now);
-      this.feedback.textContent = 'Bravo, bonne réponse !';
+      this.feedback.textContent = 'Bravo, un matériau pour la fourmilière !';
+      this.celebrate(this.burst, successBurst);
       this.playSuccess(false);
       return;
     }
@@ -347,6 +368,15 @@ export class ClockArcade {
     if (milestone && this.playing) this.celebrate(this.parade, rabbitParade);
   }
 
+  private showCorrection(selected: ClockQuestion['correct'] | null, now: number): void {
+    this.mistakenOption = selected;
+    this.lessonElapsed = 0;
+    this.lessonFrameAt = now;
+    this.feedback.textContent = '';
+    this.clearCelebrations();
+    this.show('correction');
+  }
+
   private continueAfterCorrection(now: number): void {
     if (this.screen !== 'correction') return;
     this.clearCelebrations();
@@ -359,7 +389,13 @@ export class ClockArcade {
     this.index++;
     const finished = this.index === this.questions.length;
     if (this.practice) {
-      this.show(finished ? 'results' : 'playing');
+      if (finished || this.livesLeft === 0) {
+        if (finished && this.livesLeft !== 0) this.practiceRecord = this.practiceRewards.record(this.practice, this.practiceElapsed, this.index - this.score);
+        this.show('results');
+      } else {
+        this.remaining = (this.timerSeconds ?? 0) * 1000;
+        this.resume(now);
+      }
       return;
     }
     const storyWasComplete = this.storyComplete;
@@ -462,11 +498,11 @@ export class ClockArcade {
     }
     this.screen = screen;
     this.content.innerHTML = this.markup();
-    this.guestTrail.hidden = this.practice || screen !== 'playing' || !this.guestTrail.childElementCount;
+    this.guestTrail.hidden = this.practice !== null || screen !== 'playing' || !this.guestTrail.childElementCount;
     this.feedback.hidden = screen !== 'playing' && screen !== 'results';
     if (screen === 'playing') {
       this.displayedSeconds = -1;
-      if (!this.practice) this.updateTimer();
+      if (this.timerSeconds !== null) this.updateTimer();
       this.readCurrentNarration();
     }
     this.content.querySelector<HTMLElement>('#clock-heading')!.focus();
@@ -480,7 +516,7 @@ export class ClockArcade {
     timer.textContent = `${seconds} s`;
     const track = this.content.querySelector<HTMLElement>('.time-track')!;
     track.setAttribute('aria-valuenow', String(seconds));
-    track.querySelector('span')!.style.transform = `scaleX(${seconds / clockLevels[this.level].seconds})`;
+    track.querySelector('span')!.style.transform = `scaleX(${seconds / this.timerSeconds!})`;
   }
 
   private routeMap(): string {
@@ -557,40 +593,45 @@ export class ClockArcade {
           <div class="clock-actions"><button type="button" class="play-button" data-clock-action="finale" hidden>Revoir l’animation</button><button type="button" class="secondary-button" data-clock-action="pause-film">Pause du film</button></div>`;
       }
       case 'levels':
-        return `<div class="clock-top">${catalogue}${this.practice ? '<span class="camp-materials">◷ Sans chrono</span>' : ''}</div><div class="clock-center"><span class="clock-icon" aria-hidden="true">${game.icon}</span>${title(game.name)}<p>${game.description}</p><p>${this.practice ? 'Choisis ta difficulté.' : next ? `À jouer maintenant · ${clockGames[next.game].name} · ${clockLevels[next.level].name}` : 'Tous les niveaux sont faits ! Tu peux les rejouer.'}</p></div>
+        return `<div class="clock-top">${catalogue}</div><div class="clock-center"><span class="clock-icon" aria-hidden="true">${game.icon}</span>${title(game.name)}<p>${game.description}</p><p>${next ? `À jouer maintenant · ${clockGames[next.game].name} · ${clockLevels[next.level].name}` : 'Tous les niveaux sont faits ! Tu peux les rejouer.'}</p></div>
           <div class="camp-presets clock-games clock-levels">${clockLevels.map((level, index) => {
             const key = levelKey(this.game, index);
             const done = this.completed.has(key);
             const unlocked = key === next?.key;
             const status = done ? '<span class="clock-done">✓ Fait</span>' : unlocked ? '<span class="clock-next">À jouer</span>' : '<span class="clock-locked">🔒 Verrouillé</span>';
-            return `<button type="button" data-clock-action="level" data-level="${index}"${this.practice || done || unlocked ? '' : ' disabled'}><span class="camp-symbol clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small class="camp-preset-note">${this.practice ? '5 questions' : `${level.seconds} secondes`}</small>${this.practice ? '' : status}</button>`;
+            return `<button type="button" data-clock-action="level" data-level="${index}"${done || unlocked ? '' : ' disabled'}><span class="camp-symbol clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small class="camp-preset-note">${level.seconds} secondes</small>${status}</button>`;
           }).join('')}</div>`;
       case 'correction':
-        return clockCorrectionMarkup(this.questions[this.index], this.mistakenOption!, this.practice ? null : Math.ceil(this.remaining / 1000));
+        return clockCorrectionMarkup(this.questions[this.index], this.mistakenOption, this.practice ? null : Math.ceil(this.remaining / 1000));
       case 'paused':
         return `<div class="game-overlay clock-pause"><div class="pause-panel"><span class="clock-icon" aria-hidden="true">⏸️</span>${title('Petite pause')}
           <p>${this.practice ? 'Ta question t’attend.' : 'Ton chrono t’attend.'}</p><div class="result-actions"><button type="button" class="play-button" data-clock-action="resume">On continue !</button>${catalogue}</div></div></div>`;
       case 'results': {
-        const finished = this.index === roundLength;
+        const finished = this.index === this.questions.length;
         const errors = this.index - this.score;
         const artwork = this.practice ? `<div class="camp-guide clock-practice-guide">${ant()}</div>` : finished ? clockRabbitArt : timeoutScene;
         const canContinue = !this.practice && finished && next;
-        const levelButton = this.practice ? 'Changer de difficulté' : 'Retour aux niveaux';
-        return `<div class="results-screen clock-results">${artwork}<span class="eyebrow">${game.name} · ${clockLevels[this.level].name}</span>${title(finished ? 'Bien joué !' : 'Le chrono a sonné !')}
+        const heading = this.practice && this.livesLeft === 0 ? 'Tu as utilisé tous tes essais !' : finished ? 'Bien joué !' : 'Le chrono a sonné !';
+        return `<div class="results-screen clock-results${this.practice ? ' clock-practice-results' : ''}">${artwork}<span class="eyebrow">${game.name} · ${clockLevels[this.level].name}</span>${title(heading)}
           ${this.practice ? '<p>Ta séance est terminée.</p>' : finished ? `<p><span class="clock-done">✓ Niveau fait</span> ${clockLevels[this.level].name}</p>` : '<p>Chaque essai t’aide à mieux apprivoiser le temps.</p>'}
-          <div class="result-stats"><div><strong>${this.score}</strong> <span>${this.score === 1 ? 'bonne réponse' : 'bonnes réponses'}</span></div><div><strong>${this.index} / ${roundLength}</strong><span>questions jouées</span></div><div><strong>${errors}</strong><span>${errors === 1 ? 'erreur' : 'erreurs'}</span></div></div>
+          <div class="result-stats"><div><strong>${this.score}</strong> <span>${this.score === 1 ? 'bonne réponse' : 'bonnes réponses'}</span></div><div><strong>${this.index} / ${this.questions.length}</strong><span>questions jouées</span></div><div><strong>${errors}</strong><span>${errors === 1 ? 'erreur' : 'erreurs'}</span></div>${this.practice ? `<div><strong>${this.score}</strong><span>${this.score === 1 ? 'matériau gagné' : 'matériaux gagnés'}</span></div>` : ''}</div>
+          ${this.practiceRecord === undefined ? '' : `<p>Ton meilleur temps pour ces réglages : ${formatTime(this.practiceRecord)}.</p>`}
           ${this.arrival ? `<div class="clock-arrival" role="status">${clockFriendArt(this.arrival.id)}<div><strong>${this.arrival.name} te rejoint !</strong><p>${this.arrival.story}</p></div></div>` : ''}
           <div class="result-actions">${canContinue ? '<button type="button" class="play-button" data-clock-action="next-level">Continuer le parcours →</button>' : ''}
-          <button type="button" class="${canContinue ? 'secondary-button' : 'play-button'}" data-clock-action="levels">${levelButton}</button>
-          <button type="button" class="secondary-button" data-clock-action="replay">Rejouer</button>${this.practice ? catalogue : `${this.arrival ? story : ''}${this.storyComplete ? finale : ''}`}</div></div>`;
+          ${this.practice ? catalogue : `<button type="button" class="${canContinue ? 'secondary-button' : 'play-button'}" data-clock-action="levels">Retour aux niveaux</button>`}
+          <button type="button" class="${this.practice ? 'play-button' : 'secondary-button'}" data-clock-action="replay">Rejouer</button>${this.practice ? '' : `${this.arrival ? story : ''}${this.storyComplete ? finale : ''}`}</div></div>`;
       }
       case 'playing': {
         const question = this.questions[this.index];
-        return `<div class="game-status clock-status"><div><span class="small-label">${game.name} · ${clockLevels[this.level].name}</span><span class="streak">Question ${this.index + 1} sur ${roundLength}</span></div>
+        const lives = this.livesLeft;
+        const timer = this.timerSeconds;
+        return `<div class="game-status clock-status"><div><span class="small-label">${game.name} · ${clockLevels[this.level].name}</span><span class="streak">Question ${this.index + 1} sur ${this.questions.length}</span></div>
+          ${this.practice ? `<span class="camp-materials">${lives === null ? '∞ Essais illimités' : `♥ ${lives} vie${lives === 1 ? '' : 's'}`}</span>` : ''}
           <div class="session-actions"><button type="button" class="secondary-button" data-clock-action="pause">Pause</button></div></div>
-          ${this.practice ? '' : `<div class="question-time"><div><span>◷ Temps restant</span><strong id="clock-time" role="timer"></strong></div><div class="time-track" role="progressbar" aria-label="Temps restant" aria-valuemin="0" aria-valuemax="${clockLevels[this.level].seconds}"><span></span></div></div>`}
+          ${timer === null ? '' : `<div class="question-time"><div><span>◷ Temps restant</span><strong id="clock-time" role="timer"></strong></div><div class="time-track" role="progressbar" aria-label="Temps restant" aria-valuemin="0" aria-valuemax="${timer}"><span></span></div></div>`}
           <div class="question-area clock-question"><div class="question-content clock-center">${title(question.prompt)}${question.detail ? `<p>${question.detail}</p>` : ''}${question.face === undefined ? '' : clockFace(question.face)}</div></div>
-          <div class="keypad-panel"><div class="keypad-label">CHOISIS TA RÉPONSE</div><div class="keypad clock-options">${question.options.map((option, index) => `<button type="button" data-clock-action="answer" data-option="${index}">${typeof option === 'number' ? clockFace(option) : option}</button>`).join('')}</div></div>`;
+          <div class="keypad-panel"><div class="keypad-label">CHOISIS TA RÉPONSE</div><div class="keypad clock-options">${question.options.map((option, index) => `<button type="button" data-clock-action="answer" data-option="${index}">${typeof option === 'number' ? clockFace(option) : option}</button>`).join('')}</div></div>
+          ${this.practice ? `<div class="camp-cargo">${ant()}<span>${this.score ? `${this.score} ${this.score === 1 ? 'matériau apporté' : 'matériaux apportés'}` : 'Chaque bonne réponse apporte un matériau.'}</span></div>` : ''}`;
       }
     }
   }

@@ -1,4 +1,5 @@
 import { modes, shuffle, symbols, type Calculation, type Duration, type GameSettings, type Operation } from './calculations';
+import { clockGameIds, clockQuestionCount, type ClockGame } from './clock-games';
 
 export type Carry = 'all' | 'without' | 'with';
 export interface NumberRules { min: number; max: number; carry: Carry }
@@ -20,6 +21,17 @@ export interface TrainingData {
   materials: number;
   records: Record<string, { timeMs: number; mistakes: number }>;
   colony?: { built: number; spent: number; stars: number };
+  clock?: ClockPracticeSettings;
+}
+export interface ClockPracticeSettings extends Pick<TrainingSettings, 'length' | 'duration' | 'lives' | 'voice'> {
+  game: ClockGame;
+  level: 0 | 1 | 2;
+}
+export function clockPracticePreset(game: ClockGame = 'read', level: ClockPracticeSettings['level'] = 0): ClockPracticeSettings {
+  return {game,level,length:5,duration:null,lives:null,voice:'ant'};
+}
+export function clockPracticeRecordKey(s: ClockPracticeSettings): string {
+  return `clock:${s.game}:${s.level}:${s.length === 'all' ? clockQuestionCount(s.game,s.level) : s.length}:${s.duration}:${s.lives}`;
 }
 export const TRAINING_KEY = 'calcul-party:training:v1';
 export const buildings = ['La passerelle', 'Le garde-manger', 'Le dortoir', 'Le jardin', 'La tour d’observation', 'La place des fêtes'];
@@ -131,11 +143,17 @@ export function trainingRecordKey(s: TrainingSettings): string {
     length:s.length === 'all'?inspectTraining(s).count:s.length,duration:s.duration,lives:s.lives});
 }
 export function readTraining(storage: Pick<Storage,'getItem'>, legacy?: GameSettings): TrainingData {
-  const fallback: TrainingData = {settings:legacy?importTraining(legacy):preset(),materials:0,records:{},colony:{built:0,spent:0,stars:0}};
+  const fallback: TrainingData = {settings:legacy?importTraining(legacy):preset(),materials:0,records:{},colony:{built:0,spent:0,stars:0},clock:clockPracticePreset()};
   try {
     const data = JSON.parse(storage.getItem(TRAINING_KEY) ?? 'null');
     if (!data) return fallback;
     if (isTrainingSettings(data.settings)) fallback.settings = data.settings;
+    const s = data.clock;
+    if (s && clockGameIds.includes(s.game) && integer(s.level,0,2)
+      && (s.length === 'all' || integer(s.length,1,100))
+      && [null,5,10,15,30].includes(s.duration)
+      && (s.lives === null || integer(s.lives,1,10))
+      && ['ant','classic'].includes(s.voice)) fallback.clock = s;
     if (integer(data.materials,0,Number.MAX_SAFE_INTEGER)) fallback.materials=data.materials;
     if(data.colony===undefined) { delete fallback.colony; colonyProgress(fallback); }
     else if(data.colony && integer(data.colony.built,0,6) && integer(data.colony.spent,0,fallback.materials)

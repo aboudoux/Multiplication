@@ -1,7 +1,7 @@
 import { ant, campScene } from './ants';
-import { buildings, buildingCosts, buildColony, colonyStatus, inspectTraining, preset, trainingLabel, type TrainingData, type TrainingSettings } from './training';
+import { buildings, buildingCosts, buildColony, clockPracticePreset, colonyStatus, inspectTraining, preset, trainingLabel, type ClockPracticeSettings, type TrainingData, type TrainingSettings } from './training';
 import { expression, type Operation } from './calculations';
-import { clockGameIds, clockGames, type ClockGame } from './clock-games';
+import { clockGameIds, clockGames, clockLevels, clockQuestionCount } from './clock-games';
 
 export type CampTab = 'workshop' | 'time' | 'colony';
 
@@ -13,13 +13,25 @@ const numberChoices = (values: number[]): Choice[] => values.map(value=>({value,
 const lengths = [5,10,20,30,50,100];
 const rhythms: TrainingSettings['duration'][] = [null,5,10,15,30];
 const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.9a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8L12 22l8.8-9.3a5.5 5.5 0 0 0 0-7.8Z"/></svg>';
-function rhythmPicker(s: TrainingSettings): string {
+function rhythmPicker(s: Pick<TrainingSettings, 'duration'>): string {
   const label=s.duration===null?'Sans chrono':`${s.duration} secondes`;
   return `<fieldset class="camp-play-setting"><legend>Mon rythme</legend><button id="camp-duration" type="button" class="camp-clock-button" data-duration="${s.duration??'none'}" aria-label="Mon rythme : ${label}. Cliquer pour changer"><svg class="camp-clock" viewBox="0 0 100 100" aria-hidden="true"><path d="M21 22 12 13M79 22l9-9M27 83l-6 9m52-9 6 9"/><path class="camp-clock-bells" d="M9 26Q5 5 24 7l10 10ZM66 17 76 7q19-2 15 19Z"/><circle cx="50" cy="51" r="35"/><path d="M50 22v5m29 24h-5M50 80v-5m-29-24h5"/><path class="camp-clock-hand" style="transform:rotate(${rhythms.indexOf(s.duration)*72}deg)" d="M50 51V30"/><circle class="camp-clock-pin" cx="50" cy="51" r="3"/></svg><span><strong>${label}</strong><small>Un clic pour changer de rythme</small></span></button><small class="camp-rhythm-options">Sans chrono · 5 · 10 · 15 · 30 s</small></fieldset>`;
 }
-function livesPicker(s: TrainingSettings): string {
+function livesPicker(s: Pick<TrainingSettings, 'lives'>): string {
   return `<fieldset class="camp-play-setting"><legend>Mes essais</legend><div class="camp-life-hearts" role="group" aria-label="Choisir le nombre de vies">${Array.from({length:10},(_,i)=>i+1).map(n=>`<button id="camp-life-${n}" type="button" data-lives="${n}" aria-label="${n} vie${n===1?'':'s'}" aria-pressed="${s.lives===n}" class="${s.lives!==null&&n<=s.lives?'filled':''}">${heart}</button>`).join('')}</div><div class="camp-life-summary"><strong>${s.lives===null?'Essais illimités':`${s.lives} vie${s.lives===1?'':'s'}`}</strong><button id="camp-lives-unlimited" type="button" data-lives="none" aria-pressed="${s.lives===null}">∞ Illimités</button></div></fieldset>`;
 }
+function clockLengthLabel(s: ClockPracticeSettings): string {
+  const length=s.length==='all'?clockQuestionCount(s.game,s.level):s.length;
+  return `${length} question${length===1?'':'s'}`;
+}
+function sessionSettings(s: Pick<TrainingSettings, 'length' | 'duration' | 'lives' | 'voice'>, noun: 'calculs' | 'questions'): string {
+  return `<div class="camp-number-grid"><div>${choices('camp-length','Ma séance',s.length==='all'?'all':lengths.includes(s.length)?s.length:'custom',[...lengths.map(value=>({value,label:String(value),note:noun})),{value:'all',label:'Tout',note:'Toute la sélection'},{value:'custom',label:'✎ Sur mesure',note:'Choisis ta quantité'}])}${s.length!=='all'?`<label class="camp-exact-length">Nombre exact de ${noun}<input id="camp-custom-length" type="number" min="1" max="100" value="${s.length}"></label>`:''}</div>${rhythmPicker(s)}${livesPicker(s)}${choices('camp-voice',noun==='calculs'?'Voix des calculs':'Voix des questions',s.voice,[{value:'ant',label:'🐜 Fourmi malicieuse',note:'Une voix de petite fourmi'},{value:'classic',label:'🔊 Classique',note:'Une voix naturelle'}])}</div>`;
+}
+const timePresets = [
+  { game:'read', level:0, title:'Mes premières heures' },
+  { game:'compare', level:1, title:'Le défi des sabliers' },
+  { game:'next', level:2, title:'À l’heure au rendez-vous' },
+] as const;
 export class TrainingUI {
   readonly root = document.createElement('section');
   private tab: CampTab = 'workshop';
@@ -29,23 +41,31 @@ export class TrainingUI {
   private constructionMessage = '';
   private buildingName = '';
   private buildingCost = 0;
-  constructor(private data: TrainingData, private onChange:()=>boolean, private onStart:()=>void, private onHome:()=>void, private legacyRecords:()=>string, private onTimePractice:(game:ClockGame)=>void) {
+  private get timeSettings(): ClockPracticeSettings { return this.data.clock ??= clockPracticePreset(); }
+  constructor(private data: TrainingData, private onChange:()=>boolean, private onStart:()=>void, private onHome:()=>void, private legacyRecords:()=>string, private onTimePractice:(settings:ClockPracticeSettings)=>void) {
     this.root.id='training'; this.root.hidden=true; this.root.setAttribute('aria-label','Le camp des petites fourmis');
     this.root.addEventListener('click',event=>{
       const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button) return;
-      const clockGame = clockGameIds.find(id => id === button.dataset.clockPractice);
-      if (clockGame) { this.onTimePractice(clockGame); return; }
+      const timePreset = timePresets.find(item => item.game === button.dataset.clockPreset);
+      if (timePreset) {
+        this.data.clock=clockPracticePreset(timePreset.game,timePreset.level);
+        this.save(); this.render(); this.focusTitle(); return;
+      }
       if (button.dataset.tab) { this.stopConstruction(); this.tab=button.dataset.tab as typeof this.tab; this.render(); this.root.querySelector<HTMLElement>(`[data-tab="${this.tab}"]`)?.focus(); }
       if (button.dataset.preset) { this.data.settings=preset(button.dataset.preset); this.tab='workshop'; this.save(); this.render(); this.root.querySelector<HTMLElement>('#camp-session-title')?.focus(); }
       if (button.id==='camp-home') {this.stopConstruction();this.onHome();}
       if (button.id==='camp-build') this.construct();
-      if (button.id==='camp-start') this.onStart();
+      if (button.id==='camp-start') {
+        if (this.tab==='time') this.onTimePractice({...this.timeSettings});
+        else this.onStart();
+      }
       if (button.id==='camp-duration' || button.dataset.lives) {
         const details=[...this.root.querySelectorAll<HTMLDetailsElement>('details')].map(el=>el.open);
-        const before=rhythms.indexOf(this.data.settings.duration)*72;
-        if(button.id==='camp-duration') this.data.settings.duration=rhythms[(rhythms.indexOf(this.data.settings.duration)+1)%rhythms.length];
-        else this.data.settings.lives=button.dataset.lives==='none'?null:Number(button.dataset.lives);
+        const s=this.tab==='time'?this.timeSettings:this.data.settings;
+        const before=rhythms.indexOf(s.duration)*72;
+        if(button.id==='camp-duration') s.duration=rhythms[(rhythms.indexOf(s.duration)+1)%rhythms.length];
+        else s.lives=button.dataset.lives==='none'?null:Number(button.dataset.lives);
         this.save(); this.render();
         this.root.querySelectorAll<HTMLDetailsElement>('details').forEach((el,i)=>el.open=details[i]??false);
         this.root.querySelector<HTMLElement>(`#${button.id}`)?.focus({preventScroll:true});
@@ -90,7 +110,10 @@ export class TrainingUI {
   private save():void { this.stored=this.onChange(); }
   private change(input: HTMLInputElement):void {
     const s=this.data.settings;
-    if (input.name==='operation') s.operations=[...this.root.querySelectorAll<HTMLInputElement>('[name="operation"]:checked')].map(el=>el.value as Operation);
+    const session=this.tab==='time'?this.timeSettings:s;
+    if (input.name==='camp-clock-game') this.timeSettings.game=input.value as ClockPracticeSettings['game'];
+    else if (input.name==='camp-clock-level') this.timeSettings.level=Number(input.value) as ClockPracticeSettings['level'];
+    else if (input.name==='operation') s.operations=[...this.root.querySelectorAll<HTMLInputElement>('[name="operation"]:checked')].map(el=>el.value as Operation);
     else if (input.name==='table') s.tables=[...this.root.querySelectorAll<HTMLInputElement>('[name="table"]:checked')].map(el=>Number(el.value));
     else if (input.id==='camp-zero') s.zero=input.checked;
     else if (input.dataset.rule) {
@@ -98,9 +121,24 @@ export class TrainingUI {
       if (input.dataset.field==='ceiling') { s[op].min=1; s[op].max=Number(input.value); }
       else if (input.dataset.field==='carry') s[op].carry=input.value as typeof s.add.carry;
       else s[op][input.dataset.field as 'min'|'max']=Number(input.value);
-    } else if (input.name==='camp-length') s.length=input.value==='all'?'all':input.value==='custom'?15:Number(input.value);
-    else if (input.id==='camp-custom-length') s.length=Number(input.value);
-    else if (input.name==='camp-voice') s.voice=input.value as TrainingSettings['voice'];
+    } else if (input.name==='camp-length') session.length=input.value==='all'?'all':input.value==='custom'?15:Number(input.value);
+    else if (input.id==='camp-custom-length') {
+      if (this.tab==='time') {
+        const time=this.timeSettings;
+        if (!input.validity.valid || !Number.isInteger(input.valueAsNumber)) {
+          input.value=String(time.length);
+          return;
+        }
+        const value=input.valueAsNumber;
+        time.length=value;
+        this.save();
+        this.root.querySelector('#camp-time-count')!.textContent=clockLengthLabel(time);
+        this.root.querySelectorAll<HTMLInputElement>('[name="camp-length"]').forEach(el=>el.checked=el.value===(lengths.includes(value)?String(value):'custom'));
+        return;
+      }
+      session.length=Number(input.value);
+    }
+    else if (input.name==='camp-voice') session.voice=input.value as TrainingSettings['voice'];
     else if (input.name==='camp-multiplier-min') s.multiplierMin=Number(input.value);
     else if (input.name==='camp-multiplier-max') s.multiplierMax=Number(input.value);
     const focusId=input.id;
@@ -110,14 +148,21 @@ export class TrainingUI {
     if (focusId) this.root.querySelector<HTMLElement>(`#${focusId}`)?.focus({preventScroll:true});
   }
   private timeMarkup(): string {
+    const s=this.timeSettings;
+    const game=clockGames[s.game];
+    const count=clockQuestionCount(s.game,s.level);
     return `<section aria-labelledby="camp-time-title">
-      <h2 id="camp-time-title" tabindex="-1">L’heure et les durées</h2>
-      <p class="camp-help">Choisis un atelier et une difficulté. Chaque séance propose cinq questions à ton rythme.</p>
-      <div class="camp-presets">${clockGameIds.map(id => {
-        const game = clockGames[id];
-        return `<button type="button" data-clock-practice="${id}"><span class="camp-symbol" aria-hidden="true">${game.icon}</span>
-          <strong>${game.name}</strong><small>${game.description}</small><span class="camp-preset-note">3 difficultés · Sans chrono →</span></button>`;
-      }).join('')}</div>
+      <details id="camp-quick-sessions" class="camp-quick-sessions"><summary>Séances prêtes à l’emploi</summary><p>Choisis une séance pour remplir les réglages ci-dessous.</p>
+        <div class="camp-presets">${timePresets.map(item=>`<button type="button" data-clock-preset="${item.game}"><span class="camp-symbol" aria-hidden="true">${clockGames[item.game].icon}</span><strong>${item.title}</strong><small>5 questions · ${clockLevels[item.level].name}</small><span class="camp-preset-note">Sans chrono · essais illimités →</span></button>`).join('')}</div>
+      </details>
+      <h2 id="camp-time-title" tabindex="-1">Personnaliser ma séance sur le temps</h2>
+      <div class="camp-number-grid">${choices('camp-clock-game','Mon atelier',s.game,clockGameIds.map(id=>({value:id,label:clockGames[id].name,note:clockGames[id].description})))}
+        ${choices('camp-clock-level','Ma difficulté',s.level,clockLevels.map((level,value)=>({value,label:level.name,note:game.skills[value]})))}</div>
+      ${sessionSettings(s,'questions')}
+      <p class="camp-help">Choisis une réponse. Si tu te trompes, le jeu se met en pause pour te laisser lire la fiche. Chaque bonne réponse te rapporte un matériau.</p>
+      <div class="camp-launch"><div><strong>${count} questions différentes disponibles</strong><p>${game.name} · ${clockLevels[s.level].name}</p>
+      <p><span id="camp-time-count">${clockLengthLabel(s)}</span> · ${s.duration===null?'sans chrono':`${s.duration} s par question`} · ${s.lives===null?'essais illimités':`${s.lives} vie${s.lives===1?'':'s'}`}</p></div>
+      <button id="camp-start" type="button" class="play-button">Casques prêts… on y va ! →</button></div>
     </section>`;
   }
   render():void {
@@ -133,7 +178,7 @@ export class TrainingUI {
     <div class="camp-number-grid">${(['add','subtract'] as const).filter(op=>s.operations.includes(op)).map(op=>`<fieldset class="camp-field"><legend>${op==='add'?'Mes additions':'Mes soustractions'}</legend>${choices(`camp-${op}-ceiling`,'Nombres jusqu’à',s[op].max,numberChoices([...new Set([10,20,50,100,s[op].max])].sort((a,b)=>a-b)),`data-rule="${op}" data-field="ceiling"`,true)}<details id="camp-${op}-advanced"><summary>Affiner mon entraînement</summary><div class="camp-inline"><label>Minimum<input id="camp-${op}-min" data-rule="${op}" data-field="min" type="number" min="1" max="100" value="${s[op].min}"></label><label>Maximum<input id="camp-${op}-max" data-rule="${op}" data-field="max" type="number" min="1" max="100" value="${s[op].max}"></label></div><small>Les deux nombres et le résultat restent dans cette plage.</small>${choices(`camp-${op}-carry`,'Passage de dizaine',s[op].carry,[{value:'all',label:'Tous',note:'On mélange !'},{value:'without',label:'Sans passage',note:op==='add'?'8 + 1 = 9':'18 − 5 = 13'},{value:'with',label:'Avec passage',note:op==='add'?'8 + 5 = 13':'13 − 5 = 8'}],`data-rule="${op}" data-field="carry"`)}<small>${op==='add'?'8 + 5 : on franchit 10 avec une retenue.':'13 − 5 : on emprunte une dizaine.'}</small></details></fieldset>`).join('')}</div>
     ${s.operations.includes('multiply')?`<fieldset class="camp-field"><legend>Mes tables</legend><div class="camp-table-actions"><button type="button" data-tables="all">Toutes</button><button type="button" data-tables="none">Aucune</button></div><div class="camp-checks camp-tables">${Array.from({length:10},(_,i)=>i+1).map(n=>`<label><input id="camp-table-${n}" name="table" type="checkbox" value="${n}" ${s.tables.includes(n)?'checked':''}><span>${n}</span></label>`).join('')}</div><div class="camp-multiplier-grid">${choices('camp-multiplier-min','Multiplier à partir de',s.multiplierMin,numberChoices(Array.from({length:11},(_,i)=>i)),'',true)}${choices('camp-multiplier-max','Jusqu’à',s.multiplierMax,numberChoices(Array.from({length:11},(_,i)=>i)),'',true)}</div><small>×0 est utilisé uniquement si le zéro est autorisé.</small></fieldset>`:''}
     <label class="camp-zero"><input id="camp-zero" type="checkbox" ${s.zero?'checked':''}> Autoriser le zéro comme nombre ou résultat</label>
-    <div class="camp-number-grid"><div>${choices('camp-length','Ma séance',s.length==='all'?'all':lengths.includes(s.length)?s.length:'custom',[...lengths.map(value=>({value,label:String(value),note:'calculs'})),{value:'all',label:'Tout',note:'Toute la sélection'},{value:'custom',label:'✎ Sur mesure',note:'Choisis ta quantité'}])}${s.length!=='all'?`<label class="camp-exact-length">Nombre exact de calculs<input id="camp-custom-length" type="number" min="1" max="100" value="${s.length}"></label>`:''}</div>${rhythmPicker(s)}${livesPicker(s)}${choices('camp-voice','Voix des calculs',s.voice,[{value:'ant',label:'🐜 Fourmi malicieuse',note:'Une voix de petite fourmi'},{value:'classic',label:'🔊 Classique',note:'Une voix naturelle'}])}</div>
+    ${sessionSettings(s,'calculs')}
     <p class="camp-help">Observe le calcul puis tape la réponse : elle se valide toute seule. Les boutons Son et Voix en haut de l’écran contrôlent la lecture et la musique.</p>
     <div class="camp-launch"><div><strong>${count} calculs disponibles</strong><p class="camp-examples">${examples.map(q=>`${expression(q)} = ?`).join(' &nbsp; · &nbsp; ')}</p><p>${trainingLabel(s)}</p>${error?`<p role="alert" class="camp-error">${error}</p>`:''}</div><button id="camp-start" type="button" class="play-button" ${error?'disabled':''}>Casques prêts… on y va ! →</button></div>`}</div>
     <p class="camp-save" role="status">${this.stored?'Enregistré sur cet appareil.':'Le stockage est indisponible : tes changements restent pour cette visite seulement.'}</p>`;

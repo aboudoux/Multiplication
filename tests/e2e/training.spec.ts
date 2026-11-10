@@ -3,7 +3,7 @@ import {test,expect,type Page} from '@playwright/test';
 import {preset,TRAINING_KEY} from '../../src/training';
 import {defaults,STORAGE_KEY} from '../../src/storage';
 import {ADVENTURE_KEY} from '../../src/adventure';
-import { clockRound, roundLength } from '../../src/clock-games';
+import { clockRound } from '../../src/clock-games';
 async function load(page:Page) {
  await page.addInitScript(({key,saved})=>{if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(saved));},{key:STORAGE_KEY,saved:{...defaults(),muted:true}});
  await page.clock.install({time:new Date('2026-09-30T12:00:00Z')});await page.goto('/');await page.clock.pauseAt(new Date('2026-09-30T12:00:10Z'));
@@ -16,36 +16,84 @@ async function solve(page:Page) {
  await page.clock.runFor(700);
 }
 
-test('les ateliers du temps proposent trois difficultés libres et une correction à son rythme', async ({ page }) => {
+test('les ateliers du temps reprennent les réglages, les corrections et les récompenses du camp', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await load(page);
   await page.getByRole('button', { name: 'L’heure et les durées' }).click();
-  await expect(page.locator('.camp-presets [data-clock-practice]')).toHaveCount(6);
-  await page.locator('[data-clock-practice="read"]').click();
-  await expect(page.locator('[data-clock-action="level"]:enabled')).toHaveCount(3);
-  await expect(page.locator('[data-level="2"]')).toContainText('Quarts d’heure');
+  await expect(page.locator('[name="camp-clock-game"]')).toHaveCount(6);
+  await expect(page.locator('[name="camp-clock-level"]:enabled')).toHaveCount(3);
+  await page.locator('#camp-quick-sessions summary').click();
+  await page.locator('[data-clock-preset="compare"]').click();
+  await expect(page.locator('#camp-clock-game-compare')).toBeChecked();
+  await expect(page.locator('#camp-clock-level-1')).toBeChecked();
+  await page.locator('#camp-clock-game-read').check();
+  await page.locator('#camp-clock-level-2').check();
+  await expect(page.locator('label[for="camp-clock-level-2"], label:has(#camp-clock-level-2)')).toContainText('Quarts d’heure');
+  await page.locator('#camp-voice-classic').check();
+  await page.locator('#camp-custom-length').fill('3');
   await page.evaluate(() => { Math.random = () => 0; });
-  await page.locator('[data-level="2"]').click();
+  await page.locator('#camp-start').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','ant');
   await expect(page.getByRole('timer')).toHaveCount(0);
   await page.clock.fastForward(120_000);
-  await expect(page.getByText('Question 1 sur 5')).toBeVisible();
-  const questions = clockRound('read', 2, () => 0);
+  await expect(page.getByText('Question 1 sur 3')).toBeVisible();
+  const questions = clockRound('read', 2, () => 0, 3);
   const wrong = questions[0].options.findIndex(option => option !== questions[0].correct);
   await page.locator(`[data-option="${wrong}"]`).click();
   await expect(page.locator('.clock-lesson .clock-face')).toBeVisible();
   await page.clock.fastForward(120_000);
+  await expect(page.getByText('LA BONNE RÉPONSE')).toBeVisible();
   await page.getByRole('button', { name: 'Continuer' }).click();
-  for (let index = 1; index < roundLength; index++) {
+  for (let index = 1; index < questions.length; index++) {
     const question = questions[index];
     await page.locator(`[data-option="${question.options.indexOf(question.correct)}"]`).click();
   }
   await expect(page.getByText('Ta séance est terminée.')).toBeVisible();
-  await expect(page.locator('.clock-results .result-stats')).toContainText('4 bonnes réponses');
+  await expect(page.locator('.clock-results .result-stats')).toContainText('2 bonnes réponses');
+  await expect(page.getByText('Ton meilleur temps pour ces réglages', {exact:false})).toBeVisible();
+  await page.getByRole('button', { name: 'Rejouer' }).click();
+  await expect(page.getByText('Question 1 sur 3')).toBeVisible();
+  await page.getByRole('button', { name: 'Pause' }).click();
   await page.getByRole('button', { name: 'Retour aux ateliers' }).click();
-  await expect(page.getByRole('heading', { name: 'L’heure et les durées' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Personnaliser ma séance sur le temps' })).toBeFocused();
+  await expect(page.locator('#camp-custom-length')).toHaveValue('3');
+  await expect(page.locator('#camp-voice-classic')).toBeChecked();
+  await expect(page.locator('.camp-top .camp-materials')).toContainText('2 matériaux');
   await page.locator('#camp-home').click();
   await page.locator('#open-adventure').click();
   await expect(page.locator('[data-choice="lapin"] .choice-progress')).toHaveText('0 / 18 niveaux faits');
+});
+test('le chrono des ateliers repart à chaque question et une fiche précède la fin des essais', async ({ page }) => {
+  await load(page);
+  const arithmeticRhythm = await page.locator('#camp-duration').getAttribute('data-duration');
+  await page.getByRole('button', { name: 'L’heure et les durées' }).click();
+  await page.locator('#camp-duration').click();
+  await page.locator('#camp-life-2').click();
+  await page.locator('#camp-length-all').check();
+  await page.locator('#camp-start').click();
+  await expect(page.getByText('Question 1 sur 12')).toBeVisible();
+  await expect(page.getByRole('timer')).toHaveText('5 s');
+  await page.clock.fastForward(3000);
+  await expect(page.getByRole('timer')).toHaveText('2 s');
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await page.clock.fastForward(10_000);
+  await page.getByRole('button', { name: 'On continue !' }).click();
+  await expect(page.getByRole('timer')).toHaveText('2 s');
+  await page.clock.fastForward(2100);
+  await expect(page.getByText('Le temps est écoulé.')).toBeVisible();
+  await page.getByRole('button', { name: 'Continuer' }).click();
+  await expect(page.getByText('Question 2 sur 12')).toBeVisible();
+  await expect(page.getByText('♥ 1 vie')).toBeVisible();
+  await expect(page.getByRole('timer')).toHaveText('5 s');
+  await page.clock.fastForward(5100);
+  await expect(page.getByText('Le temps est écoulé.')).toBeVisible();
+  await page.getByRole('button', { name: 'Continuer' }).click();
+  await expect(page.getByText('Tu as utilisé tous tes essais !')).toBeVisible();
+  await page.getByRole('button', { name: 'Retour aux ateliers' }).click();
+  await expect(page.locator('#camp-duration')).toHaveAttribute('data-duration','5');
+  await expect(page.locator('#camp-life-2')).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button', { name: 'S’entraîner' }).click();
+  await expect(page.locator('#camp-duration')).toHaveAttribute('data-duration',arithmeticRhythm!);
 });
 test('guided setup, exact tables, completion, materials, replay and independent adventure',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

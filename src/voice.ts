@@ -67,9 +67,9 @@ export class QuestionVoice {
     await this.play('rabbit-late', 0.55, 1.5, 'kitten');
   }
 
-  async clockQuestion(tokens: readonly ClockVoiceToken[]): Promise<void> {
+  async clockQuestion(tokens: readonly ClockVoiceToken[], style: VoiceStyle = 'classic'): Promise<void> {
     this.stop();
-    await this.play('clock-questions', 0, 1.5, 'classic', bank => composeClockVoice(this.context, bank, tokens));
+    await this.play('clock-questions', 0, 1.5, style, bank => composeClockVoice(this.context, bank, tokens));
   }
 
   async clockStory(film: ClockStoryFilm, step: number, elapsedMs: number): Promise<void> {

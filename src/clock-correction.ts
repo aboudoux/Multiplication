@@ -22,11 +22,11 @@ function correctionFigure(question: ClockQuestion): string {
   }
 }
 
-export function clockCorrectionMarkup(question: ClockQuestion, selected: ClockQuestion['correct'], seconds: number | null): string {
+export function clockCorrectionMarkup(question: ClockQuestion, selected: ClockQuestion['correct'] | null, seconds: number | null): string {
   return `<article class="correction-card clock-lesson" data-lesson-kind="${question.correction.kind}">
     <header><span class="clock-kicker">${seconds === null ? 'À TON RYTHME' : `CHRONO EN PAUSE · ${seconds} S RESTANTES`}</span><h2 id="clock-heading" tabindex="-1">Regardons ensemble</h2></header>
     <div class="clock-lesson-body"><div class="clock-lesson-text"><p class="clock-lesson-question">${question.prompt}</p>
-    <p>Tu avais choisi <strong>${answerLabel(selected)}</strong>.</p><p class="clock-lesson-answer"><span>LA BONNE RÉPONSE</span><strong>${answerLabel(question.correct)}</strong></p><p>${question.explanation}</p></div>
+    ${selected === null ? '<p>Le temps est écoulé.</p>' : `<p>Tu avais choisi <strong>${answerLabel(selected)}</strong>.</p>`}<p class="clock-lesson-answer"><span>LA BONNE RÉPONSE</span><strong>${answerLabel(question.correct)}</strong></p><p>${question.explanation}</p></div>
     ${correctionFigure(question)}</div>
     ${seconds === null
       ? '<button type="button" class="play-button" data-clock-action="practice-next">Continuer →</button>'
