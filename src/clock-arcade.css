@@ -169,7 +169,7 @@
 .clock-map > header p { color:#664537; margin:4px 0 12px; }
 .clock-route { position:relative; list-style:none; margin:0; padding:0; }
 .clock-map-stop {
-  --land:#c1d595; position:relative; isolation:isolate; min-height:clamp(240px,39vw,292px);
+  --land:#c1d595; position:relative; isolation:isolate; min-height:clamp(312px,39vw,336px);
 }
 .clock-map-stop::before {
   content:""; position:absolute; inset:0; pointer-events:none;
@@ -213,7 +213,7 @@
   color:#573d46; background:transparent; border:0; border-radius:14px; font-weight:700; cursor:pointer; pointer-events:auto;
 }
 .clock-map-rabbit {
-  position:absolute; z-index:2; top:6px; left:50%; width:48px;
+  position:absolute; z-index:2; top:10px; left:50%; width:72px;
   translate:-50% -90%; pointer-events:none;
 }
 .clock-map-marker {
@@ -289,7 +289,6 @@
 .clock-map-end .play-button { min-height:44px; padding:5px 12px; font-size:.86rem; }
 @media (max-width:620px) {
   .clock-map-compass { position:static; display:block; width:43px; margin:0 auto 5px; }
-  .clock-map-stop { min-height:264px; }
   .clock-map-heading { top:4%; }
   .clock-map-heading strong { font-size:.9rem; }
   .clock-map-heading small { font-size:.73rem; }
