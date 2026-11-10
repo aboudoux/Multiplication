@@ -218,7 +218,7 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 
 *Le goûter du tic-tac* suit les six mini-jeux existants du Lapin chrono, avec trois niveaux chacun. Le lapin a raté le goûter parce que sa montre est tombée dans une flaque et s’est arrêtée. Un animal rejoint le groupe après 3, 6, 9, 12 et 15 niveaux distincts terminés. Son portrait apparaît à côté du lapin et son chapitre raconte ce qu’il apporte à la réparation. Les chapitres, les compagnons et la fin se déduisent de la progression des niveaux.
 
-Les six portraits fournis, dans le style enfantin du Pays des merveilles, sont intégrés en WebP dans `src/clock-art`. Les mêmes dessins servent sur la vignette du lapin, dans l’histoire, sous les réponses, au bilan et dans le film. Dans la finale, le contour de chaque animal détache le personnage du fond de son illustration pour le faire évoluer dans la clairière.
+Les six portraits fournis, dans le style enfantin du Pays des merveilles, sont intégrés en WebP dans `src/clock-art`. Les mêmes dessins servent sur la vignette du lapin, dans l’histoire, sous les réponses, au bilan et dans le film. Chaque portrait a son propre mouvement en boucle, suspendu en arrière-plan et désactivé si la réduction des animations est activée. Les compagnons reprennent ce mouvement après leurs réactions. Dans la finale, le contour de chaque animal détache le personnage du fond de son illustration pour le faire évoluer dans la clairière.
 
 Le Lapin chrono reprend le tableau vert et les cartes du camp, puis le bandeau, la jauge du temps, les touches et le bilan des jeux de calcul. Les touches affichent les choix du mini-jeu et la fiche de correction garde son illustration.
 

@@ -38,6 +38,7 @@ test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ p
 
   await finishLevel(page, 'read', 2);
   await expect(page.locator('.clock-arrival')).toContainText('Noisette l’écureuil te rejoint !');
+  await expect(page.locator('.clock-arrival [data-portrait="squirrel"]')).toHaveCSS('animation-name', 'clock-friend-cheer, clock-portrait-spring');
   await expect(friends).toHaveCount(1);
   await expect(friends.first()).toHaveAccessibleName('Noisette l’écureuil');
   await page.getByRole('button', { name: 'Lire l’histoire' }).click();
@@ -208,6 +209,12 @@ test('les portraits des cinq amis s’inclinent et avancent sous les réponses s
   await openStoryGame(page, 15);
   const trail = page.locator('.clock-guest-trail');
   await expect(trail).toBeHidden();
+  await page.getByRole('button', { name: 'Lire l’histoire' }).click();
+  const chapters = page.locator('.clock-chapter [data-portrait]');
+  await expect(chapters).toHaveCount(5);
+  const motions = await chapters.evaluateAll(portraits => portraits.map(portrait => getComputedStyle(portrait).animationName));
+  expect(motions).toEqual(['clock-portrait-spring', 'clock-portrait-bob', 'clock-portrait-stretch', 'clock-portrait-hover', 'clock-portrait-bow']);
+  await page.getByRole('button', { name: 'Tous les jeux' }).click();
   await page.locator('[data-game="read"]').click();
   await page.locator('[data-level="0"]').click();
   await expect(trail).toBeVisible();
@@ -226,8 +233,8 @@ test('les portraits des cinq amis s’inclinent et avancent sous les réponses s
     const left = parseFloat(seek(figure, 'clock-guest-stroll', 0).left);
     const right = parseFloat(seek(figure, 'clock-guest-stroll', .5).left);
     const portrait = figure.querySelector('.clock-friend-art')!;
-    const still = seek(portrait, 'clock-animal-tilt', 0).transform;
-    const greeting = seek(portrait, 'clock-animal-tilt', .34).transform;
+    const still = seek(portrait, 'clock-portrait-spring', 0).transform;
+    const greeting = seek(portrait, 'clock-portrait-spring', .14).transform;
     return { distance: right - left, still, greeting };
   });
   expect(movement.distance).toBeGreaterThan(8);
@@ -238,7 +245,7 @@ test('les portraits des cinq amis s’inclinent et avancent sous les réponses s
   const hour = face.match(/Petite aiguille sur le (\d+)/)![1];
   await page.getByRole('button', { name: `${hour} h`, exact: true }).click();
   await expect(page.getByText('Question 2 sur 5')).toBeVisible();
-  await expect(squirrel).toHaveCSS('animation-name', 'clock-friend-cheer');
+  await expect(squirrel).toHaveCSS('animation-name', 'clock-friend-cheer, clock-portrait-spring');
   expect(await actor!.evaluate(node => node.isConnected)).toBe(true);
   await page.locator('[data-clock-action="pause"]').click();
   await expect(trail).toBeHidden();
