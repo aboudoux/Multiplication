@@ -1,6 +1,11 @@
 import type { Page } from '@playwright/test';
 import { clockCorrectionMs } from '../../src/clock-games';
 
+export async function openClockArcade(page: Page) {
+  await page.locator('#open-adventure').click();
+  await page.locator('#open-clock-arcade').click();
+}
+
 export async function answerClock(page: Page, correct = true) {
   const questionFace = await page.locator('.clock-question .question-content').evaluate(content => content.querySelector('.clock-face')?.getAttribute('aria-label'));
   if (questionFace) {

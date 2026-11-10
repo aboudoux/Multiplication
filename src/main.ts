@@ -80,9 +80,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="club-bunting" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
           <div class="destination-heading"><span class="eyebrow">BIENVENUE AU CLUB DU CALCUL</span><h1>À chaque jour son expédition !</h1><p>Un monde à explorer, des choses à construire.</p><div class="club-supplies" aria-hidden="true"><span>+</span><span>−</span><span>×</span><span>=</span></div></div>
           <div class="destinations">
-            <article class="destination-card"><span class="destination-tag">EXPLORER & DÉCOUVRIR</span><div class="destination-art adventure-entry-art" aria-hidden="true"><img src="/themes/adventure-map.png" alt="" width="1254" height="1254" decoding="async"></div><h2>Partir à l’aventure</h2><p>Une fête avec le chaton ou un voyage en mer avec Pico : choisis ton aventure.</p><button id="open-adventure" class="play-button" type="button">Choisir mon aventure →</button></article>
+            <article class="destination-card"><span class="destination-tag">EXPLORER & DÉCOUVRIR</span><div class="destination-art adventure-entry-art" aria-hidden="true"><img src="/themes/adventure-map.png" alt="" width="1254" height="1254" decoding="async"></div><h2>Partir à l’aventure</h2><p>Fais la fête avec le chaton, prends la mer avec Pico ou suis la montre du Lapin chrono.</p><button id="open-adventure" class="play-button" type="button">Choisir mon aventure →</button></article>
             <article class="destination-card camp-entry"><span class="destination-tag">S’ENTRAÎNER & CONSTRUIRE</span><div class="destination-art">${ant()}</div><h2>Le camp d’entraînement</h2><p>Choisis tes calculs et aide les petites fourmis à bâtir leur maison.</p><button id="open-training" class="play-button" type="button">S’entraîner avec les fourmis →</button></article>
-            <article class="destination-card clock-entry"><span class="destination-tag">JOUER AVEC LE TEMPS</span><div class="destination-art">${clockRabbitArt}</div><h2>Le lapin chrono</h2><p>Suis le petit lapin et sa montre. Six jeux pour apprivoiser l’heure et les durées.</p><button id="open-clock-arcade" class="play-button" type="button">Jouer avec le lapin →</button></article>
           </div>
         </section>
 
@@ -205,7 +204,7 @@ unlockMenuAudio(); // Start immediately when the browser permits audible autopla
 // navigation() plays after the destination has finished changing the world.
 document.addEventListener('click', event => {
   const target=(event.target as Element).closest<HTMLButtonElement|HTMLAnchorElement>(
-    '.brand, [data-adventure], #change-adventure, #leave-adventure-choice, #open-adventure, #open-training, #leave-adventure, [data-tab], [data-preset], #camp-home, #camp-exit, #camp-results-exit, #camp-colony-ready, #adventure-exit, [data-action="home"], [data-stage], #camp-start, [data-action="start"]',
+    '.brand, [data-adventure], #change-adventure, #leave-adventure-choice, #open-adventure, #open-clock-arcade, #open-training, #leave-adventure, [data-tab], [data-preset], #camp-home, #camp-exit, #camp-results-exit, #camp-colony-ready, #adventure-exit, [data-action="home"], [data-stage], #camp-start, [data-action="start"]',
   );
   if (target && !target.matches(':disabled')) void audio.navigation();
 }, {capture:true});
@@ -228,7 +227,7 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
 });
 get('home').before(camp.root);
-const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), milestone => audio.success(milestone), cue => {
+const clockArcade = new ClockArcade(() => showAdventureChoice('open-clock-arcade'), milestone => audio.success(milestone), cue => {
   if (cue !== 'rabbit-late' || saved.voiceEnabled) audio.clockAnswer(cue);
 }, () => localStorage, tokens => {
   if (tokens && saved.voiceEnabled && !saved.muted) audio.speakClockQuestion(tokens);
@@ -237,12 +236,6 @@ const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), mile
   if (saved.voiceEnabled && !saved.muted) audio.speakClockStory(film, step, elapsedMs);
 });
 get('home').before(clockArcade.root);
-get('open-clock-arcade').addEventListener('click', () => {
-  void audio.navigation();
-  get('home').hidden = true;
-  clockArcade.open();
-  applyTheme();
-});
 get('play').insertAdjacentHTML('beforeend',`<div id="camp-cargo" class="camp-cargo" hidden>${ant()}<span id="camp-cargo-label"></span></div>`);
 get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory" class="camp-victory-scene" hidden></div>');
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
@@ -361,26 +354,40 @@ function showMap(): void {
   applyTheme(); render(performance.now());
   get('map-title').focus();
 }
-function showAdventureChoice():void {
+function showAdventureChoice(focusId = 'choice-title'): void {
+  clockArcade.close();
   clearUnlockReveal(); newlyUnlockedMissions=[];cacheAdventure();
   activeFinale.close();activeStage=null;mapOpen=false;chooserOpen=true;campOpen=false;trainingActive=false;previewVictory=false;
   audio.stopSpeech();surprises.clear();game=createGame();previousPhase='finished';
-  adventureChoice.innerHTML=`<span class="eyebrow">DEUX HISTOIRES, TES PROPRES DÉCOUVERTES</span><h1 id="choice-title" tabindex="-1">Quelle aventure aujourd’hui ?</h1><p>Chaque aventure garde ses missions sur cet appareil. Le camp des fourmis reste indépendant.</p><div class="adventure-choice-grid">${adventures.map(a=>{
+  adventureChoice.innerHTML=`<span class="eyebrow">TROIS HISTOIRES À EXPLORER</span><h1 id="choice-title" tabindex="-1">Quelle aventure aujourd’hui ?</h1><p>Chaque aventure garde sa progression sur cet appareil.</p><div class="adventure-choice-grid">${adventures.map(a=>{
     const save=adventureSaves.get(a.id)!;
     return `<article class="adventure-choice-card" data-choice="${a.id}"><div class="choice-portrait" aria-hidden="true">${themes[a.hero].home}</div><h2>${a.title}</h2><p>${a.description}</p><p class="choice-progress"><strong>${save.progress.completed.length} / 24</strong> missions · ${a.worlds.filter(w=>worldFinished(save.progress,w.id,a)).length} / 8 amis${save.stored?'':' · Pour cette visite'}</p><button type="button" class="play-button" data-adventure="${a.id}">${save.progress.completed.length?'Continuer':'Commencer'} →</button></article>`;
-  }).join('')}</div><button id="leave-adventure-choice" type="button" class="secondary-button">← Accueil</button>`;
-  applyTheme();render(performance.now());get('choice-title').focus();
+  }).join('')}
+    <article class="adventure-choice-card clock-entry" data-choice="lapin">
+      <div class="choice-portrait" aria-hidden="true">${clockRabbitArt}</div>
+      <h2>Le Lapin chrono</h2><p>Suis le lapin sur la carte du goûter. Six jeux pour apprivoiser l’heure et les durées.</p>
+      <p class="choice-progress">${clockArcade.progressSummary}</p>
+      <button id="open-clock-arcade" type="button" class="play-button">Jouer avec le lapin →</button>
+    </article></div><button id="leave-adventure-choice" type="button" class="secondary-button">← Accueil</button>`;
+  applyTheme();render(performance.now());get(focusId).focus();
 }
 adventureChoice.addEventListener('click',event=>{
   const button=(event.target as Element).closest<HTMLButtonElement>('button');if(!button)return;
   if(button.id==='leave-adventure-choice'){showLanding();get('open-adventure').focus();return;}
+  if (button.id === 'open-clock-arcade') {
+    chooserOpen = false;
+    clockArcade.open();
+    applyTheme();
+    render(performance.now());
+    return;
+  }
   const adventure=adventures.find(a=>a.id===button.dataset.adventure);if(!adventure)return;
   cacheAdventure();activeAdventure=adventure;worlds=adventure.worlds;stages=adventure.stages;
   const save=adventureSaves.get(adventure.id)!;adventureProgress=save.progress;adventureStored=save.stored;
   activeFinale=adventure.finale==='lighthouse'?lighthouseParty:kittenBirthday;
   get('adventure-guests').innerHTML=worlds.map(w=>themes[w.id].home).join('');showMap();
 });
-get('open-adventure').addEventListener('click',showAdventureChoice);
+get('open-adventure').addEventListener('click', () => showAdventureChoice());
 get('adventure-exit').addEventListener('click',showMap);
 adventureMap.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -496,7 +503,7 @@ function previewVictoryAnimation(): void {
   });
 }
 function goHome(): void {
-  if (!clockArcade.root.hidden) { showLanding('open-clock-arcade'); return; }
+  if (!clockArcade.root.hidden) { showLanding('open-adventure'); return; }
   if (activeFinale.active) activeFinale.close();
   if (previewVictory) return;
   // The brand is only a home link outside an active game; no accidental loss of progress.

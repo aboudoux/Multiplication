@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { defaults, STORAGE_KEY } from '../../src/storage';
 import { CLOCK_PROGRESS_KEY, clockGameIds, clockLevels, clockRound, clockTime } from '../../src/clock-games';
-import { advanceClockLesson, answerClock, answerFirstClockOption } from './clock-helpers';
+import { advanceClockLesson, answerClock, answerFirstClockOption, openClockArcade } from './clock-helpers';
 
 async function prepareClockPage(page: Page, completed: number | string[] = 0) {
   const progress = typeof completed === 'number'
@@ -19,7 +19,9 @@ async function prepareClockPage(page: Page, completed: number | string[] = 0) {
 test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ page }) => {
   await prepareClockPage(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('.destination-card')).toHaveCount(3);
+  await expect(page.locator('.destination-card')).toHaveCount(2);
+  await page.locator('#open-adventure').click();
+  await expect(page.locator('.adventure-choice-card')).toHaveCount(3);
   const illustration = page.locator('.clock-entry [data-portrait="rabbit"]');
   await expect(illustration).toHaveCSS('clip-path', /#clock-animal-cut-rabbit/);
   await expect(page.locator('#clock-animal-cut-rabbit')).toHaveCount(1);
@@ -60,9 +62,11 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
     await page.getByRole('button', { name: 'Tous les jeux' }).click();
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await page.getByRole('button', { name: 'Accueil', exact: false }).click();
+  await page.getByRole('button', { name: 'Choix des aventures' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'club');
   await expect(page.locator('#open-clock-arcade')).toBeFocused();
+  await expect(page.locator('#adventure-choice')).toBeVisible();
+  await page.locator('#leave-adventure-choice').click();
   await expect(page.locator('#open-adventure')).toBeVisible();
   await expect(page.locator('#open-training')).toBeVisible();
 });
@@ -70,7 +74,7 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
 test('une réussite avance immédiatement et une fiche d’erreur se ferme seule', async ({ page }) => {
   await prepareClockPage(page, 3);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   const timer = page.getByRole('timer');
@@ -146,7 +150,7 @@ test('chaque mini-jeu montre une fiche illustrée avec la bonne réponse', async
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => { Math.random = () => 0; });
   for (const game of clockGameIds) {
-    await page.locator('#open-clock-arcade').click();
+    await openClockArcade(page);
     await page.locator(`[data-game="${game}"]`).click();
     await page.locator('[data-level="0"]').click();
     const question = clockRound(game, 0, () => 0)[0];
@@ -163,7 +167,7 @@ test('chaque mini-jeu montre une fiche illustrée avec la bonne réponse', async
 
 test('le bonhomme et les étoiles repartent à chaque réussite, le lapin tous les cinq succès', async ({ page }) => {
   await prepareClockPage(page, 3);
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   let successes = 0;
@@ -212,7 +216,7 @@ test('le bonhomme et les étoiles repartent à chaque réussite, le lapin tous l
 
 test('les titres, consignes et réponses contrastent avec leur fond', async ({ page }) => {
   await prepareClockPage(page, 12);
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   const contrast = (selector: string) => page.locator(selector).first().evaluate(element => {
     const luminance = (color: string) => {
       const rgb = color.match(/[\d.]+/g)!.slice(0, 3).map(value => Number(value) / 255);
@@ -253,7 +257,7 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
   };
 
   await expect(companion).toBeHidden();
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await page.locator('[data-game="read"]').click();
   await firstLevel.click();
   await answerClock(page, false);
@@ -322,13 +326,15 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
   await expect(companion).toBeVisible();
   await expect(companion).toHaveCSS('position', 'fixed');
   await expect(companion).toHaveCSS('pointer-events', 'none');
-  await page.getByRole('button', { name: 'Accueil', exact: false }).click();
+  await page.getByRole('button', { name: 'Choix des aventures' }).click();
   await expect(companion).toBeHidden();
+  await expect(page.locator('[data-choice="lapin"] .choice-progress')).toHaveText('2 / 18 niveaux faits');
+  await page.locator('#leave-adventure-choice').click();
   await page.locator('#open-training').click();
   await expect(companion).toBeHidden();
   await page.reload();
   await expect(companion).toBeHidden();
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await expect(companion).toBeVisible();
   await expect(companion).toContainText('2 / 18 niveaux faits');
   await page.locator('[data-game="read"]').click();
@@ -339,7 +345,7 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
 
 test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau manquant', async ({ page }) => {
   await prepareClockPage(page, ['read:1', 'next:2']);
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await page.locator('[data-game="next"]').click();
   await expect(page.locator('[data-level="2"] .clock-done')).toHaveText('✓ Fait');
   await expect(page.locator('[data-level="2"]')).toBeEnabled();

@@ -88,7 +88,7 @@ export class ClockArcade {
   private filmPaused = false;
 
   constructor(
-    private readonly goHome: () => void,
+    private readonly leaveArcade: () => void,
     private readonly playSuccess: (milestone: boolean) => void,
     private readonly playCue: (cue: ClockCue) => void,
     private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
@@ -124,7 +124,7 @@ export class ClockArcade {
       if (!button || button.disabled) return;
       const now = performance.now();
       switch (button.dataset.clockAction) {
-        case 'home': this.goHome(); break;
+        case 'adventures': this.leaveArcade(); break;
         case 'catalogue': this.open(); break;
         case 'levels': this.show('levels'); break;
         case 'story':
@@ -175,6 +175,7 @@ export class ClockArcade {
   }
 
   private get storyComplete(): boolean { return this.completed.size === orderedLevels.length; }
+  get progressSummary(): string { return `${this.completed.size} / ${orderedLevels.length} niveaux faits`; }
   private get nextLevel() { return orderedLevels.find(level => !this.completed.has(level.key)); }
 
   loadProgress(): void {
@@ -217,7 +218,7 @@ export class ClockArcade {
 
   private updateCompanion(): void {
     this.companion.hidden = this.completed.size === 0;
-    this.progressLabel.textContent = `${this.completed.size} / ${orderedLevels.length} niveaux faits`;
+    this.progressLabel.textContent = this.progressSummary;
     const friends = clockFriends.filter(friend => friend.at <= this.completed.size);
     this.companionFriends.innerHTML = friends.map(friend =>
       `<span class="clock-companion-friend" role="img" aria-label="${friend.name}">${clockFriendArt(friend.id)}</span>`).join('');
@@ -495,7 +496,7 @@ export class ClockArcade {
 
     switch (this.screen) {
       case 'catalogue':
-        return `<div class="camp-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span class="camp-materials">${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
+        return `<div class="camp-top"><button type="button" class="secondary-button" data-clock-action="adventures">← Choix des aventures</button><span class="camp-materials">${this.progressSummary}</span></div>
           <header class="camp-heading clock-intro"><div><span class="eyebrow">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure et compare les durées. Termine chaque niveau pour débloquer le suivant.</p></div>${clockRabbitArt}</header>
           <div class="clock-story-teaser"><div><span class="clock-kicker">L’HISTOIRE DU LAPIN</span><h3>${clockStoryTitle}</h3><p>Sa montre s’est arrêtée et il a raté le goûter. Retrouve ses amis en suivant la carte !</p></div><div class="clock-story-actions">${story}${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Revoir l’animation</button>' : ''}</div></div>
           <section class="clock-map" aria-labelledby="clock-map-title">
@@ -506,7 +507,7 @@ export class ClockArcade {
             </div>
           </section>`;
       case 'story':
-        return `<div class="clock-top">${this.storyReturn === 'levels' ? levels : catalogue}<span>${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
+        return `<div class="clock-top">${this.storyReturn === 'levels' ? levels : catalogue}<span>${this.progressSummary}</span></div>
           <header class="clock-center clock-story-intro"><span class="clock-kicker">L’HISTOIRE DU LAPIN</span>${title(clockStoryTitle)}<p>${clockStoryIntro}</p></header>
           <ol class="clock-chapters">${clockFriends.map(friend => friend.at <= this.completed.size
             ? `<li class="clock-chapter" data-friend="${friend.id}">${clockFriendArt(friend.id)}<div><span class="clock-kicker">${friend.name}</span><h3>${friend.title}</h3><p>${friend.story}</p><button type="button" class="secondary-button" data-clock-action="arrival" data-friend="${friend.id}" aria-label="Revoir l’arrivée de ${friend.name}">Revoir la rencontre</button></div></li>`

@@ -10,13 +10,16 @@
 .adventure-choice { padding:30px 0; }
 .adventure-choice h1 { font-size:clamp(32px,5vw,52px); margin:14px 0; line-height:1.2; text-wrap:balance; }
 .adventure-choice > p { color:var(--muted); line-height:1.6; }
-.adventure-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin:28px 0; }
+.adventure-choice-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(12px,2vw,24px); margin:28px 0; }
 .adventure-choice-card { min-width:0; padding:24px; border:2px solid var(--world-edge); border-radius:25px; background:var(--world-panel); display:flex; flex-direction:column; align-items:center; text-align:center; }
-.adventure-choice-card .choice-portrait { width:150px; aspect-ratio:1; }
+.adventure-choice-card .choice-portrait { width:min(100%,150px); aspect-ratio:1; }
 .adventure-choice-card h2 { color:var(--world-ink); font-size:26px; margin:15px 0 8px; }
 .adventure-choice-card p { line-height:1.6; font-size:14px; color:var(--muted); }
 .adventure-choice-card .choice-progress { color:var(--world-ink); margin-top:auto; }
 .adventure-choice-card button { margin-top:15px; }
+.adventure-choice-card.clock-entry { position:relative; border-color:#bb7192; }
+.clock-entry .play-button::after { content:""; position:absolute; inset:0; }
+.clock-entry .play-button:hover,.clock-entry .play-button:active { transform:none; }
 .map-actions { display:flex; flex-wrap:wrap; gap:10px; }
 .friend-invited .pico-sprite { animation:pico-greeting 4s ease-in-out infinite !important; }
 @keyframes pico-greeting { 0%,15%,65%,100%{transform:none} 25%,45%{transform:rotate(-6deg) translateY(-3px)}35%,55%{transform:rotate(6deg) translateY(-5px)} }

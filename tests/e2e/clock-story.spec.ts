@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { CLOCK_PROGRESS_KEY, clockGameIds, clockLevels, roundLength } from '../../src/clock-games';
 import { clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFriends } from '../../src/clock-story';
 import { defaults, STORAGE_KEY } from '../../src/storage';
-import { answerFirstClockOption } from './clock-helpers';
+import { answerFirstClockOption, openClockArcade } from './clock-helpers';
 
 const levelKeys = clockGameIds.flatMap(game => clockLevels.map((_, level) => `${game}:${level}`));
 
@@ -14,7 +14,7 @@ async function openStoryGame(page: Page, completed: number, muted = true) {
   await page.clock.install({ time: new Date('2026-11-09T12:00:00Z') });
   await page.goto('/');
   await page.clock.pauseAt(new Date('2026-11-09T12:00:10Z'));
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
 }
 
 async function finishLevel(page: Page, game: string, level: number) {
@@ -60,7 +60,7 @@ test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ p
   await page.reload();
   await expect(friends).toHaveCount(1);
   await expect(friends.first()).toBeHidden();
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await expect(friends.first()).toBeVisible();
   await expect(page.locator('.clock-companion')).toContainText('3 / 18 niveaux faits');
   await expect(page.locator('.clock-map-level[data-state="done"]')).toHaveCount(3);
@@ -143,7 +143,7 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await page.reload();
   await expect(page.locator('.clock-companion')).toContainText('18 / 18 niveaux faits');
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.getByRole('button', { name: 'Voir le goûter' }).click();
   await expect(scene).toHaveAttribute('data-step', '0');

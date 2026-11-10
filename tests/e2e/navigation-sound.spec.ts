@@ -1,7 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 import {defaults,STORAGE_KEY} from '../../src/storage';
 import { CLOCK_PROGRESS_KEY, clockCorrectionMs } from '../../src/clock-games';
-import { answerClock } from './clock-helpers';
+import { answerClock, openClockArcade } from './clock-helpers';
 
 const funkBassRiff = [41.2, 82.41, 41.2, 49, 55, 58.27, 61.74, 73.42, 41.2];
 
@@ -115,7 +115,7 @@ test('la mélodie rythmée du lapin continue pendant la correction, la pause et 
   await prepare(page);
   const notes = () => page.evaluate(() => (window as any).navigationProbe.filter((note: any) =>
     note.type === 'sine' && [130.81, 110, 87.31, 98, 146.83, 1220].includes(note.frequency)));
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await expect.poll(async () => (await notes()).some((note: any) => note.frequency === 130.81)).toBe(true);
   await expect.poll(() => page.evaluate(() => {
     const notes = (window as any).navigationProbe.filter((note: any) => note.type === 'triangle');
@@ -159,7 +159,7 @@ test('la mélodie rythmée du lapin continue pendant la correction, la pause et 
 test('le chrono expiré joue un riff de basse funk et le rejeu le coupe', async ({ page }) => {
   await page.clock.install();
   await prepare(page);
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await page.locator('[data-game="read"]').click();
   await page.locator('[data-level="0"]').click();
   const bass = () => page.evaluate(frequencies => (window as any).navigationProbe.filter((note: any) =>
@@ -199,7 +199,7 @@ test('la voix du lapin joue au bilan et s’arrête au retour aux niveaux', asyn
     };
   });
   await prepare(page, false, true);
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await page.locator('[data-game="read"]').click();
   await page.locator('[data-level="0"]').click();
   const lines = () => page.evaluate(() => (window as any).rabbitLines);
@@ -237,7 +237,7 @@ test('le Lapin chrono lit les questions et interrompt la voix à la correction e
     };
   });
   await prepare(page, false, true);
-  await page.locator('#open-clock-arcade').click();
+  await openClockArcade(page);
   await page.locator('[data-game="match"]').click();
   await page.locator('[data-level="0"]').click();
   const readings = () => page.evaluate(() => (window as any).clockReadings);

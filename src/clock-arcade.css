@@ -1,12 +1,3 @@
-html[data-theme="club"] .destinations { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-html[data-theme="club"] .destination-card.clock-entry { border-color:#d879a0; background:linear-gradient(145deg,#ffe5d6,#ffc9dc); box-shadow:0 7px 0 #b86589,0 12px 20px #8b496822; }
-.clock-entry .destination-tag { color:#723754; background:#ec9eba66; }
-html[data-theme="club"] .clock-entry :is(h2,p) { color:#2c193d; }
-html[data-theme="club"] .clock-entry .destination-art { background:none; }
-.clock-entry .play-button::after { content:""; position:absolute; inset:0; }
-html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
-.clock-entry .play-button:hover,.clock-entry .play-button:active { transform:none; }
-
 .clock-arcade { padding:12px 0 20px; }
 .clock-arcade .secondary-button { min-height:44px; }
 .clock-top { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; font-weight:700; }
@@ -558,14 +549,7 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   .clock-chapters { grid-template-columns:1fr; }
 }
 
-@media (701px <= width <= 920px) {
-  html[data-theme="club"] .destinations { gap:15px; }
-  html[data-theme="club"] .destination-card { padding-inline:10px; }
-  html[data-theme="club"] .destination-card .destination-art { max-width:100%; }
-  html[data-theme="club"] .destination-card .play-button { white-space:normal; padding-inline:9px; }
-}
 @media (max-width:700px) {
-  html[data-theme="club"] .destinations { grid-template-columns:1fr; }
   .clock-games :is(.clock-done,.clock-next,.clock-locked) { grid-column:2; }
   .clock-options { gap:8px; }
   .clock-options button { padding:8px 4px; }

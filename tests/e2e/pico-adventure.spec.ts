@@ -16,11 +16,12 @@ async function setup(page:Page,completed=false){
  },{adventures,key:STORAGE_KEY,saved:{...defaults(),muted:true,voiceEnabled:false},completed});
  await page.clock.install({time:new Date('2026-10-01T12:00:00Z')});await page.goto('/');await page.clock.pauseAt(new Date('2026-10-01T12:00:10Z'));
 }
-for(const width of [390,768,1365])test(`adventure chooser displays both portraits at ${width}px`,async({page},info)=>{
+for(const width of [390,768,1365])test(`adventure chooser displays three portraits at ${width}px`,async({page},info)=>{
  await page.route('**/themes/*.png',route=>route.fulfill({status:401}));
  await page.setViewportSize({width,height:950});await setup(page);
- await expect(page.locator('.destination-card')).toHaveCount(3);await page.locator('#open-adventure').click();
- await expect(page.locator('.adventure-choice-card')).toHaveCount(2);
+ await expect(page.locator('.destination-card')).toHaveCount(2);await page.locator('#open-adventure').click();
+ await expect(page.locator('.adventure-choice-card')).toHaveCount(3);
+ await expect(page.locator('[data-choice="lapin"]')).toContainText('Le Lapin chrono');
  await expect(page.locator('[data-choice="pico"]')).toContainText('Pico et le phare des îles');
  expect(await page.locator('.choice-portrait .theme-sprite').evaluateAll(elements=>Promise.all(elements.map(async element=>{
   const src=getComputedStyle(element).backgroundImage.slice(5,-2);
