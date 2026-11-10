@@ -110,13 +110,18 @@ test('menu music continues through camp and adventure, stops on launch and resum
  await page.waitForTimeout(1000);expect(await music()).toBe(adventureCountdown);
 });
 
-test('la mélodie du lapin continue pendant la correction, la pause et le bilan', async ({ page }) => {
+test('la mélodie rythmée du lapin continue pendant la correction, la pause et le bilan', async ({ page }) => {
   await page.addInitScript(key => localStorage.setItem(key, '["read:0","read:1","read:2"]'), CLOCK_PROGRESS_KEY);
   await prepare(page);
   const notes = () => page.evaluate(() => (window as any).navigationProbe.filter((note: any) =>
-    note.type === 'sine' && [261.63, 329.63, 293.66, 130.81, 110, 146.83, 98].includes(note.frequency)));
+    note.type === 'sine' && [130.81, 110, 87.31, 98, 146.83, 1220].includes(note.frequency)));
   await page.locator('#open-clock-arcade').click();
   await expect.poll(async () => (await notes()).some((note: any) => note.frequency === 130.81)).toBe(true);
+  await expect.poll(() => page.evaluate(() => {
+    const notes = (window as any).navigationProbe.filter((note: any) => note.type === 'triangle');
+    return [880, 329.63, 392].every(pitch => notes.some((note: any) => note.frequency === pitch));
+  })).toBe(true);
+  expect((await notes()).some((note: any) => note.frequency === 1220)).toBe(true);
   await page.getByRole('button', { name: 'Lire l’histoire' }).click();
   const story = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(story);
@@ -144,7 +149,7 @@ test('la mélodie du lapin continue pendant la correction, la pause et le bilan'
   await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeVisible();
   const finished = (await notes()).length;
   await expect.poll(async () => (await notes()).length).toBeGreaterThan(finished);
-  expect((await notes()).filter((note: any) => [130.81, 110, 146.83, 98].includes(note.frequency)).every((note: any) => !note.cancelled)).toBe(true);
+  expect((await notes()).every((note: any) => !note.cancelled)).toBe(true);
   await page.locator('#sound').click();
   const muted = (await notes()).length;
   await page.waitForTimeout(700);

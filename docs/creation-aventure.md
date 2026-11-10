@@ -218,7 +218,7 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 
 *Le goûter du tic-tac* suit les six mini-jeux existants du Lapin chrono, avec trois niveaux chacun. Le lapin a raté le goûter parce que sa montre est tombée dans une flaque et s’est arrêtée. Un animal rejoint le groupe après 3, 6, 9, 12 et 15 niveaux distincts terminés. Son portrait apparaît à côté du lapin et son chapitre raconte ce qu’il apporte à la réparation. Les chapitres, les compagnons et la fin se déduisent de la progression des niveaux.
 
-Les six portraits fournis sont intégrés en WebP dans `src/clock-art`. Les mêmes dessins servent sur la vignette du lapin, dans l’histoire, sous les réponses, au bilan et dans le film. Les déplacements et les réactions animent les portraits entiers.
+Les six portraits fournis, dans le style enfantin du Pays des merveilles, sont intégrés en WebP dans `src/clock-art`. Les mêmes dessins servent sur la vignette du lapin, dans l’histoire, sous les réponses, au bilan et dans le film. Les déplacements et les réactions animent les portraits entiers.
 
 Le Lapin chrono reprend le tableau vert et les cartes du camp, puis le bandeau, la jauge du temps, les touches et le bilan des jeux de calcul. Les touches affichent les choix du mini-jeu et la fiche de correction garde son illustration.
 
@@ -226,7 +226,7 @@ Les 18 niveaux se débloquent dans l’ordre du catalogue, en commençant par D�
 
 À la fin de chaque niveau terminé, le lapin traverse l’écran avec la bulle « Oh là là, je suis en retard ! ». Sa réplique française est jouée si le son et la voix sont activés. Avec la réduction des animations, le lapin reste immobile sous la bulle.
 
-Le dernier niveau à terminer lance cinq tableaux de cinq secondes chacun : les retrouvailles sous le chêne, la réparation de la montre, le réglage des aiguilles, la cloche et le goûter. La scène conserve la mélodie du lapin et ponctue les actions de carillons. Elle se suspend pendant une pause ou en arrière-plan et affiche les tableaux fixes avec la réduction des animations. Le dernier tableau reste visible et le film est rejouable depuis l’histoire.
+Le dernier niveau à terminer lance cinq tableaux : les retrouvailles sous le chêne, la réparation de la montre, le réglage des aiguilles, la cloche et le goûter. Une voix française lit chaque légende. La mélodie du lapin mêle des notes courtes, des accords et une basse à 136 battements par minute. Son volume baisse pendant la narration et les carillons ponctuent les actions. Le film et la voix se suspendent pendant une pause ou en arrière-plan. La réduction des animations affiche des tableaux fixes. Le dernier tableau reste visible et le film est rejouable depuis l’histoire.
 
 Une bonne réponse enchaîne immédiatement sur la question suivante avec des personnages et des confettis en fête. Une erreur fige le chrono, joue le même riff funk à la basse qu’à la fin du temps et ouvre une fiche avec la réponse et un cadran, une frise ou des durées à comparer. Après 4,5 secondes de lecture à l’écran, la manche avance et le décompte reprend automatiquement. La mélodie de fond accompagne aussi la lecture de la fiche.
 

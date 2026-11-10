@@ -10,8 +10,17 @@ const clubMusic = {
   bass: [196,174.61,174.61,196], beat: .3, noteLength: .24, bassLength: .27,
 };
 const rabbitMusic = {
-  melody: [261.63,0,329.63,392,440,0,392,329.63,293.66,0,349.23,440,392,0,329.63,293.66],
-  bass: [130.81,110,146.83,98], beat: .48, noteLength: .76, bassLength: 1.85,
+  step: 60 / 136 / 2,
+  bars: [
+    { bass: 130.81, chord: [329.63, 392], melody: [659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25, 0] },
+    { bass: 110, chord: [261.63, 329.63], melody: [659.25, 880, 1046.5, 987.77, 880, 783.99, 659.25, 0] },
+    { bass: 87.31, chord: [349.23, 440], melody: [698.46, 880, 1046.5, 880, 783.99, 698.46, 659.25, 698.46] },
+    { bass: 98, chord: [293.66, 493.88], melody: [783.99, 987.77, 880, 783.99, 587.33, 783.99, 0, 587.33] },
+    { bass: 130.81, chord: [329.63, 392], melody: [659.25, 783.99, 1046.5, 783.99, 659.25, 783.99, 880, 783.99] },
+    { bass: 87.31, chord: [349.23, 440], melody: [698.46, 880, 1046.5, 1174.66, 1046.5, 880, 783.99, 698.46] },
+    { bass: 146.83, chord: [349.23, 440], melody: [698.46, 880, 1174.66, 1046.5, 880, 698.46, 659.25, 698.46] },
+    { bass: 98, chord: [293.66, 493.88], melody: [783.99, 987.77, 1174.66, 987.77, 783.99, 587.33, 493.88, 0] },
+  ],
 };
 
 /** Original synthesized arcade sounds and bundled French voice prompts. */
@@ -138,7 +147,7 @@ export class GameAudio {
   private readonly clockSources = new Set<AudioScheduledSourceNode>();
   private homeBeat = 0;
   private nextHomeBeat = 0;
-  /** Music-box loops for the menus and the rabbit arcade. */
+  /** Background music for the menus and the rabbit arcade. */
   homeMusic(active: boolean, rabbit = false): void {
     const ctx=this.context;
     const audible=active && !this.muted && ctx?.state==='running';
@@ -150,13 +159,31 @@ export class GameAudio {
     if (!audible) return;
     if (!this.homePlaying) { this.homePlaying=true; this.nextHomeBeat=ctx.currentTime+(rabbit ? 0 : .65); }
     if (ctx.currentTime<this.nextHomeBeat) return;
-    const music = rabbit ? rabbitMusic : clubMusic;
-    this.nextHomeBeat=ctx.currentTime+music.beat;
-    const note=music.melody[this.homeBeat%music.melody.length];
-    if (note) this.tone(note,0,music.noteLength,rabbit ? .087 : .055,'sine',this.menuSources);
-    if (this.homeBeat%4===0) this.tone(music.bass[Math.floor(this.homeBeat/4)%music.bass.length],0,music.bassLength,rabbit ? .042 : .025,'sine',this.menuSources);
-    if (rabbit && this.homeBeat%4===2) this.tone(note * 1.5,.12,.25,.028,'triangle',this.menuSources);
+    this.nextHomeBeat = ctx.currentTime + (rabbit ? rabbitMusic.step : clubMusic.beat);
+    if (rabbit) {
+      this.playRabbitBeat();
+    } else {
+      const note = clubMusic.melody[this.homeBeat % clubMusic.melody.length];
+      if (note) this.tone(note, 0, clubMusic.noteLength, .055, 'sine', this.menuSources);
+      if (this.homeBeat % 4 === 0) this.tone(clubMusic.bass[Math.floor(this.homeBeat / 4) % clubMusic.bass.length], 0, clubMusic.bassLength, .025, 'sine', this.menuSources);
+    }
     this.homeBeat++;
+  }
+
+  private playRabbitBeat(): void {
+    const bar = rabbitMusic.bars[Math.floor(this.homeBeat / 8) % rabbitMusic.bars.length];
+    const step = this.homeBeat % 8;
+    const note = bar.melody[step];
+    const duck = this.speechStatus === 'speaking' || this.speechStatus === 'loading' ? .28 : 1;
+    if (note) this.tone(note, 0, step % 2 === 0 ? .19 : .12, .07 * duck, 'triangle', this.menuSources);
+    if (step % 2 === 0) {
+      const bass = step % 4 === 0 ? bar.bass : bar.bass * 1.5;
+      this.tone(bass, 0, .21, .055 * duck, 'sine', this.menuSources);
+    }
+    if (step % 4 === 2) {
+      for (const pitch of bar.chord) this.tone(pitch, 0, .1, .033 * duck, 'triangle', this.menuSources);
+    }
+    if (step % 2 === 1) this.tone(1220, 0, .045, .013 * duck, 'sine', this.menuSources);
   }
 
   private tone(
