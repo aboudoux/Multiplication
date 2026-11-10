@@ -386,3 +386,30 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await nextRegion.click();
   await expect(page.getByText('Trouve le cadran · Découverte')).toBeVisible();
 });
+
+test('la remise à zéro du Lapin chrono demande confirmation et reste après rechargement', async ({ page }) => {
+  const progress = clockGameIds.flatMap(game => clockLevels.map((_, level) => `${game}:${level}`));
+  await page.addInitScript(({ key, progress, settingsKey, settings }) => {
+    if (sessionStorage.getItem('clock-reset-test')) return;
+    sessionStorage.setItem('clock-reset-test', 'seeded');
+    localStorage.setItem(key, JSON.stringify(progress));
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+  }, { key: CLOCK_PROGRESS_KEY, progress, settingsKey: STORAGE_KEY, settings: { ...defaults(), muted: true } });
+  await page.goto('/');
+  await openClockArcade(page);
+  const reset = page.getByRole('button', { name: 'Réinitialiser les niveaux' });
+  page.once('dialog', dialog => dialog.dismiss());
+  await reset.click();
+  await expect(page.locator('.clock-map-level[data-state="done"]')).toHaveCount(18);
+  page.once('dialog', dialog => dialog.accept());
+  await reset.click();
+  await expect(page.locator('#clock-reset-status')).toContainText('Progression remise à zéro');
+  await expect(page.locator('.clock-map-level:enabled')).toHaveAccessibleName('Niveau 1, Découverte, À jouer');
+  await expect(page.locator('.clock-map-level:disabled')).toHaveCount(17);
+  await expect(page.getByRole('button', { name: 'Revoir l’animation' })).toHaveCount(0);
+  await expect(page.locator('.clock-companion')).toBeHidden();
+  await page.reload();
+  await openClockArcade(page);
+  await expect(page.locator('.camp-top .camp-materials')).toHaveText('0 / 18 niveaux faits');
+  await expect(reset).toBeDisabled();
+});

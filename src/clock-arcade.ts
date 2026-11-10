@@ -99,7 +99,7 @@ export class ClockArcade {
     private readonly leaveArcade: () => void,
     private readonly playSuccess: (milestone: boolean) => void,
     private readonly playCue: (cue: ClockCue) => void,
-    private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
+    private readonly storage: () => Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>,
     private readonly narrate: (tokens: readonly ClockVoiceToken[] | null, voice?: ClockPracticeSettings['voice']) => void,
     private readonly narrateStory: (film: ClockStoryFilm, step: number, elapsedMs: number) => void,
     private readonly practiceRewards: {
@@ -138,6 +138,7 @@ export class ClockArcade {
       switch (button.dataset.clockAction) {
         case 'leave-arcade': this.leaveArcade(); break;
         case 'catalogue': this.open(); break;
+        case 'reset-levels': this.resetLevels(); break;
         case 'levels': if (this.practice) this.leaveArcade(); else this.show('levels'); break;
         case 'story':
           this.storyReturn = this.screen === 'results' ? 'levels' : 'catalogue';
@@ -217,6 +218,20 @@ export class ClockArcade {
     } catch {
       return new Set();
     }
+  }
+
+  private resetLevels(): void {
+    if (this.screen !== 'catalogue' || this.practice || !this.completed.size) return;
+    if (!window.confirm('Recommencer le Lapin chrono depuis le début ? Les niveaux terminés et les amis débloqués seront effacés pour ce profil.')) return;
+    try {
+      this.storage().removeItem(CLOCK_PROGRESS_KEY);
+    } catch {
+      this.content.querySelector('#clock-reset-status')!.textContent = 'La progression n’a pas pu être réinitialisée. Réessaie dans ce navigateur.';
+      return;
+    }
+    this.loadProgress();
+    this.open();
+    this.content.querySelector('#clock-reset-status')!.textContent = 'Progression remise à zéro. Le premier niveau est prêt à jouer.';
   }
 
   private completeLevel(): void {
@@ -585,7 +600,11 @@ export class ClockArcade {
             <div class="clock-map-end">${clockMapTreasure}<span>Le goûter sous le grand chêne</span>
               ${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Voir le goûter</button>' : '<small>Au bout des 18 niveaux</small>'}
             </div>
-          </section>`;
+          </section>
+          <div class="adventure-reset clock-reset">
+            <button type="button" class="secondary-button" data-clock-action="reset-levels"${this.completed.size ? '' : ' disabled'}>Réinitialiser les niveaux</button>
+            <span id="clock-reset-status" role="status">Progression du Lapin chrono sur ce profil.</span>
+          </div>`;
       case 'story':
         return `<div class="clock-top">${this.storyReturn === 'levels' ? levels : catalogue}<span>${this.progressSummary}</span></div>
           <header class="clock-center clock-story-intro"><span class="clock-kicker">L’HISTOIRE DU LAPIN</span>${title(clockStoryTitle)}<p>${clockStoryIntro}</p></header>

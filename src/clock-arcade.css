@@ -2,6 +2,7 @@
 .clock-arcade .secondary-button { min-height:44px; }
 .clock-top { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; font-weight:700; }
 .clock-top > span { font-size:14px; }
+.clock-reset.adventure-reset { max-width:860px; margin:18px auto 0; }
 .clock-intro > .clock-rabbit-art,.clock-results > .clock-rabbit-art { width:clamp(80px,19vw,144px); }
 .clock-intro > .clock-rabbit-art { flex:none; }
 .clock-results > .clock-rabbit-art { margin:0 auto 12px; }
