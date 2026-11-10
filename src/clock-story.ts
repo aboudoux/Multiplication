@@ -13,6 +13,7 @@ export const clockFriends = [
 ] as const;
 
 export type ClockFriend = (typeof clockFriends)[number];
+export type ClockStoryFilm = 'arrival' | 'finale';
 
 export const clockFinaleChapters = [
   { title: 'Sous le grand chêne', caption: 'Le lapin retrouve ses cinq amis. Ils lui ont gardé une place au goûter !' },
@@ -49,6 +50,17 @@ const grove = `<svg class="clock-finale-grove" viewBox="0 0 760 360" preserveAsp
   <g color="#fff2b9"><use href="#clock-grove-flower" x="43" y="321"/><use href="#clock-grove-flower" x="112" y="301"/><use href="#clock-grove-flower" x="648" y="308"/><use href="#clock-grove-flower" x="728" y="280"/></g>
   <g color="#f3a6bc"><use href="#clock-grove-flower" x="79" y="336"/><use href="#clock-grove-flower" x="153" y="319"/><use href="#clock-grove-flower" x="684" y="325"/><use href="#clock-grove-flower" x="742" y="308"/></g>
 </svg>`;
+
+const arrivalProps: Record<ClockFriend['id'], string> = { squirrel: '⚙', hedgehog: '🔩', turtle: '💧', owl: '🕰️', fox: '🏮' };
+
+export function clockArrivalScene(friend: ClockFriend): string {
+  return `<div class="clock-finale-scene clock-arrival-scene" data-friend="${friend.id}" aria-hidden="true">
+    ${grove}<div class="clock-arrival-halo"></div>
+    <span class="clock-arrival-rabbit">${clockRabbitArt}</span>
+    <span class="clock-arrival-guest">${clockFriendArt(friend.id)}</span>
+    <span class="clock-arrival-prop">${arrivalProps[friend.id]}</span>
+  </div>`;
+}
 
 const watch = `<svg viewBox="0 0 120 120" class="clock-finale-watch" data-finale-prop="watch">
   <rect x="51" y="4" width="18" height="16" rx="5" fill="#e4a941" stroke="#855363" stroke-width="3"/>

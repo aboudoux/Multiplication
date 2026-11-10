@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { CLOCK_PROGRESS_KEY, clockGameIds, clockLevels, roundLength } from '../../src/clock-games';
-import { clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs } from '../../src/clock-story';
+import { clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFriends } from '../../src/clock-story';
 import { defaults, STORAGE_KEY } from '../../src/storage';
 import { answerFirstClockOption } from './clock-helpers';
 
@@ -37,6 +37,15 @@ test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ p
   await page.getByRole('button', { name: 'Tous les jeux' }).click();
 
   await finishLevel(page, 'read', 2);
+  const scene = page.locator('.clock-arrival-scene');
+  await expect(page.getByRole('heading', { name: 'Noisette l’écureuil te rejoint !' })).toBeFocused();
+  await expect(scene).toHaveAttribute('data-friend', 'squirrel');
+  await expect(scene.locator('.clock-arrival-guest')).toHaveCSS('animation-name', 'clock-arrival-entrance');
+  await expect(page.locator('.clock-finale-caption')).toContainText('petit rouage');
+  await page.getByRole('button', { name: 'Pause du film' }).click();
+  await expect(scene.locator('.clock-arrival-guest')).toHaveCSS('animation-play-state', 'paused');
+  await page.getByRole('button', { name: 'Continuer', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Bien joué !' })).toBeFocused();
   await expect(page.locator('.clock-arrival')).toContainText('Noisette l’écureuil te rejoint !');
   await expect(page.locator('.clock-arrival [data-portrait="squirrel"]')).toHaveCSS('animation-name', 'clock-friend-cheer, clock-portrait-spring');
   await expect(friends).toHaveCount(1);
@@ -54,6 +63,8 @@ test('le premier ami rejoint le lapin au troisième niveau distinct', async ({ p
   await page.locator('#open-clock-arcade').click();
   await expect(friends.first()).toBeVisible();
   await expect(page.locator('.clock-companion')).toContainText('3 / 18 niveaux faits');
+  await expect(page.locator('.clock-map-level[data-state="done"]')).toHaveCount(3);
+  await expect(page.locator('.clock-map-level[data-state="next"]')).toHaveAttribute('data-map-game', 'match');
 });
 
 test('le dernier niveau lance le dénouement et permet de le revoir après rechargement', async ({ page }) => {
@@ -218,6 +229,12 @@ test('les portraits des cinq amis s’inclinent et avancent sous les réponses s
   expect(clips).toEqual([true, true, true, true, true]);
   const motions = await chapters.evaluateAll(portraits => portraits.map(portrait => getComputedStyle(portrait).animationName));
   expect(motions).toEqual(['clock-portrait-spring', 'clock-portrait-bob', 'clock-portrait-stretch', 'clock-portrait-hover', 'clock-portrait-bow']);
+  for (const friend of clockFriends) {
+    await page.getByRole('button', { name: `Revoir l’arrivée de ${friend.name}` }).click();
+    await expect(page.locator('.clock-arrival-scene')).toHaveAttribute('data-friend', friend.id);
+    await expect(page.locator('.clock-finale-caption')).toHaveText(friend.story);
+    await page.getByRole('button', { name: 'Continuer', exact: true }).click();
+  }
   await page.getByRole('button', { name: 'Tous les jeux' }).click();
   await page.locator('[data-game="read"]').click();
   await page.locator('[data-level="0"]').click();

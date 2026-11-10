@@ -216,13 +216,13 @@ Pour une **mission isolée**, réutiliser le héros, les personnages, les assets
 
 ## L’histoire des mini-jeux du Lapin chrono
 
-*Le goûter du tic-tac* suit les six mini-jeux existants du Lapin chrono, avec trois niveaux chacun. Le lapin a raté le goûter parce que sa montre est tombée dans une flaque et s’est arrêtée. Un animal rejoint le groupe après 3, 6, 9, 12 et 15 niveaux distincts terminés. Son portrait apparaît à côté du lapin et son chapitre raconte ce qu’il apporte à la réparation. Les chapitres, les compagnons et la fin se déduisent de la progression des niveaux.
+*Le goûter du tic-tac* suit les six mini-jeux du Lapin chrono, avec trois niveaux chacun. Le lapin a raté le goûter parce que sa montre est tombée dans une flaque et s’est arrêtée. Un animal rejoint le groupe après 3, 6, 9, 12 et 15 niveaux distincts terminés. Une cinématique se lance à chaque arrivée, avec une narration française et une légende qui expliquent ce que l’ami apporte à l’histoire. Le joueur peut revenir au bilan à tout moment et revoir la rencontre depuis son chapitre. Les chapitres, les compagnons et la fin se déduisent de la progression des niveaux.
 
 Les six portraits fournis, dans le style enfantin du Pays des merveilles, sont intégrés en WebP dans `src/clock-art`. Le contour de chaque animal masque le décor d’origine sur la vignette, dans l’histoire, sous les réponses, au bilan et dans le film. Chaque personnage a son propre mouvement en boucle, suspendu en arrière-plan et désactivé si la réduction des animations est activée. Les compagnons reprennent ce mouvement après leurs réactions.
 
 Le Lapin chrono reprend le tableau vert et les cartes du camp, puis le bandeau, la jauge du temps, les touches et le bilan des jeux de calcul. Les touches affichent les choix du mini-jeu et la fiche de correction garde son illustration.
 
-Les 18 niveaux se débloquent dans l’ordre du catalogue, en commençant par Découverte, puis Exploration et Défi pour chaque mini-jeu. Jouer les cinq questions avant la fin du chrono termine le niveau. Le bilan propose de continuer vers le premier niveau encore à faire ou de revenir aux niveaux du mini-jeu joué. Les niveaux déjà terminés restent rejouables, y compris ceux qui avaient été faits dans le désordre avant l’ajout des cadenas.
+La carte du chemin du goûter montre les six étapes et leurs 18 niveaux. On peut ouvrir un niveau disponible directement ou consulter les détails d’une étape. Les niveaux se débloquent dans l’ordre, en commençant par Découverte, puis Exploration et Défi pour chaque mini-jeu. Jouer les cinq questions avant la fin du chrono termine le niveau. Le bilan propose de continuer vers le premier niveau encore à faire ou de revenir aux niveaux du mini-jeu joué. Les niveaux déjà terminés restent rejouables, y compris ceux qui avaient été faits dans le désordre avant l’ajout des cadenas.
 
 À la fin de chaque niveau terminé, le lapin traverse l’écran avec la bulle « Oh là là, je suis en retard ! ». Sa réplique française est jouée si le son et la voix sont activés. Avec la réduction des animations, le lapin reste immobile sous la bulle.
 

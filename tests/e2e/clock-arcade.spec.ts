@@ -42,7 +42,13 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(introRabbit).toHaveCSS('animation-name', 'clock-portrait-hop');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'ant');
-  await expect(page.locator('.clock-games.camp-presets button')).toHaveCount(6);
+  await expect(page.locator('.clock-map-stop')).toHaveCount(6);
+  await expect(page.locator('.clock-map-level')).toHaveCount(18);
+  await expect(page.locator('.clock-map-level:enabled')).toHaveCount(1);
+  await page.locator('.clock-map-level:enabled').click();
+  await expect(page.getByText('Question 1 sur 5')).toBeVisible();
+  await page.locator('[data-clock-action="pause"]').click();
+  await page.getByRole('button', { name: 'Tous les jeux' }).click();
   for (const game of clockGameIds) {
     await page.locator(`[data-game="${game}"]`).click();
     await expect(page.locator('[data-clock-action="level"]')).toHaveCount(3);
@@ -87,6 +93,7 @@ test('une réussite avance immédiatement et une fiche d’erreur se ferme seule
   await expect(page.locator('.clock-options')).toHaveCount(0);
   await expect(page.locator('.clock-lesson .clock-face')).toBeVisible();
   await expect(page.locator('.clock-lesson.correction-card')).toBeVisible();
+  await expect(page.locator('.clock-lesson .theme-sprite')).toHaveCount(0);
   await expect(page.locator('.clock-sparkles')).toHaveCount(0);
   const mistake = page.locator('.clock-mistake-effect');
   await expect(mistake.locator('i')).toHaveCount(12);
@@ -145,7 +152,7 @@ test('chaque mini-jeu montre une fiche illustrée avec la bonne réponse', async
     await expect(page.locator('.clock-lesson')).toHaveAttribute('data-lesson-kind', question.correction.kind);
     await expect(page.locator('.clock-lesson-answer strong')).toHaveText(typeof question.correct === 'number' ? clockTime(question.correct, true) : question.correct);
     await expect(page.locator('.clock-lesson-figure')).toBeVisible();
-    await expect(page.locator('.clock-lesson .sprite-kitten')).toBeVisible();
+    await expect(page.locator('.clock-lesson .sprite-kitten')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.locator('.brand').click();
   }
@@ -221,7 +228,7 @@ test('les titres, consignes et réponses contrastent avec leur fond', async ({ p
     }
     return 0;
   });
-  for (const selector of ['#clock-heading', '.clock-intro p', '.clock-games strong', '.clock-games button span:not(.clock-icon)', '.clock-games small']) {
+  for (const selector of ['#clock-heading', '.clock-intro p', '.clock-map-heading strong', '.clock-map-heading small', '.clock-map-level']) {
     expect(await contrast(selector), selector).toBeGreaterThanOrEqual(4.5);
   }
   await page.locator('[data-game="elapsed"]').click();
@@ -345,6 +352,7 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
 
   await page.locator('[data-level="0"]').click();
   for (let index = 0; index < 5; index++) await answerFirstClockOption(page);
+  await page.getByRole('button', { name: 'Continuer', exact: true }).click();
   await page.getByRole('button', { name: 'Continuer le parcours' }).click();
   await expect(page.getByText('Lis l’horloge · Défi')).toBeVisible();
   for (let index = 0; index < 5; index++) await answerFirstClockOption(page);

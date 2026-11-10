@@ -2,6 +2,7 @@ import { themes, type ThemeId } from "./themes";
 import type { Calculation } from "./calculations";
 import { QuestionVoice, type VoiceStyle } from "./voice";
 import type { ClockVoiceToken } from './clock-voice';
+import type { ClockStoryFilm } from './clock-story';
 
 export type ClockCue = 'correct' | 'mistake' | 'timeout' | 'rabbit-late' | 'stop';
 
@@ -81,8 +82,8 @@ export class GameAudio {
     if (!this.muted && this.ready) void this.voice?.clockQuestion(tokens);
   }
 
-  speakClockFinale(step: number, elapsedMs: number): void {
-    if (!this.muted && this.ready) void this.voice?.clockFinale(step, elapsedMs);
+  speakClockStory(film: ClockStoryFilm, step: number, elapsedMs: number): void {
+    if (!this.muted && this.ready) void this.voice?.clockStory(film, step, elapsedMs);
   }
 
   disappointment(): void {

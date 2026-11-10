@@ -1,13 +1,13 @@
 import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
 import { clockRabbitArt, clockFriendArt } from './clock-characters';
 import { clockCorrectionMarkup } from './clock-correction';
-import { clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend } from './clock-story';
-import { sprite } from './themes';
+import { clockArrivalScene, clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend, type ClockStoryFilm } from './clock-story';
+import { arrivalVoiceClips } from './clock-arrival-voice-clips';
 import type { ClockCue } from './audio';
 import type { ClockVoiceToken } from './clock-voice';
 
 type Level = Parameters<typeof clockRound>[1];
-type Screen = 'catalogue' | 'levels' | 'playing' | 'correction' | 'paused' | 'results' | 'story' | 'finale';
+type Screen = 'catalogue' | 'levels' | 'playing' | 'correction' | 'paused' | 'results' | 'story' | 'arrival' | 'finale';
 type FinaleOrigin = 'catalogue' | 'results' | 'story';
 type Gesture = 'cheer' | 'encourage' | 'finish';
 const rabbitEvery = 5;
@@ -73,12 +73,14 @@ export class ClockArcade {
   private lessonElapsed = 0;
   private lessonFrameAt: number | null = null;
   private arrival: ClockFriend | undefined;
+  private arrivalScene: ClockFriend | undefined;
+  private arrivalReturn: 'results' | 'story' = 'results';
   private storyReturn: 'catalogue' | 'levels' = 'catalogue';
   private finaleReturn: FinaleOrigin = 'story';
-  private finaleElapsed = 0;
-  private finaleFrameAt: number | null = null;
-  private finaleStep = 0;
-  private finalePaused = false;
+  private filmElapsed = 0;
+  private filmFrameAt: number | null = null;
+  private filmStep = 0;
+  private filmPaused = false;
 
   constructor(
     private readonly goHome: () => void,
@@ -86,7 +88,7 @@ export class ClockArcade {
     private readonly playCue: (cue: ClockCue) => void,
     private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
     private readonly narrate: (tokens: readonly ClockVoiceToken[] | null) => void,
-    private readonly narrateFinale: (step: number, elapsedMs: number) => void,
+    private readonly narrateStory: (film: ClockStoryFilm, step: number, elapsedMs: number) => void,
   ) {
     this.root.className = 'clock-arcade';
     this.root.setAttribute('aria-labelledby', 'clock-heading');
@@ -128,10 +130,17 @@ export class ClockArcade {
           if (this.screen === 'finale') this.startFinale(now, this.finaleReturn);
           else if (this.screen === 'catalogue' || this.screen === 'results' || this.screen === 'story') this.startFinale(now, this.screen);
           break;
-        case 'pause-finale': this.toggleFinalePause(now, button); break;
+        case 'pause-film': this.toggleFilmPause(now, button); break;
         case 'leave-finale': this.show(this.finaleReturn); break;
+        case 'arrival': {
+          const friend = clockFriends.find(item => item.id === button.dataset.friend);
+          if (friend && friend.at <= this.completed.size && (this.screen === 'story' || this.screen === 'results')) this.startArrival(now, friend, this.screen);
+          break;
+        }
+        case 'leave-arrival': this.show(this.arrivalReturn); break;
         case 'game': this.game = button.dataset.game as ClockGame; this.show('levels'); break;
         case 'level': this.start(now, this.game, Number(button.dataset.level) as Level); break;
+        case 'map-level': this.start(now, button.dataset.mapGame as ClockGame, Number(button.dataset.mapLevel) as Level); break;
         case 'next-level': {
           const next = this.nextLevel;
           if (this.screen === 'results' && next) this.start(now, next.game, next.level);
@@ -152,9 +161,10 @@ export class ClockArcade {
       if (!document.hidden) this.narrate(this.questions[this.index].narration);
       return true;
     }
-    if (this.screen !== 'finale') return false;
-    if (!this.finalePaused && !document.hidden && this.finaleElapsed >= 0) {
-      this.narrateFinale(this.finaleStep, this.finaleElapsed - clockFinaleChapterStarts[this.finaleStep]);
+    if (this.screen !== 'finale' && this.screen !== 'arrival') return false;
+    if (!this.filmPaused && !document.hidden && this.filmElapsed >= 0) {
+      const elapsed = this.screen === 'arrival' ? this.filmElapsed : this.filmElapsed - clockFinaleChapterStarts[this.filmStep];
+      this.narrateStory(this.screen, this.filmStep, elapsed);
     }
     return true;
   }
@@ -191,8 +201,8 @@ export class ClockArcade {
   private completeLevel(): void {
     const key = levelKey(this.game, this.level);
     if (this.completed.has(key)) return;
-    const before = this.completed.size;
     for (const saved of this.readProgress()) this.completed.add(saved);
+    const before = this.completed.size;
     this.completed.add(key);
     this.arrival = clockFriends.find(friend => friend.at > before && friend.at <= this.completed.size);
     try { this.storage().setItem(CLOCK_PROGRESS_KEY, JSON.stringify([...this.completed])); }
@@ -227,6 +237,7 @@ export class ClockArcade {
   tick(now: number): void {
     if (this.root.hidden) return;
     if (this.screen === 'finale') this.tickFinale(now);
+    if (this.screen === 'arrival') this.tickArrival(now);
     if (this.screen === 'correction') {
       this.lessonElapsed += now - (this.lessonFrameAt ?? now);
       this.lessonFrameAt = now;
@@ -244,7 +255,7 @@ export class ClockArcade {
   }
 
   pause(now: number): void {
-    this.finaleFrameAt = null;
+    this.filmFrameAt = null;
     this.lessonFrameAt = null;
     if (!this.playing) return;
     this.tick(now);
@@ -322,6 +333,7 @@ export class ClockArcade {
     const storyWasComplete = this.storyComplete;
     if (finished) this.completeLevel();
     if (finished && !storyWasComplete && this.storyComplete) this.startFinale(now, 'results', clockFinaleOpeningMs);
+    else if (finished && this.arrival) this.startArrival(now, this.arrival, 'results', clockFinaleOpeningMs);
     else this.show(finished ? 'results' : 'playing');
     if (finished) {
       this.reactCompanion('finish');
@@ -348,37 +360,58 @@ export class ClockArcade {
   private startFinale(now: number, back: FinaleOrigin, openingMs = 0): void {
     if (!this.storyComplete) return;
     this.finaleReturn = back;
-    this.finaleElapsed = -openingMs;
-    this.finaleFrameAt = now;
-    this.finaleStep = 0;
-    this.finalePaused = false;
+    this.filmElapsed = -openingMs;
+    this.filmFrameAt = now;
+    this.filmStep = 0;
+    this.filmPaused = false;
     this.show('finale');
     this.readCurrentNarration();
   }
 
-  private toggleFinalePause(now: number, button: HTMLButtonElement): void {
-    this.finalePaused = !this.finalePaused;
-    this.finaleFrameAt = this.finalePaused ? null : now;
-    this.content.querySelector('.clock-finale-scene')!.toggleAttribute('data-paused', this.finalePaused);
-    button.textContent = this.finalePaused ? 'Reprendre le film' : 'Pause du film';
-    if (this.finalePaused) this.narrate(null);
+  private startArrival(now: number, friend: ClockFriend, back: 'results' | 'story', openingMs = 0): void {
+    this.arrivalScene = friend;
+    this.arrivalReturn = back;
+    this.filmElapsed = -openingMs;
+    this.filmFrameAt = now;
+    this.filmStep = clockFriends.indexOf(friend);
+    this.filmPaused = false;
+    this.show('arrival');
+    this.readCurrentNarration();
+  }
+
+  private tickArrival(now: number): void {
+    if (this.filmPaused || document.hidden) return;
+    const resumed = this.filmFrameAt === null;
+    const previous = this.filmElapsed;
+    const [start, end] = arrivalVoiceClips[this.filmStep];
+    this.filmElapsed = Math.min((end - start) * 1000, previous + now - (this.filmFrameAt ?? now));
+    this.filmFrameAt = now;
+    if (resumed || (previous < 0 && this.filmElapsed >= 0)) this.readCurrentNarration();
+  }
+
+  private toggleFilmPause(now: number, button: HTMLButtonElement): void {
+    this.filmPaused = !this.filmPaused;
+    this.filmFrameAt = this.filmPaused ? null : now;
+    this.content.querySelector('.clock-finale-scene')!.toggleAttribute('data-paused', this.filmPaused);
+    button.textContent = this.filmPaused ? 'Reprendre le film' : 'Pause du film';
+    if (this.filmPaused) this.narrate(null);
     else this.readCurrentNarration();
   }
 
   private tickFinale(now: number): void {
     const last = clockFinaleChapters.length - 1;
-    if (this.finalePaused || document.hidden) return;
-    const resumed = this.finaleFrameAt === null;
-    const previous = this.finaleElapsed;
-    this.finaleElapsed = Math.min(clockFinaleChapterStarts[last + 1], previous + now - (this.finaleFrameAt ?? now));
-    this.finaleFrameAt = now;
-    let step = this.finaleStep;
-    while (step < last && this.finaleElapsed >= clockFinaleChapterStarts[step + 1]) step++;
-    if (step === this.finaleStep) {
-      if (resumed || (previous < 0 && this.finaleElapsed >= 0)) this.readCurrentNarration();
+    if (this.filmPaused || document.hidden) return;
+    const resumed = this.filmFrameAt === null;
+    const previous = this.filmElapsed;
+    this.filmElapsed = Math.min(clockFinaleChapterStarts[last + 1], previous + now - (this.filmFrameAt ?? now));
+    this.filmFrameAt = now;
+    let step = this.filmStep;
+    while (step < last && this.filmElapsed >= clockFinaleChapterStarts[step + 1]) step++;
+    if (step === this.filmStep) {
+      if (resumed || (previous < 0 && this.filmElapsed >= 0)) this.readCurrentNarration();
       return;
     }
-    this.finaleStep = step;
+    this.filmStep = step;
     this.content.querySelector<HTMLElement>('.clock-finale-scene')!.dataset.step = String(step);
     const chapter = clockFinaleChapters[step];
     this.content.querySelector<HTMLElement>('.clock-finale-beat')!.textContent = chapter.title;
@@ -391,7 +424,7 @@ export class ClockArcade {
 
   private show(screen: Screen): void {
     if (this.screen === 'playing' && screen !== 'playing') this.narrate(null);
-    if (this.screen === 'results' || this.screen === 'finale') {
+    if (this.screen === 'results' || this.screen === 'finale' || this.screen === 'arrival') {
       this.finishLayer.replaceChildren();
       this.playCue('stop');
     }
@@ -418,11 +451,34 @@ export class ClockArcade {
     track.querySelector('span')!.style.transform = `scaleX(${seconds / clockLevels[this.level].seconds})`;
   }
 
+  private routeMap(): string {
+    const next = this.nextLevel;
+    return `<ol class="clock-route" aria-label="Carte des dix-huit niveaux">${clockGameIds.map((id, index) => {
+      const item = clockGames[id];
+      const done = clockLevels.filter((_, level) => this.completed.has(levelKey(id, level))).length;
+      const state = next?.game === id ? 'next' : done === clockLevels.length ? 'done' : done ? 'started' : 'locked';
+      const friend = clockFriends[index];
+      return `<li class="clock-map-stop" data-map-state="${state}">
+        <span class="clock-map-pin" aria-hidden="true">${index + 1}</span>
+        <div class="clock-map-card"><button type="button" class="clock-map-heading" data-clock-action="game" data-game="${id}">
+          <span class="clock-map-icon" aria-hidden="true">${item.icon}</span><span><strong>${item.name}</strong><small>${done} / ${clockLevels.length} niveaux faits</small></span>
+          ${friend && friend.at <= this.completed.size ? clockFriendArt(friend.id) : ''}
+        </button>
+        <div class="clock-map-steps" role="group" aria-label="Niveaux de ${item.name}">${clockLevels.map((level, n) => {
+          const key = levelKey(id, n);
+          const state = this.completed.has(key) ? 'done' : next?.key === key ? 'next' : 'locked';
+          const status = state === 'done' ? 'Fait' : state === 'next' ? 'À jouer' : 'Verrouillé';
+          const badge = state === 'done' ? '✓' : state === 'next' ? '▶' : '🔒';
+          return `<button type="button" class="clock-map-level" data-clock-action="map-level" data-map-game="${id}" data-map-level="${n}" data-state="${state}" aria-label="${level.name} · ${status}"${state === 'locked' ? ' disabled' : ''}><span aria-hidden="true">${badge}</span>${level.name}</button>`;
+        }).join('')}</div></div></li>`;
+    }).join('')}</ol>`;
+  }
+
   private markup(): string {
     const game = clockGames[this.game];
     const next = this.nextLevel;
     const title = (text: string) => `<h2 id="clock-heading" tabindex="-1">${text}</h2>`;
-    const catalogue = '<button type="button" class="secondary-button" data-clock-action="catalogue">← Tous les jeux</button>';
+    const catalogue = '<button type="button" class="secondary-button" data-clock-action="catalogue">← Tous les jeux sur la carte</button>';
     const levels = '<button type="button" class="secondary-button" data-clock-action="levels">← Retour aux niveaux</button>';
     const story = '<button type="button" class="secondary-button" data-clock-action="story">Lire l’histoire</button>';
     const finale = '<button type="button" class="play-button" data-clock-action="finale">Voir la fin animée</button>';
@@ -431,27 +487,29 @@ export class ClockArcade {
       case 'catalogue':
         return `<div class="camp-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span class="camp-materials">${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
           <header class="camp-heading clock-intro"><div><span class="eyebrow">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure et compare les durées. Termine chaque niveau pour débloquer le suivant.</p></div>${clockRabbitArt}</header>
-          <div class="clock-story-teaser"><div class="clock-story-invite">${sprite('kitten', 4, 'clock-kitten-sticker')}<div><span class="clock-kicker">L’HISTOIRE DU LAPIN</span><h3>${clockStoryTitle}</h3><p>Sa montre s’est arrêtée et il a raté le goûter. Retrouve ses amis en jouant !</p></div></div><div class="clock-story-actions">${story}${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Revoir l’animation</button>' : ''}</div></div>
-          <div class="camp-presets clock-games">${clockGameIds.map(id => {
-            const item = clockGames[id];
-            const done = clockLevels.filter((_, level) => this.completed.has(levelKey(id, level))).length;
-            const status = next?.game === id ? '<span class="clock-next">Prochain niveau ici</span>' : done === 0 ? '<span class="clock-locked">🔒 Verrouillé</span>' : '';
-            return `<button type="button" data-clock-action="game" data-game="${id}"><span class="camp-symbol clock-icon" aria-hidden="true">${item.icon}</span><strong>${item.name}</strong><span>${item.description}</span><small class="camp-preset-note">${done} / ${clockLevels.length} niveaux faits</small>${status}</button>`;
-          }).join('')}</div>`;
+          <div class="clock-story-teaser"><div><span class="clock-kicker">L’HISTOIRE DU LAPIN</span><h3>${clockStoryTitle}</h3><p>Sa montre s’est arrêtée et il a raté le goûter. Retrouve ses amis en suivant la carte !</p></div><div class="clock-story-actions">${story}${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Revoir l’animation</button>' : ''}</div></div>
+          <section class="clock-map" aria-labelledby="clock-map-title"><header><span aria-hidden="true">✦</span><h3 id="clock-map-title">Le chemin du goûter</h3><p>Suis les étapes jusqu’au grand chêne.</p></header>${this.routeMap()}<p class="clock-map-end"><span aria-hidden="true">🎂</span> Le goûter sous le grand chêne</p></section>`;
       case 'story':
         return `<div class="clock-top">${this.storyReturn === 'levels' ? levels : catalogue}<span>${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
           <header class="clock-center clock-story-intro"><span class="clock-kicker">L’HISTOIRE DU LAPIN</span>${title(clockStoryTitle)}<p>${clockStoryIntro}</p></header>
           <ol class="clock-chapters">${clockFriends.map(friend => friend.at <= this.completed.size
-            ? `<li class="clock-chapter" data-friend="${friend.id}">${clockFriendArt(friend.id)}<div><span class="clock-kicker">${friend.name}</span><h3>${friend.title}</h3><p>${friend.story}</p></div></li>`
+            ? `<li class="clock-chapter" data-friend="${friend.id}">${clockFriendArt(friend.id)}<div><span class="clock-kicker">${friend.name}</span><h3>${friend.title}</h3><p>${friend.story}</p><button type="button" class="secondary-button" data-clock-action="arrival" data-friend="${friend.id}" aria-label="Revoir l’arrivée de ${friend.name}">Revoir la rencontre</button></div></li>`
             : `<li class="clock-chapter clock-chapter-locked"><span class="clock-mystery" aria-hidden="true">?</span><div><h3>Un ami mystère</h3><p>Il te rejoint à ${friend.at} niveaux faits.</p></div></li>`).join('')}</ol>
           <div class="clock-story-end"><h3>Le dernier chapitre</h3>${this.storyComplete ? finale : `<p>Termine les ${orderedLevels.length} niveaux pour voir la fin animée.</p>`}</div>`;
+      case 'arrival': {
+        const friend = this.arrivalScene!;
+        return `<div class="clock-top"><button type="button" class="secondary-button" data-clock-action="leave-arrival">← ${this.arrivalReturn === 'story' ? 'L’histoire' : 'Mon bilan'}</button><span>UNE NOUVELLE RENCONTRE</span></div>
+          <header class="clock-center"><span class="clock-kicker">${friend.title}</span>${title(`${friend.name} te rejoint !`)}</header>
+          ${clockArrivalScene(friend)}<p class="clock-finale-caption">${friend.story}</p>
+          <div class="clock-actions"><button type="button" class="play-button" data-clock-action="leave-arrival">Continuer</button><button type="button" class="secondary-button" data-clock-action="pause-film">Pause du film</button></div>`;
+      }
       case 'finale': {
         const back = { catalogue: 'Tous les jeux', results: 'Mon bilan', story: 'L’histoire' }[this.finaleReturn];
         return `<div class="clock-top"><button type="button" class="secondary-button" data-clock-action="leave-finale">← ${back}</button><span>LE DERNIER CHAPITRE</span></div>
           <header class="clock-center">${title('Enfin l’heure du goûter&nbsp;!')}</header>${clockFinaleScene()}
           <div class="clock-finale-strip"><span class="clock-finale-beat">${clockFinaleChapters[0].title}</span><progress class="clock-finale-progress" aria-label="Tableau du film" value="1" max="${clockFinaleChapters.length}"></progress></div>
           <p class="clock-finale-caption" role="status">${clockFinaleChapters[0].caption}</p>
-          <div class="clock-actions"><button type="button" class="play-button" data-clock-action="finale" hidden>Revoir l’animation</button><button type="button" class="secondary-button" data-clock-action="pause-finale">Pause du film</button></div>`;
+          <div class="clock-actions"><button type="button" class="play-button" data-clock-action="finale" hidden>Revoir l’animation</button><button type="button" class="secondary-button" data-clock-action="pause-film">Pause du film</button></div>`;
       }
       case 'levels':
         return `<div class="clock-top">${catalogue}</div><div class="clock-center"><span class="clock-icon" aria-hidden="true">${game.icon}</span>${title(game.name)}<p>${game.description}</p><p>${next ? `À jouer maintenant · ${clockGames[next.game].name} · ${clockLevels[next.level].name}` : 'Tous les niveaux sont faits ! Tu peux les rejouer.'}</p></div>
