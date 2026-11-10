@@ -1,4 +1,4 @@
-import { clockRabbitArt, clockFriendArt } from './clock-characters';
+import { clockFinalePuppets } from './clock-finale-art';
 import { finaleVoiceClips } from './clock-finale-voice-clips';
 
 export const clockStoryTitle = 'Le goûter du tic-tac';
@@ -28,17 +28,26 @@ export const clockFinaleChapterStarts = finaleVoiceClips.reduce((starts, [start,
 }, [0]);
 
 const grove = `<svg class="clock-finale-grove" viewBox="0 0 760 360" preserveAspectRatio="xMidYMid slice">
-  <defs><linearGradient id="clock-grove-sky" x2="0" y2="1"><stop stop-color="#9bd2e9"/><stop offset="1" stop-color="#ffecb6"/></linearGradient></defs>
+  <defs>
+    <linearGradient id="clock-grove-sky" x2="0" y2="1"><stop stop-color="#b4a6e1"/><stop offset=".7" stop-color="#f7ceba"/><stop offset="1" stop-color="#fff0ad"/></linearGradient>
+    <linearGradient id="clock-grove-lawn" x2="0" y2="1"><stop stop-color="#dbe494"/><stop offset="1" stop-color="#8fb16c"/></linearGradient>
+    <radialGradient id="clock-grove-sun"><stop offset=".45" stop-color="#fff8bc"/><stop offset="1" stop-color="#fff6b500"/></radialGradient>
+    <g id="clock-grove-flower"><path d="M0 12Q-2 6 0 0M0 10Q5 6 7 7" fill="none" stroke="#5f824e" stroke-width="1.7" stroke-linecap="round"/><path d="M0-2Q-7-8-7-1Q-10 5-3 4Q0 11 3 4Q10 5 7-1Q7-8 0-2Z" fill="currentColor"/><circle r="2.2" fill="#f5ad55"/></g>
+  </defs>
   <path d="M0 0h760v360H0Z" fill="url(#clock-grove-sky)"/>
-  <circle cx="166" cy="100" r="55" fill="#fff1b5" opacity=".6"/><circle cx="166" cy="100" r="40" fill="#ffe088"/>
-  <path d="M0 218q110-81 221-14t199-11q140-64 340 29v138H0Z" fill="#91bd8d"/>
-  <path d="M0 278q139-80 301-34t459-17v133H0Z" fill="#aed58f"/>
-  <path d="M0 331q157-71 333-39t427-22v90H0Z" fill="#97bf79"/>
-  <path d="M481 270q41-20 41-99l-27-38 13-8 23 28 15-58 18 7-6 45 43-40 12 10-54 67q-5 44 23 83Z" fill="#a77762" stroke="#805a53" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M418 126q-11-50 51-62 26-45 91-36 51-23 103 19 61 0 66 53 24 51-30 63-31 33-98 20-59 20-104-11-65 5-79-46Z" fill="#6fa674"/>
-  <path d="M438 113q14-41 70-38 27-35 91-23 39-12 80 19 31 1 42 20-30-17-66-6-50-22-89 8-71-11-128 20Z" fill="#8fbb7d"/>
-  <path d="M69 144q0-10 19-11 9-17 26-9 12 1 16 12 22-2 24 8Z M289 113q9-13 25-9 11-16 31-6 17-3 26 15Z" fill="#fffaed" opacity=".8"/>
-  <path d="M89 307l-4 13m12-11 1 9m594-19-5 14m14-10 1 9m-509 15-4 9m13-10 1 12" stroke="#6e9b63" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="166" cy="101" r="93" fill="url(#clock-grove-sun)"/><circle cx="166" cy="101" r="38" fill="#fff0ae"/>
+  <path d="M51 106q8-15 31-11 20-27 44 11Zm226-17q10-16 28-12 15-18 35-4 17-2 24 16Zm148 33q13-15 30-11 16-22 37 11Z" fill="#fff8ea" opacity=".69"/>
+  <path d="M0 218q110-81 221-14t199-11q140-64 340 29v138H0Z" fill="#b7b4c6"/>
+  <path d="M0 255q139-80 301-34t459-17v156H0Z" fill="#a9bd91"/>
+  <path d="M0 284q96-45 257-20 159 22 279-18 110-29 224 10v104H0Z" fill="url(#clock-grove-lawn)"/>
+  <path d="M381 235q-56 23-22 47t-108 78h118q112-46 58-81-32-19-24-44Z" fill="#f8e3b6" opacity=".84"/>
+  <path d="M593 254q36-19 39-91 1-39-26-62l9-11 35 29 14-79 16 7-4 75 56-44 11 15-65 67q-4 69 41 95-65 14-126-1Z" fill="#9a5e50" stroke="#825448" stroke-width="3"/>
+  <path d="M633 246q21-36 20-74m17-35 41-33m-52 124q8 20 21 26" fill="none" stroke="#bd8963" stroke-width="4" stroke-linecap="round"/>
+  <path d="M523 79Q492 23 548 7q22-24 67-16 39-17 80 5 50-7 67 16l15 106q-36 29-82 14-47 28-85 1-62 21-80-23Z" fill="#699265"/>
+  <path d="M523 63q9-40 50-37 32-24 70-7 48-18 88 12l31 6v42q-31-22-76-8-38-15-83 7-53-13-80 14Z" fill="#8fac67"/>
+  <path d="M0 344q90-22 135-8 45 14 112 24H0Zm535 16q68-33 118-22 48 8 107-18v40Z" fill="#789d62"/>
+  <g color="#fff2b9"><use href="#clock-grove-flower" x="43" y="321"/><use href="#clock-grove-flower" x="112" y="301"/><use href="#clock-grove-flower" x="648" y="308"/><use href="#clock-grove-flower" x="728" y="280"/></g>
+  <g color="#f3a6bc"><use href="#clock-grove-flower" x="79" y="336"/><use href="#clock-grove-flower" x="153" y="319"/><use href="#clock-grove-flower" x="684" y="325"/><use href="#clock-grove-flower" x="742" y="308"/></g>
 </svg>`;
 
 const watch = `<svg viewBox="0 0 120 120" class="clock-finale-watch" data-finale-prop="watch">
@@ -66,8 +75,7 @@ export function clockFinaleScene(): string {
   return `<div class="clock-finale-scene" data-step="0" aria-hidden="true">
     ${grove}<div class="clock-finale-late-light"></div>${lanterns}
     <div class="clock-finale-fireflies"><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="clock-finale-cast"><span class="clock-finale-actor" data-animal="rabbit">${clockRabbitArt}</span>${clockFriends.map(friend =>
-      `<span class="clock-finale-actor" data-animal="${friend.id}">${clockFriendArt(friend.id)}</span>`).join('')}</div>
+    ${clockFinalePuppets(clockFriends.map(friend => friend.id))}
     <div class="clock-finale-workbench">${watch}<span class="clock-finale-gear" data-finale-prop="gear">⚙</span><span class="clock-finale-screw"></span><span class="clock-finale-glints">✧ ✦ ✧</span></div>
     ${bell}<div class="clock-finale-blanket"></div>${cake}
     <div class="clock-finale-confetti">${[6, 14, 22, 29, 37, 45, 53, 61, 68, 76, 84, 93].map((left, index) =>

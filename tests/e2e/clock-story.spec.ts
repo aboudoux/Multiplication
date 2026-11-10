@@ -74,13 +74,18 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   expect(artwork.map(portrait => portrait.animal)).toEqual(['rabbit', 'squirrel', 'hedgehog', 'turtle', 'owl', 'fox']);
   expect(artwork.every(portrait => portrait.width === 520 && portrait.src.startsWith('data:image/webp;'))).toBe(true);
   expect(new Set(artwork.map(portrait => portrait.src)).size).toBe(6);
+  for (const { animal } of artwork) {
+    await expect(scene.locator(`[data-portrait="${animal}"]`)).toHaveCSS('clip-path', new RegExp(`#clock-finale-cut-${animal}`));
+  }
   await expect(scene).toHaveAttribute('data-step', '0');
   await page.clock.fastForward(clockFinaleOpeningMs + clockFinaleChapterStarts[1] + 100);
   await expect(caption).toContainText('Noisette et Pique');
   await expect(scene.locator('.clock-finale-gear')).toHaveCSS('animation-name', 'clock-finale-gear-fit');
-  await expect(scene.locator('.clock-finale-actor[data-animal="squirrel"]')).toHaveCSS('animation-name', 'clock-finale-offer');
+  const squirrel = scene.locator('[data-animal="squirrel"] .clock-finale-puppet');
+  await expect(squirrel).toHaveCSS('animation-name', 'clock-finale-offer');
   await page.getByRole('button', { name: 'Pause du film' }).click();
   await expect(scene.locator('.clock-finale-gear')).toHaveCSS('animation-play-state', 'paused');
+  await expect(squirrel).toHaveCSS('animation-play-state', 'paused');
   await page.clock.fastForward(30_000);
   await expect(scene).toHaveAttribute('data-step', '1');
   await page.getByRole('button', { name: 'Reprendre le film' }).click();
@@ -99,14 +104,20 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await page.clock.fastForward(clockFinaleChapterStarts[2] - clockFinaleChapterStarts[1]);
   await expect(caption).toContainText('quatre heures dix');
   await expect(scene.locator('.clock-finale-minute')).toHaveCSS('animation-name', 'clock-finale-minute-set');
+  await expect(scene.locator('[data-animal="owl"] .clock-finale-puppet')).toHaveCSS('animation-name', 'clock-finale-glide');
   await page.clock.fastForward(clockFinaleChapterStarts[3] - clockFinaleChapterStarts[2]);
   await expect(caption).toContainText('Les lanternes s’allument');
   await expect(scene.locator('.clock-finale-bell')).toHaveCSS('animation-name', 'clock-finale-bell-swing');
+  await expect(scene.locator('[data-animal="rabbit"] .clock-finale-puppet')).toHaveCSS('animation-name', 'clock-finale-ring');
   await page.clock.fastForward(clockFinaleChapterStarts[4] - clockFinaleChapterStarts[3]);
   await expect(caption).toContainText('partage enfin son gâteau');
   await expect(scene).toHaveAttribute('data-step', '4');
   await expect(page.getByRole('progressbar', { name: 'Tableau du film' })).toHaveAttribute('value', '5');
   await expect(scene.locator('.clock-finale-confetti i')).toHaveCount(12);
+  const dances = await scene.locator('.clock-finale-puppet').evaluateAll(puppets =>
+    puppets.map(puppet => getComputedStyle(puppet).animationName));
+  expect(new Set(dances).size).toBe(6);
+  expect(dances).not.toContain('none');
   const replay = page.getByRole('button', { name: 'Revoir l’animation' });
   await expect(replay).toBeVisible();
   await replay.click();
@@ -131,6 +142,7 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await expect(scene).toHaveAttribute('data-step', '4');
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('animation-name', 'none');
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('opacity', '1');
+  await expect(scene.locator('[data-animal="rabbit"] .clock-finale-puppet')).toHaveCSS('animation-name', 'none');
 });
 
 test('la voix lit les cinq tableaux, reprend au bon endroit et recommence au rejeu', async ({ page }) => {
