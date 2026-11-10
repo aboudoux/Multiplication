@@ -3,7 +3,6 @@ html[data-theme="club"] .destination-card.clock-entry { border-color:#d879a0; ba
 .clock-entry .destination-tag { color:#723754; background:#ec9eba66; }
 html[data-theme="club"] .clock-entry :is(h2,p) { color:#2c193d; }
 html[data-theme="club"] .clock-entry .destination-art { background:none; }
-.clock-entry .destination-art img { display:block; object-fit:contain; }
 .clock-entry .play-button::after { content:""; position:absolute; inset:0; }
 html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-entry .play-button:hover,.clock-entry .play-button:active { transform:none; }
@@ -12,8 +11,9 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-arcade .secondary-button { min-height:44px; }
 .clock-top { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; font-weight:700; }
 .clock-top > span { font-size:14px; }
-.clock-intro img,.clock-results > img { width:clamp(80px,19vw,144px); height:auto; }
-.clock-intro img { flex:none; }
+.clock-intro > .clock-rabbit-art,.clock-results > .clock-rabbit-art { width:clamp(80px,19vw,144px); }
+.clock-intro > .clock-rabbit-art { flex:none; }
+.clock-results > .clock-rabbit-art { margin:0 auto 12px; }
 .clock-intro h2 { margin:12px 0; font-size:clamp(30px,5vw,56px); }
 .clock-kicker { color:var(--yellow); font-size:12px; font-weight:700; letter-spacing:1.6px; }
 .clock-center h2,.clock-pause h2 { margin:0; font-size:clamp(28px,5vw,45px); }
@@ -192,7 +192,14 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 @media (prefers-reduced-motion:reduce) {
   .clock-timeout-scene * { animation:none !important; }
 }
-.clock-friend-art,.clock-rabbit-art { display:block; width:100%; height:auto; }
+/* Embedded images also work when the private preview blocks separate image requests. */
+.clock-character { display:block; width:100%; aspect-ratio:1; border-radius:20%; background-position:center; background-size:cover; box-shadow:inset 0 0 0 1px #a77d4e70; }
+.clock-character[data-portrait="rabbit"] { background-image:url('./clock-art/lapin.webp?inline'); }
+.clock-character[data-portrait="squirrel"] { background-image:url('./clock-art/ecureuil.webp?inline'); }
+.clock-character[data-portrait="hedgehog"] { background-image:url('./clock-art/herisson.webp?inline'); }
+.clock-character[data-portrait="turtle"] { background-image:url('./clock-art/tortue.webp?inline'); }
+.clock-character[data-portrait="owl"] { background-image:url('./clock-art/hibou.webp?inline'); }
+.clock-character[data-portrait="fox"] { background-image:url('./clock-art/renard.webp?inline'); }
 .clock-guest-trail { position:relative; display:flex; gap:2px; height:clamp(62px,10vw,80px); margin:14px auto 0; max-width:590px; overflow:hidden; border:1px solid #adca9a; border-radius:16px; pointer-events:none; background:radial-gradient(ellipse at 19% 103%,#d2e4a9 0 24%,transparent 25%),radial-gradient(ellipse at 85% 112%,#b8d597 0 40%,transparent 41%),linear-gradient(#e4f3dc,#fbf5dd); }
 .clock-guest-trail::before { content:""; position:absolute; left:-3%; right:-3%; bottom:-11px; height:29px; border-top:1px dashed #b9aa69; border-radius:50%; background:#f1dfa8; }
 .clock-guest-trail::after { content:""; position:absolute; inset:auto 0 3px; height:9px; opacity:.85; background:radial-gradient(circle,#f7f0c5 0 2px,transparent 2.5px) 9px bottom / 29px 9px repeat-x; }
@@ -205,20 +212,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 :is(.clock-companion-friend,.clock-guest-spot):nth-child(3) { --animal-delay:-4.6s; --trail-pace:13s; }
 :is(.clock-companion-friend,.clock-guest-spot):nth-child(4) { --animal-delay:-2.2s; --trail-pace:11s; }
 :is(.clock-companion-friend,.clock-guest-spot):nth-child(5) { --animal-delay:-5.5s; --trail-pace:8s; }
-:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-head { transform-box:fill-box; transform-origin:center 78%; animation:clock-animal-tilt 7.4s ease-in-out var(--animal-delay,-3s) infinite; }
-:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-look { animation:clock-animal-look 5.8s ease-in-out var(--animal-delay,-3s) infinite; }
-:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 6.2s ease-in-out var(--animal-delay,-3s) infinite; }
-:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-paw { transform-box:view-box; transform-origin:89px 81px; animation:clock-animal-wave 6.8s ease-in-out var(--animal-delay,-3s) infinite; }
-:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-animal-detail { transform-box:fill-box; transform-origin:35% 90%; animation:clock-animal-sway var(--detail-pace,3.8s) ease-in-out var(--animal-delay,-3s) infinite; }
-[data-animal="turtle"] { --detail-pace:5.6s; }
-[data-animal="owl"] { --detail-pace:2.7s; }
+:is(.clock-companion-friends,.clock-guest-trail,.clock-finale-cast) .clock-friend-art { transform-origin:center 85%; animation:clock-animal-tilt 7.4s ease-in-out var(--animal-delay,-3s) infinite; }
 :is(.clock-companion,.clock-guest-trail)[data-gesture="cheer"] .clock-friend-art { animation:clock-friend-cheer .64s cubic-bezier(.22,.8,.35,1) both; }
 :is(.clock-companion,.clock-guest-trail)[data-gesture="cheer"] :is(.clock-companion-friend,.clock-guest-spot):nth-child(even) .clock-friend-art { animation-delay:.1s; }
 .clock-guest-trail[data-gesture="encourage"] .clock-friend-art { animation:clock-companion-nod .55s ease-in-out both; }
-:is(.clock-companion-art,.clock-rabbit-runner,.clock-finish-runner,.clock-finale-cast) .clock-rabbit-eyes { transform-box:fill-box; transform-origin:center; animation:clock-animal-blink 5.8s ease-in-out infinite; }
-:is(.clock-companion-art,.clock-rabbit-runner,.clock-finish-runner,.clock-finale-cast) .clock-rabbit-ears { transform-box:fill-box; transform-origin:center bottom; animation:clock-animal-sway 3.6s ease-in-out infinite; }
-:is(.clock-companion-art,.clock-rabbit-runner,.clock-finish-runner,.clock-finale-cast) .clock-rabbit-watch { transform-box:fill-box; transform-origin:center top; animation:clock-rabbit-tick var(--watch-pace,3.6s) ease-in-out infinite; }
-.clock-rabbit-runner,.clock-finish-runner { --watch-pace:.66s; }
+:is(.clock-rabbit-runner,.clock-finish-runner) .clock-rabbit-art { transform-origin:center bottom; animation:clock-animal-tilt .66s ease-in-out infinite; }
 .camp-background :is(.clock-companion,.clock-guest-trail) * { animation-play-state:paused; }
 @keyframes clock-guest-stroll {
   0%,100% { left:0; transform:translateY(0) rotate(0); }
@@ -226,28 +224,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   46%,55% { left:calc(100% - var(--guest-size)); transform:translateY(0) rotate(0); }
   77% { left:calc((100% - var(--guest-size)) / 2); transform:translateY(calc(-.7 * var(--hop,8px))) rotate(calc(-1 * var(--lean,6deg))); }
 }
-@keyframes clock-animal-sway { 0%,100% { transform:rotate(0); } 38% { transform:rotate(7deg); } 70% { transform:rotate(-5deg); } }
-@keyframes clock-rabbit-tick { 0%,100% { transform:rotate(0); } 38% { transform:rotate(-11deg); } 74% { transform:rotate(8deg); } }
 @keyframes clock-friend-cheer { 0%,100% { transform:translateY(0) scale(1); } 19% { transform:scale(1.08,.92); } 51% { transform:translateY(-11px) scale(.97,1.04) rotate(-7deg); } 78% { transform:translateY(-3px) rotate(4deg); } }
 @keyframes clock-animal-tilt {
   0%,23%,49%,77%,100% { transform:rotate(0); }
   34% { transform:rotate(-7deg); }
   64% { transform:rotate(6deg); }
-}
-@keyframes clock-animal-look {
-  0%,35%,61%,100% { transform:translate(0); }
-  17% { transform:translate(-2px,-1px); }
-  49% { transform:translate(2px,-2px); }
-  78% { transform:translate(0,-2px); }
-}
-@keyframes clock-animal-blink {
-  0%,43%,49%,78%,84%,100% { transform:scaleY(1); }
-  46%,81% { transform:scaleY(.16); }
-}
-@keyframes clock-animal-wave {
-  0%,40%,74%,100% { opacity:0; transform:rotate(18deg); }
-  46%,62% { opacity:1; transform:rotate(-24deg); }
-  54%,69% { opacity:1; transform:rotate(14deg); }
 }
 @media (prefers-reduced-motion:reduce) {
   .clock-guest-figure { left:50%; transform:translateX(-50%); }

@@ -62,7 +62,17 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   const caption = page.locator('.clock-finale-caption');
   await expect(page.getByRole('heading', { name: 'Enfin l’heure du goûter !' })).toBeVisible();
   await expect(page.locator('.clock-finish-bubble')).toHaveText('Oh là là, je suis en retard !');
-  await expect(scene.locator('.clock-finale-cast svg')).toHaveCount(6);
+  const portraits = scene.locator('.clock-finale-cast .clock-character');
+  await expect(portraits).toHaveCount(6);
+  const artwork = await portraits.evaluateAll(elements => Promise.all(elements.map(async element => {
+    const image = new Image();
+    image.src = getComputedStyle(element).backgroundImage.slice(5, -2);
+    await image.decode();
+    return { animal: element.getAttribute('data-portrait'), width: image.naturalWidth, src: image.src };
+  })));
+  expect(artwork.map(portrait => portrait.animal)).toEqual(['rabbit', 'squirrel', 'hedgehog', 'turtle', 'owl', 'fox']);
+  expect(artwork.every(portrait => portrait.width === 520 && portrait.src.startsWith('data:image/webp;'))).toBe(true);
+  expect(new Set(artwork.map(portrait => portrait.src)).size).toBe(6);
   await expect(scene).toHaveAttribute('data-step', '0');
   await page.clock.fastForward(5100);
   await expect(caption).toContainText('Noisette et Pique');
@@ -122,7 +132,7 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('opacity', '1');
 });
 
-test('les cinq amis regardent, saluent et avancent sous les réponses sans bloquer le jeu', async ({ page }) => {
+test('les portraits des cinq amis s’inclinent et avancent sous les réponses sans bloquer le jeu', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openStoryGame(page, 15);
   const trail = page.locator('.clock-guest-trail');
@@ -144,16 +154,14 @@ test('les cinq amis regardent, saluent et avancent sous les réponses sans bloqu
     };
     const left = parseFloat(seek(figure, 'clock-guest-stroll', 0).left);
     const right = parseFloat(seek(figure, 'clock-guest-stroll', .5).left);
-    const eyes = figure.querySelector('.clock-animal-look')!;
-    const look = seek(eyes, 'clock-animal-look', .17).transform;
-    const paw = figure.querySelector('.clock-animal-paw')!;
-    const raised = Number(seek(paw, 'clock-animal-wave', .54).opacity);
-    return { distance: right - left, look, raised };
+    const portrait = figure.querySelector('.clock-friend-art')!;
+    const still = seek(portrait, 'clock-animal-tilt', 0).transform;
+    const greeting = seek(portrait, 'clock-animal-tilt', .34).transform;
+    return { distance: right - left, still, greeting };
   });
   expect(movement.distance).toBeGreaterThan(8);
-  expect(movement.look).toBe('matrix(1, 0, 0, 1, -2, -1)');
-  expect(movement.raised).toBe(1);
-  await expect(squirrel.locator('.clock-animal-eyes')).toHaveCSS('animation-name', 'clock-animal-blink');
+  expect(movement.greeting).not.toBe(movement.still);
+  await expect(squirrel).toHaveAttribute('data-portrait', 'squirrel');
   const actor = await squirrel.elementHandle();
   const face = (await page.locator('.clock-face').getAttribute('aria-label'))!;
   const hour = face.match(/Petite aiguille sur le (\d+)/)![1];
@@ -166,6 +174,6 @@ test('les cinq amis regardent, saluent et avancent sous les réponses sans bloqu
   await page.locator('[data-clock-action="resume"]').click();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(figure).toHaveCSS('animation-name', 'none');
-  await expect(squirrel.locator('.clock-animal-paw')).toHaveCSS('opacity', '0');
+  await expect(squirrel).toHaveCSS('animation-name', 'none');
   await expect(trail).toBeVisible();
 });

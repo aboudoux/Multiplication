@@ -27,6 +27,7 @@ import './keypad.css';
 import './training.css';
 import './landing.css';
 import { ClockArcade } from './clock-arcade';
+import { clockRabbitArt } from './clock-characters';
 import './clock-arcade.css';
 import './colony.css';
 import { BirthdayParty } from './birthday-party';
@@ -79,7 +80,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="destinations">
             <article class="destination-card"><span class="destination-tag">EXPLORER & DÉCOUVRIR</span><div class="destination-art adventure-entry-art" aria-hidden="true"><img src="/themes/adventure-map.png" alt="" width="1254" height="1254" decoding="async"></div><h2>Partir à l’aventure</h2><p>Une fête avec le chaton ou un voyage en mer avec Pico : choisis ton aventure.</p><button id="open-adventure" class="play-button" type="button">Choisir mon aventure →</button></article>
             <article class="destination-card camp-entry"><span class="destination-tag">S’ENTRAÎNER & CONSTRUIRE</span><div class="destination-art">${ant()}</div><h2>Le camp d’entraînement</h2><p>Choisis tes calculs et aide les petites fourmis à bâtir leur maison.</p><button id="open-training" class="play-button" type="button">S’entraîner avec les fourmis →</button></article>
-            <article class="destination-card clock-entry"><span class="destination-tag">JOUER AVEC LE TEMPS</span><div class="destination-art"><img src="/themes/lapin-chrono.svg" alt="" width="220" height="220"></div><h2>Le lapin chrono</h2><p>Suis le petit lapin et sa montre. Six jeux pour apprivoiser l’heure et les durées.</p><button id="open-clock-arcade" class="play-button" type="button">Jouer avec le lapin →</button></article>
+            <article class="destination-card clock-entry"><span class="destination-tag">JOUER AVEC LE TEMPS</span><div class="destination-art">${clockRabbitArt}</div><h2>Le lapin chrono</h2><p>Suis le petit lapin et sa montre. Six jeux pour apprivoiser l’heure et les durées.</p><button id="open-clock-arcade" class="play-button" type="button">Jouer avec le lapin →</button></article>
           </div>
         </section>
 

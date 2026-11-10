@@ -1,6 +1,5 @@
 import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
-import clockRabbitArt from '/themes/lapin-chrono.svg?raw';
-import { clockFriendArt } from './clock-characters';
+import { clockRabbitArt, clockFriendArt } from './clock-characters';
 import { clockCorrectionMarkup } from './clock-correction';
 import { clockFinaleChapterMs, clockFinaleChapters, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend } from './clock-story';
 import { sprite } from './themes';
@@ -196,9 +195,9 @@ export class ClockArcade {
     this.progressLabel.textContent = `${this.completed.size} / ${orderedLevels.length} niveaux faits`;
     const friends = clockFriends.filter(friend => friend.at <= this.completed.size);
     this.companionFriends.innerHTML = friends.map(friend =>
-      `<span class="clock-companion-friend" role="img" aria-label="${friend.name}">${clockFriendArt(friend)}</span>`).join('');
+      `<span class="clock-companion-friend" role="img" aria-label="${friend.name}">${clockFriendArt(friend.id)}</span>`).join('');
     this.guestTrail.innerHTML = friends.map(friend =>
-      `<span class="clock-guest-spot" data-clock-friend="${friend.id}"><span class="clock-guest-figure">${clockFriendArt(friend)}</span></span>`).join('');
+      `<span class="clock-guest-spot" data-clock-friend="${friend.id}"><span class="clock-guest-figure">${clockFriendArt(friend.id)}</span></span>`).join('');
   }
 
   open(): void {
@@ -411,7 +410,7 @@ export class ClockArcade {
     switch (this.screen) {
       case 'catalogue':
         return `<div class="camp-top"><button type="button" class="secondary-button" data-clock-action="home">← Accueil</button><span class="camp-materials">${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
-          <header class="camp-heading clock-intro"><div><span class="eyebrow">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure et compare les durées. Termine chaque niveau pour débloquer le suivant.</p></div><img src="/themes/lapin-chrono.svg" alt="" width="144" height="144"></header>
+          <header class="camp-heading clock-intro"><div><span class="eyebrow">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure et compare les durées. Termine chaque niveau pour débloquer le suivant.</p></div>${clockRabbitArt}</header>
           <div class="clock-story-teaser"><div class="clock-story-invite">${sprite('kitten', 4, 'clock-kitten-sticker')}<div><span class="clock-kicker">L’HISTOIRE DU LAPIN</span><h3>${clockStoryTitle}</h3><p>Sa montre s’est arrêtée et il a raté le goûter. Retrouve ses amis en jouant !</p></div></div><div class="clock-story-actions">${story}${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Revoir l’animation</button>' : ''}</div></div>
           <div class="camp-presets clock-games">${clockGameIds.map(id => {
             const item = clockGames[id];
@@ -423,7 +422,7 @@ export class ClockArcade {
         return `<div class="clock-top">${this.storyReturn === 'levels' ? levels : catalogue}<span>${this.completed.size} / ${orderedLevels.length} niveaux faits</span></div>
           <header class="clock-center clock-story-intro"><span class="clock-kicker">L’HISTOIRE DU LAPIN</span>${title(clockStoryTitle)}<p>${clockStoryIntro}</p></header>
           <ol class="clock-chapters">${clockFriends.map(friend => friend.at <= this.completed.size
-            ? `<li class="clock-chapter" data-friend="${friend.id}">${clockFriendArt(friend)}<div><span class="clock-kicker">${friend.name}</span><h3>${friend.title}</h3><p>${friend.story}</p></div></li>`
+            ? `<li class="clock-chapter" data-friend="${friend.id}">${clockFriendArt(friend.id)}<div><span class="clock-kicker">${friend.name}</span><h3>${friend.title}</h3><p>${friend.story}</p></div></li>`
             : `<li class="clock-chapter clock-chapter-locked"><span class="clock-mystery" aria-hidden="true">?</span><div><h3>Un ami mystère</h3><p>Il te rejoint à ${friend.at} niveaux faits.</p></div></li>`).join('')}</ol>
           <div class="clock-story-end"><h3>Le dernier chapitre</h3>${this.storyComplete ? finale : `<p>Termine les ${orderedLevels.length} niveaux pour voir la fin animée.</p>`}</div>`;
       case 'finale': {
@@ -451,11 +450,11 @@ export class ClockArcade {
       case 'results': {
         const finished = this.index === roundLength;
         const errors = this.index - this.score;
-        const artwork = finished ? '<img src="/themes/lapin-chrono.svg" alt="" width="144" height="144">' : timeoutScene;
+        const artwork = finished ? clockRabbitArt : timeoutScene;
         return `<div class="results-screen clock-results">${artwork}<span class="eyebrow">${game.name} · ${clockLevels[this.level].name}</span>${title(finished ? 'Bien joué !' : 'Le chrono a sonné !')}
           ${finished ? `<p><span class="clock-done">✓ Niveau fait</span> ${clockLevels[this.level].name}</p>` : '<p>Chaque essai t’aide à mieux apprivoiser le temps.</p>'}
           <div class="result-stats"><div><strong>${this.score}</strong> <span>${this.score === 1 ? 'bonne réponse' : 'bonnes réponses'}</span></div><div><strong>${this.index} / ${roundLength}</strong><span>questions jouées</span></div><div><strong>${errors}</strong><span>${errors === 1 ? 'erreur' : 'erreurs'}</span></div></div>
-          ${this.arrival ? `<div class="clock-arrival" role="status">${clockFriendArt(this.arrival)}<div><strong>${this.arrival.name} te rejoint !</strong><p>${this.arrival.story}</p></div></div>` : ''}
+          ${this.arrival ? `<div class="clock-arrival" role="status">${clockFriendArt(this.arrival.id)}<div><strong>${this.arrival.name} te rejoint !</strong><p>${this.arrival.story}</p></div></div>` : ''}
           <div class="result-actions">${finished && next ? '<button type="button" class="play-button" data-clock-action="next-level">Continuer le parcours →</button>' : ''}<button type="button" class="${finished && next ? 'secondary-button' : 'play-button'}" data-clock-action="levels">Retour aux niveaux</button><button type="button" class="secondary-button" data-clock-action="replay">Rejouer</button>${this.arrival ? story : ''}${this.storyComplete ? finale : ''}</div></div>`;
       }
       case 'playing': {

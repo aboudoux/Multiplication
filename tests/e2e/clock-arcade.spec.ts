@@ -20,8 +20,13 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await prepareClockPage(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator('.destination-card')).toHaveCount(3);
-  const illustration = page.locator('.clock-entry img');
-  await expect.poll(() => illustration.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  const illustration = page.locator('.clock-entry [data-portrait="rabbit"]');
+  expect(await illustration.evaluate(async element => {
+    const image = new Image();
+    image.src = getComputedStyle(element).backgroundImage.slice(5, -2);
+    await image.decode();
+    return [image.src.startsWith('data:image/webp;'), image.naturalWidth];
+  })).toEqual([true, 520]);
   await illustration.scrollIntoViewIfNeeded();
   const box = (await illustration.boundingBox())!;
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -171,7 +176,7 @@ test('le bonhomme et les étoiles repartent à chaque réussite, le lapin tous l
         await expect(page.locator('.clock-feedback')).toContainText(`${successes} bonnes réponses`);
         const runner = page.locator('.clock-rabbit-runner');
         await expect(runner).toHaveCSS('animation-name', successes === 5 ? 'clock-rabbit' : 'clock-celebration-fade');
-        await expect(runner.locator('.clock-rabbit-watch')).toHaveCSS('animation-name', successes === 5 ? 'clock-rabbit-tick' : 'none');
+        await expect(runner.locator('[data-portrait="rabbit"]')).toHaveCSS('animation-name', successes === 5 ? 'clock-animal-tilt' : 'none');
         await expect(page.locator('.clock-parade')).toHaveCSS('pointer-events', 'none');
         await runner.evaluate(element => element.dispatchEvent(new Event('animationend')));
         await page.emulateMedia({ reducedMotion: 'reduce' });

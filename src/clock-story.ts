@@ -1,5 +1,4 @@
-import clockRabbitArt from '/themes/lapin-chrono.svg?raw';
-import { clockFriendArt } from './clock-characters';
+import { clockRabbitArt, clockFriendArt } from './clock-characters';
 
 export const clockStoryTitle = 'Le goûter du tic-tac';
 export const clockStoryIntro = 'Le lapin doit apporter le gâteau au goûter de quatre heures. Une averse le surprend et sa montre tombe dans une flaque. Elle s’arrête à trois heures ! Il croit avoir encore le temps. Quand il arrive en retard, la clairière est vide… Où sont passés ses amis ?';
@@ -63,7 +62,7 @@ export function clockFinaleScene(): string {
     ${grove}<div class="clock-finale-late-light"></div>${lanterns}
     <div class="clock-finale-fireflies"><i></i><i></i><i></i><i></i><i></i></div>
     <div class="clock-finale-cast"><span class="clock-finale-actor" data-animal="rabbit">${clockRabbitArt}</span>${clockFriends.map(friend =>
-      `<span class="clock-finale-actor" data-animal="${friend.id}">${clockFriendArt(friend)}</span>`).join('')}</div>
+      `<span class="clock-finale-actor" data-animal="${friend.id}">${clockFriendArt(friend.id)}</span>`).join('')}</div>
     <div class="clock-finale-workbench">${watch}<span class="clock-finale-gear" data-finale-prop="gear">⚙</span><span class="clock-finale-screw"></span><span class="clock-finale-glints">✧ ✦ ✧</span></div>
     ${bell}<div class="clock-finale-blanket"></div>${cake}
     <div class="clock-finale-confetti">${[6, 14, 22, 29, 37, 45, 53, 61, 68, 76, 84, 93].map((left, index) =>
