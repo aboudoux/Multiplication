@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {defaults,STORAGE_KEY} from '../../src/storage';
-import { CLOCK_PROGRESS_KEY } from '../../src/clock-games';
+import { CLOCK_PROGRESS_KEY, clockCorrectionMs } from '../../src/clock-games';
 import { answerClock } from './clock-helpers';
 
 const funkBassRiff = [41.2, 82.41, 41.2, 49, 55, 58.27, 61.74, 73.42, 41.2];
@@ -205,6 +205,56 @@ test('la voix du lapin joue au bilan et s’arrête au retour aux niveaux', asyn
   await expect.poll(lines).toEqual([{ stopped: false }]);
   await page.getByRole('button', { name: 'Retour aux niveaux' }).click();
   await expect.poll(lines).toEqual([{ stopped: true }]);
+});
+
+test('le Lapin chrono lit les questions et interrompt la voix à la correction et en pause', async ({ page }) => {
+  await page.clock.install();
+  await page.addInitScript(key => localStorage.setItem(key, '["read:0","read:1","read:2"]'), CLOCK_PROGRESS_KEY);
+  await page.addInitScript(() => {
+    const readings: { question: string; audible: boolean; stopped: boolean }[] = [];
+    Object.assign(window, { clockReadings: readings });
+    const start = AudioBufferSourceNode.prototype.start;
+    const stop = AudioBufferSourceNode.prototype.stop;
+    const active = new WeakMap<AudioBufferSourceNode, typeof readings[number]>();
+    AudioBufferSourceNode.prototype.start = function (...args) {
+      if (this.buffer && this.buffer.duration > .6 && this.playbackRate.value === 1) {
+        const entry = { question: document.querySelector('.clock-status .streak')?.textContent ?? '',
+          audible: this.buffer.getChannelData(0).some(sample => Math.abs(sample) > .005), stopped: false };
+        active.set(this, entry);
+        readings.push(entry);
+      }
+      return start.apply(this, args);
+    };
+    AudioBufferSourceNode.prototype.stop = function (...args) {
+      const entry = active.get(this);
+      if (entry) entry.stopped = true;
+      return stop.apply(this, args);
+    };
+  });
+  await prepare(page, false, true);
+  await page.locator('#open-clock-arcade').click();
+  await page.locator('[data-game="match"]').click();
+  await page.locator('[data-level="0"]').click();
+  const readings = () => page.evaluate(() => (window as any).clockReadings);
+  await expect.poll(readings).toEqual([{ question: 'Question 1 sur 5', audible: true, stopped: false }]);
+  await answerClock(page);
+  await expect.poll(async () => (await readings()).at(-1)).toEqual({ question: 'Question 2 sur 5', audible: true, stopped: false });
+  expect((await readings())[0].stopped).toBe(true);
+  await answerClock(page, false);
+  await expect(page.locator('.clock-lesson')).toBeVisible();
+  expect((await readings()).at(-1).stopped).toBe(true);
+  await page.clock.fastForward(clockCorrectionMs + 100);
+  await expect.poll(async () => (await readings()).at(-1)).toEqual({ question: 'Question 3 sur 5', audible: true, stopped: false });
+  await page.locator('[data-clock-action="pause"]').click();
+  expect((await readings()).at(-1).stopped).toBe(true);
+  await page.locator('[data-clock-action="resume"]').click();
+  await expect.poll(async () => (await readings()).length).toBe(4);
+  await page.locator('#voice').click();
+  expect((await readings()).at(-1).stopped).toBe(true);
+  await answerClock(page);
+  expect(await readings()).toHaveLength(4);
+  await page.locator('#voice').click();
+  await expect.poll(async () => (await readings()).at(-1)).toEqual({ question: 'Question 4 sur 5', audible: true, stopped: false });
 });
 
 test.describe('audible autoplay permitted',()=>{

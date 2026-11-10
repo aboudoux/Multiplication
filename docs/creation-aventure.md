@@ -228,6 +228,8 @@ Le dernier niveau à terminer lance cinq tableaux de cinq secondes chacun : les 
 
 Une bonne réponse enchaîne immédiatement sur la question suivante avec des personnages et des confettis en fête. Une erreur fige le chrono, joue le même riff funk à la basse qu’à la fin du temps et ouvre une fiche avec la réponse et un cadran, une frise ou des durées à comparer. Après 4,5 secondes de lecture à l’écran, la manche avance et le décompte reprend automatiquement. La mélodie de fond accompagne aussi la lecture de la fiche.
 
+Quand le son et la voix sont activés, chaque question et ses données utiles sont lues en français à partir des extraits locaux de `src/clock-voice.mp3`. Les réponses restent jouables pendant la lecture et le chrono continue. Une nouvelle question remplace la précédente à l’oral. La correction, la pause ou la sortie interrompt la lecture ; reprendre la manche relit la question affichée.
+
 Si le chrono expire, le bilan montre la montre qui sonne et le lapin qui danse sur une mesure de funk à la basse. Avec la réduction des animations, l’illustration reste fixe. Les compagnons apparaissent dans le Lapin chrono et disparaissent quand on revient à l’accueil, où la progression reste sauvegardée.
 
 ## Repères dans le code

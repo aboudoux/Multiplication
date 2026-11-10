@@ -1,6 +1,7 @@
 import { themes, type ThemeId } from "./themes";
 import type { Calculation } from "./calculations";
 import { QuestionVoice, type VoiceStyle } from "./voice";
+import type { ClockVoiceToken } from './clock-voice';
 
 export type ClockCue = 'correct' | 'mistake' | 'timeout' | 'rabbit-late' | 'stop';
 
@@ -65,6 +66,10 @@ export class GameAudio {
 
   stopSpeech(): void {
     this.voice?.stop();
+  }
+
+  speakClockQuestion(tokens: readonly ClockVoiceToken[]): void {
+    if (!this.muted && this.ready) void this.voice?.clockQuestion(tokens);
   }
 
   disappointment(): void {

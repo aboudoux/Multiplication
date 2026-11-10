@@ -1,4 +1,5 @@
 import { shuffle } from './calculations';
+import type { ClockVoiceToken } from './clock-voice';
 
 export const clockLevels = [
   { name: 'Découverte', seconds: 90, icon: '🌱' },
@@ -32,6 +33,7 @@ export type ClockCorrection =
 export type ClockQuestion = {
   prompt: string;
   detail: string;
+  narration: readonly ClockVoiceToken[];
   face?: number;
   options: Option[];
   correct: Option;
@@ -52,6 +54,23 @@ function durationText(minutes: number): string {
   return minutes < 60 ? `${minutes} min` : clockTime(minutes);
 }
 
+const numberVoice = (value: number) => `n${value}` as ClockVoiceToken;
+const hourVoice = (hour: number) => `h${hour}` as ClockVoiceToken;
+
+function timeVoice(time: number, twelveHour = false): ClockVoiceToken[] {
+  const hours = Math.floor(time / 60);
+  const minutes = time % 60;
+  const hour = hourVoice(twelveHour ? hours % 12 || 12 : hours);
+  return minutes ? [hour, numberVoice(minutes)] : [hour];
+}
+
+function durationVoice(duration: number): ClockVoiceToken[] {
+  const hours = Math.floor(duration / 60);
+  const minutes = duration % 60;
+  if (!hours) return [numberVoice(minutes), 'minutes'];
+  return minutes ? [hourVoice(hours), 'and', numberVoice(minutes), 'minutes'] : [hourVoice(hours)];
+}
+
 function faceQuestion(time: number, game: 'read' | 'match', level: Level): ClockQuestion {
   const alternatives = level === 0 ? [60, 120] : level === 1 ? [30, 60] : [15, 60];
   const faces = [time, ...alternatives.map(delta => minutesOnFace(time + delta))];
@@ -63,8 +82,8 @@ function faceQuestion(time: number, game: 'read' | 'match', level: Level): Clock
   const explanation = `${shortHand} ${longHand}`;
   const correction = { kind: 'face', time } as const;
   return game === 'read'
-    ? { prompt: 'Quelle heure est-il ?', detail: '', face: time, options: faces.map(value => clockTime(value, true)), correct: label, explanation, correction }
-    : { prompt: `Quelle horloge indique ${label} ?`, detail: '', options: faces, correct: time, explanation, correction };
+    ? { prompt: 'Quelle heure est-il ?', detail: '', narration: ['read'], face: time, options: faces.map(value => clockTime(value, true)), correct: label, explanation, correction }
+    : { prompt: `Quelle horloge indique ${label} ?`, detail: '', narration: ['match', ...timeVoice(time, true)], options: faces, correct: time, explanation, correction };
 }
 
 function orderQuestion(index: number, level: Level): ClockQuestion {
@@ -73,7 +92,8 @@ function orderQuestion(index: number, level: Level): ClockQuestion {
   const times = [first, first + step, first + step * (2 + index % 2)].map(value => clockTime(value));
   const position = Math.floor(index / 6);
   const labels = ['le plus tôt', 'entre les deux autres', 'le plus tard'];
-  return { prompt: `Quelle heure vient ${labels[position]} ?`, detail: 'Imagine que ces trois heures sont le même jour.', options: times, correct: times[position], explanation: 'Compare d’abord les heures. Si elles sont pareilles, compare les minutes.', correction: { kind: 'order', times } };
+  const narration = ['early', 'middle', 'late'] as const;
+  return { prompt: `Quelle heure vient ${labels[position]} ?`, detail: 'Imagine que ces trois heures sont le même jour.', narration: [narration[position], 'sameDay'], options: times, correct: times[position], explanation: 'Compare d’abord les heures. Si elles sont pareilles, compare les minutes.', correction: { kind: 'order', times } };
 }
 
 function compareQuestion(index: number, level: Level): ClockQuestion {
@@ -87,7 +107,9 @@ function compareQuestion(index: number, level: Level): ClockQuestion {
   const correct = difference === 0 ? equal : (difference > 0) === longer ? right : left;
   const conversion = level === 0 ? '' : `${first} = ${amount * 60} ${level === 1 ? 's' : 'min'}. `;
   const comparison = difference === 0 ? 'Les deux durées sont égales.' : `${correct} dure ${longer ? 'plus' : 'moins'} longtemps.`;
-  return { prompt: `Quelle durée est la plus ${longer ? 'longue' : 'courte'} ?`, detail: `① ${first}　·　② ${second}`, options: [left, right, equal], correct, explanation: conversion + comparison, correction: { kind: 'compare', labels: [first, second], lengths: [amount, target] } };
+  const firstVoice: ClockVoiceToken[] = level === 2 ? [hourVoice(amount)] : [numberVoice(amount), 'minutes'];
+  const secondVoice: ClockVoiceToken[] = level === 0 ? [numberVoice(target), 'minutes'] : [numberVoice(target * 60), level === 1 ? 'seconds' : 'minutes'];
+  return { prompt: `Quelle durée est la plus ${longer ? 'longue' : 'courte'} ?`, detail: `① ${first}　·　② ${second}`, narration: [longer ? 'longer' : 'shorter', 'first', ...firstVoice, 'second', ...secondVoice], options: [left, right, equal], correct, explanation: conversion + comparison, correction: { kind: 'compare', labels: [first, second], lengths: [amount, target] } };
 }
 
 function travelQuestion(index: number, game: 'elapsed' | 'next', level: Level): ClockQuestion {
@@ -99,10 +121,12 @@ function travelQuestion(index: number, game: 'elapsed' | 'next', level: Level): 
   const correction = { kind: 'journey', start: clockTime(start), end: clockTime(end), duration: durationText(duration) } as const;
   if (game === 'elapsed') return {
     prompt: 'Combien de temps dure la balade ?', detail: `Départ à ${clockTime(start)} · Retour à ${clockTime(end)}`,
+    narration: ['elapsed', 'depart', ...timeVoice(start), 'return', ...timeVoice(end)],
     options: [duration, duration + step, duration + step * 2].map(durationText), correct: durationText(duration), explanation, correction,
   };
   return {
     prompt: 'À quelle heure arrive le lapin ?', detail: `Il part à ${clockTime(start)}. Son trajet dure ${durationText(duration)}.`,
+    narration: ['arrival', 'starts', ...timeVoice(start), 'trip', ...durationVoice(duration)],
     options: [end, end + step, end - step].map(value => clockTime(value)), correct: clockTime(end), explanation, correction,
   };
 }

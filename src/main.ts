@@ -227,7 +227,10 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
 get('home').before(camp.root);
 const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), milestone => audio.success(milestone), cue => {
   if (cue !== 'rabbit-late' || saved.voiceEnabled) audio.clockAnswer(cue);
-}, () => localStorage);
+}, () => localStorage, tokens => {
+  if (tokens && saved.voiceEnabled && !saved.muted) audio.speakClockQuestion(tokens);
+  else audio.stopSpeech();
+});
 get('home').before(clockArcade.root);
 get('open-clock-arcade').addEventListener('click', () => {
   void audio.navigation();
@@ -519,6 +522,10 @@ get("sound").addEventListener("click", () => {
   renderPreferences();
 });
 function speakCurrentQuestion(retry = false): void {
+  if (clockArcade.playing) {
+    clockArcade.readCurrentQuestion();
+    return;
+  }
   if (
     game.phase === "question" &&
     game.current &&

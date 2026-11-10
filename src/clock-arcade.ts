@@ -5,6 +5,7 @@ import { clockCorrectionMarkup } from './clock-correction';
 import { clockFinaleChapterMs, clockFinaleChapters, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend } from './clock-story';
 import { sprite } from './themes';
 import type { ClockCue } from './audio';
+import type { ClockVoiceToken } from './clock-voice';
 
 type Level = Parameters<typeof clockRound>[1];
 type Screen = 'catalogue' | 'levels' | 'playing' | 'correction' | 'paused' | 'results' | 'story' | 'finale';
@@ -85,6 +86,7 @@ export class ClockArcade {
     private readonly playSuccess: (milestone: boolean) => void,
     private readonly playCue: (cue: ClockCue) => void,
     private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
+    private readonly narrate: (tokens: readonly ClockVoiceToken[] | null) => void,
   ) {
     this.root.className = 'clock-arcade';
     this.root.setAttribute('aria-labelledby', 'clock-heading');
@@ -144,6 +146,10 @@ export class ClockArcade {
   }
 
   get playing(): boolean { return !this.root.hidden && this.screen === 'playing'; }
+  readCurrentQuestion(): void {
+    if (this.playing && !document.hidden) this.narrate(this.questions[this.index].narration);
+  }
+
   private get storyComplete(): boolean { return this.completed.size === orderedLevels.length; }
   private get nextLevel() { return orderedLevels.find(level => !this.completed.has(level.key)); }
 
@@ -365,6 +371,7 @@ export class ClockArcade {
   }
 
   private show(screen: Screen): void {
+    if (this.screen === 'playing' && screen !== 'playing') this.narrate(null);
     if (this.screen === 'results' || this.screen === 'finale') {
       this.finishLayer.replaceChildren();
       this.playCue('stop');
@@ -376,6 +383,7 @@ export class ClockArcade {
     if (screen === 'playing') {
       this.displayedSeconds = -1;
       this.updateTimer();
+      this.readCurrentQuestion();
     }
     this.content.querySelector<HTMLElement>('#clock-heading')!.focus();
   }

@@ -2,6 +2,8 @@ import { voicePath } from "./calculations";
 import type { Calculation } from "./calculations";
 import { voiceProfiles, voiceRates, type VoiceStyle } from "./voice-profiles";
 import rabbitLateClip from './rabbit-late.wav?inline';
+import clockVoiceClip from './clock-voice.mp3?inline';
+import { composeClockVoice, type ClockVoiceToken } from './clock-voice';
 export { voiceRates, type VoiceStyle } from "./voice-profiles";
 export type VoiceStatus = "idle" | "loading" | "speaking" | "unavailable";
 export const VOICE_LOAD_TIMEOUT_MS = 5000;
@@ -57,7 +59,12 @@ export class QuestionVoice {
 
   async rabbitLate(): Promise<void> {
     this.stop();
-    await this.play(rabbitLateClip, 0.55, 1.5, 'kitten');
+    await this.play('rabbit-late', 0.55, 1.5, 'kitten');
+  }
+
+  async clockQuestion(tokens: readonly ClockVoiceToken[]): Promise<void> {
+    this.stop();
+    await this.play('clock-questions', 0, 1.5, 'classic', bank => composeClockVoice(this.context, bank, tokens));
   }
 
   private load(url: string, retry = false): VoiceClip {
@@ -72,8 +79,9 @@ export class QuestionVoice {
       }, VOICE_LOAD_TIMEOUT_MS);
     });
     const composed = url.match(/^\/voice\/fr\/composed\/(add|subtract|multiply)\/(\d+)-(\d+)$/);
-    const download = url === rabbitLateClip
-      ? this.context.decodeAudioData(Uint8Array.from(atob(url.slice(url.indexOf(',') + 1)), char => char.charCodeAt(0)).buffer)
+    const inlineClip = url === 'rabbit-late' ? rabbitLateClip : url === 'clock-questions' ? clockVoiceClip : null;
+    const download = inlineClip
+      ? this.context.decodeAudioData(Uint8Array.from(atob(inlineClip.slice(inlineClip.indexOf(',') + 1)), char => char.charCodeAt(0)).buffer)
       : composed ? this.compose(composed[1],composed[2],composed[3]) : fetch(url, { signal: controller.signal }).then(async response => {
       if (!response.ok) throw new Error("Voice unavailable");
       return this.context.decodeAudioData(await response.arrayBuffer());
@@ -107,14 +115,14 @@ export class QuestionVoice {
     return buffer;
   }
 
-  private async play(url: string, delay = 0, volume = 1.6, style: VoiceStyle = "classic"): Promise<void> {
+  private async play(url: string, delay = 0, volume = 1.6, style: VoiceStyle = "classic", compose?: (buffer: AudioBuffer) => AudioBuffer): Promise<void> {
     const generation = this.generation;
     this.status = "loading";
     try {
       const buffer = await this.load(url, true).pending;
       // A fast answer, pause, mute, or new question invalidates older downloads.
       if (generation !== this.generation) return;
-      this.startBuffer(buffer, delay, volume, style, generation);
+      this.startBuffer(compose ? compose(buffer) : buffer, delay, volume, style, generation);
     } catch {
       if (generation === this.generation) {
         this.stop();
