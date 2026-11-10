@@ -1,6 +1,9 @@
 import { ant, campScene } from './ants';
 import { buildings, buildingCosts, buildColony, colonyStatus, inspectTraining, preset, trainingLabel, type TrainingData, type TrainingSettings } from './training';
 import { expression, type Operation } from './calculations';
+import { clockGameIds, clockGames, type ClockGame } from './clock-games';
+
+export type CampTab = 'workshop' | 'time' | 'colony';
 
 type Choice = { value: number|string; label: string; note?: string };
 function choices(id: string, title: string, value: unknown, items: Choice[], attributes='', compact=false): string {
@@ -19,18 +22,20 @@ function livesPicker(s: TrainingSettings): string {
 }
 export class TrainingUI {
   readonly root = document.createElement('section');
-  private tab: 'workshop'|'colony' = 'workshop';
+  private tab: CampTab = 'workshop';
   private stored = true;
   private building: number | null = null;
   private constructionTimer: number | undefined;
   private constructionMessage = '';
   private buildingName = '';
   private buildingCost = 0;
-  constructor(private data: TrainingData, private onChange:()=>boolean, private onStart:()=>void, private onHome:()=>void, private legacyRecords:()=>string) {
+  constructor(private data: TrainingData, private onChange:()=>boolean, private onStart:()=>void, private onHome:()=>void, private legacyRecords:()=>string, private onTimePractice:(game:ClockGame)=>void) {
     this.root.id='training'; this.root.hidden=true; this.root.setAttribute('aria-label','Le camp des petites fourmis');
     this.root.addEventListener('click',event=>{
       const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button) return;
+      const clockGame = clockGameIds.find(id => id === button.dataset.clockPractice);
+      if (clockGame) { this.onTimePractice(clockGame); return; }
       if (button.dataset.tab) { this.stopConstruction(); this.tab=button.dataset.tab as typeof this.tab; this.render(); this.root.querySelector<HTMLElement>(`[data-tab="${this.tab}"]`)?.focus(); }
       if (button.dataset.preset) { this.data.settings=preset(button.dataset.preset); this.tab='workshop'; this.save(); this.render(); this.root.querySelector<HTMLElement>('#camp-session-title')?.focus(); }
       if (button.id==='camp-home') {this.stopConstruction();this.onHome();}
@@ -52,7 +57,7 @@ export class TrainingUI {
     });
     this.root.addEventListener('change',event=>this.change(event.target as HTMLInputElement));
   }
-  open(tab: typeof this.tab = 'workshop',stored=this.stored): void { this.stopConstruction(); this.tab=tab; this.stored=stored; this.render(); this.focusTitle(); }
+  open(tab: CampTab = 'workshop',stored=this.stored): void { this.stopConstruction(); this.tab=tab; this.stored=stored; this.render(); this.focusTitle(); }
   private stopConstruction(): void {clearTimeout(this.constructionTimer);this.building=null;}
   private construct(): void {
     if(this.building!==null) return;
@@ -81,7 +86,7 @@ export class TrainingUI {
     <ol class="camp-buildings">${buildings.map((name,i)=>`<li class="${i<state.built?'built':i===state.built?'next-building':''}"><span>${i<state.built?'✓':i+1}</span><strong>${name}</strong><small>${i<state.built?'Construite':`${buildingCosts[i]} matériaux`}</small>${i===state.built?'<em>Prochain chantier</em>':''}</li>`).join('')}</ol>
     ${state.stars?`<p class="colony-stars">★ ${state.stars} étoile${state.stars===1?'':'s'} sur ton drapeau</p>`:''}<p class="camp-help">Chaque chantier demande davantage de matériaux. Tes constructions restent acquises et le surplus attend dans ta réserve. Tous les réglages d’entraînement restent accessibles.</p><details><summary>Mes anciens records de partie libre</summary>${this.legacyRecords()}</details>`;
   }
-  private focusTitle():void { this.root.querySelector<HTMLElement>('h1')?.focus(); }
+  private focusTitle():void { this.root.querySelector<HTMLElement>(this.tab === 'time' ? '#camp-time-title' : 'h1')?.focus(); }
   private save():void { this.stored=this.onChange(); }
   private change(input: HTMLInputElement):void {
     const s=this.data.settings;
@@ -104,6 +109,17 @@ export class TrainingUI {
     this.root.querySelectorAll<HTMLDetailsElement>('details').forEach((el,i)=>el.open=details[i]??false);
     if (focusId) this.root.querySelector<HTMLElement>(`#${focusId}`)?.focus({preventScroll:true});
   }
+  private timeMarkup(): string {
+    return `<section aria-labelledby="camp-time-title">
+      <h2 id="camp-time-title" tabindex="-1">L’heure et les durées</h2>
+      <p class="camp-help">Choisis un atelier et une difficulté. Chaque séance propose cinq questions à ton rythme.</p>
+      <div class="camp-presets">${clockGameIds.map(id => {
+        const game = clockGames[id];
+        return `<button type="button" data-clock-practice="${id}"><span class="camp-symbol" aria-hidden="true">${game.icon}</span>
+          <strong>${game.name}</strong><small>${game.description}</small><span class="camp-preset-note">3 difficultés · Sans chrono →</span></button>`;
+      }).join('')}</div>
+    </section>`;
+  }
   render():void {
     const s=this.data.settings;
     const {pools,count,error}=inspectTraining(s);
@@ -111,8 +127,8 @@ export class TrainingUI {
     const stock=colonyStatus(this.data).stock;
     this.root.innerHTML=`<div class="camp-top"><button id="camp-home" class="secondary-button" type="button">← Accueil</button><span class="camp-materials">✦ ${stock} matériaux</span></div>
     <header class="camp-heading"><div><span class="eyebrow">PETITS CALCULS, GRANDES CONSTRUCTIONS</span><h1 tabindex="-1">Le camp des<br><em>petites fourmis</em></h1><p>Choisis ton défi. Enfile ton casque.<br>Construisons quelque chose ensemble !</p></div><div class="camp-guide">${ant()}</div></header>
-    <nav class="camp-nav" aria-label="Les lieux du camp">${[['workshop','⚒','S’entraîner'],['colony','⌂','La fourmilière']].map(([id,icon,label])=>`<button type="button" data-tab="${id}" aria-current="${id===this.tab?'page':'false'}"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>
-    <div class="camp-content">${this.tab==='colony'?this.colonyMarkup():
+    <nav class="camp-nav" aria-label="Les lieux du camp">${[['workshop','⚒','S’entraîner'],['time','◷','L’heure et les durées'],['colony','⌂','La fourmilière']].map(([id,icon,label])=>`<button type="button" data-tab="${id}" aria-current="${id===this.tab?'page':'false'}"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>
+    <div class="camp-content">${this.tab==='colony'?this.colonyMarkup():this.tab==='time'?this.timeMarkup():
     `<details id="camp-quick-sessions" class="camp-quick-sessions"><summary>Séances prêtes à l’emploi</summary><p>Choisis une séance pour remplir les réglages ci-dessous.</p><div class="camp-presets">${[['first','+','Premiers calculs','10 additions jusqu’à 10'],['tables','×','Mes tables','20 calculs · tables de 2 et 5'],['mix','+ − ×','Grand mélange','20 calculs · trois opérations']].map(([id,icon,title,desc])=>`<button type="button" data-preset="${id}"><span class="camp-symbol">${icon}</span><strong>${title}</strong><small>${desc}</small><span class="camp-preset-note">Sans chrono · essais illimités →</span></button>`).join('')}</div></details><h2 id="camp-session-title" tabindex="-1">Personnaliser ma séance</h2><fieldset class="camp-field"><legend>Mes opérations</legend><div class="camp-checks">${(['add','subtract','multiply'] as const).map((op,i)=>`<label><input id="camp-op-${op}" name="operation" type="checkbox" value="${op}" ${s.operations.includes(op)?'checked':''}><span>${['+ Addition','− Soustraction','× Multiplication'][i]}</span></label>`).join('')}</div></fieldset>
     <div class="camp-number-grid">${(['add','subtract'] as const).filter(op=>s.operations.includes(op)).map(op=>`<fieldset class="camp-field"><legend>${op==='add'?'Mes additions':'Mes soustractions'}</legend>${choices(`camp-${op}-ceiling`,'Nombres jusqu’à',s[op].max,numberChoices([...new Set([10,20,50,100,s[op].max])].sort((a,b)=>a-b)),`data-rule="${op}" data-field="ceiling"`,true)}<details id="camp-${op}-advanced"><summary>Affiner mon entraînement</summary><div class="camp-inline"><label>Minimum<input id="camp-${op}-min" data-rule="${op}" data-field="min" type="number" min="1" max="100" value="${s[op].min}"></label><label>Maximum<input id="camp-${op}-max" data-rule="${op}" data-field="max" type="number" min="1" max="100" value="${s[op].max}"></label></div><small>Les deux nombres et le résultat restent dans cette plage.</small>${choices(`camp-${op}-carry`,'Passage de dizaine',s[op].carry,[{value:'all',label:'Tous',note:'On mélange !'},{value:'without',label:'Sans passage',note:op==='add'?'8 + 1 = 9':'18 − 5 = 13'},{value:'with',label:'Avec passage',note:op==='add'?'8 + 5 = 13':'13 − 5 = 8'}],`data-rule="${op}" data-field="carry"`)}<small>${op==='add'?'8 + 5 : on franchit 10 avec une retenue.':'13 − 5 : on emprunte une dizaine.'}</small></details></fieldset>`).join('')}</div>
     ${s.operations.includes('multiply')?`<fieldset class="camp-field"><legend>Mes tables</legend><div class="camp-table-actions"><button type="button" data-tables="all">Toutes</button><button type="button" data-tables="none">Aucune</button></div><div class="camp-checks camp-tables">${Array.from({length:10},(_,i)=>i+1).map(n=>`<label><input id="camp-table-${n}" name="table" type="checkbox" value="${n}" ${s.tables.includes(n)?'checked':''}><span>${n}</span></label>`).join('')}</div><div class="camp-multiplier-grid">${choices('camp-multiplier-min','Multiplier à partir de',s.multiplierMin,numberChoices(Array.from({length:11},(_,i)=>i)),'',true)}${choices('camp-multiplier-max','Jusqu’à',s.multiplierMax,numberChoices(Array.from({length:11},(_,i)=>i)),'',true)}</div><small>×0 est utilisé uniquement si le zéro est autorisé.</small></fieldset>`:''}

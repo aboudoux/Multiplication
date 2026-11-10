@@ -3,6 +3,7 @@ import {test,expect,type Page} from '@playwright/test';
 import {preset,TRAINING_KEY} from '../../src/training';
 import {defaults,STORAGE_KEY} from '../../src/storage';
 import {ADVENTURE_KEY} from '../../src/adventure';
+import { clockRound, roundLength } from '../../src/clock-games';
 async function load(page:Page) {
  await page.addInitScript(({key,saved})=>{if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(saved));},{key:STORAGE_KEY,saved:{...defaults(),muted:true}});
  await page.clock.install({time:new Date('2026-09-30T12:00:00Z')});await page.goto('/');await page.clock.pauseAt(new Date('2026-09-30T12:00:10Z'));
@@ -14,6 +15,38 @@ async function solve(page:Page) {
  await page.keyboard.type(String(label.includes('plus')?a+b:label.includes('moins')?a-b:a*b));
  await page.clock.runFor(700);
 }
+
+test('les ateliers du temps proposent trois difficultés libres et une correction à son rythme', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await load(page);
+  await page.getByRole('button', { name: 'L’heure et les durées' }).click();
+  await expect(page.locator('.camp-presets [data-clock-practice]')).toHaveCount(6);
+  await page.locator('[data-clock-practice="read"]').click();
+  await expect(page.locator('[data-clock-action="level"]:enabled')).toHaveCount(3);
+  await expect(page.locator('[data-level="2"]')).toContainText('Quarts d’heure');
+  await page.evaluate(() => { Math.random = () => 0; });
+  await page.locator('[data-level="2"]').click();
+  await expect(page.getByRole('timer')).toHaveCount(0);
+  await page.clock.fastForward(120_000);
+  await expect(page.getByText('Question 1 sur 5')).toBeVisible();
+  const questions = clockRound('read', 2, () => 0);
+  const wrong = questions[0].options.findIndex(option => option !== questions[0].correct);
+  await page.locator(`[data-option="${wrong}"]`).click();
+  await expect(page.locator('.clock-lesson .clock-face')).toBeVisible();
+  await page.clock.fastForward(120_000);
+  await page.getByRole('button', { name: 'Continuer' }).click();
+  for (let index = 1; index < roundLength; index++) {
+    const question = questions[index];
+    await page.locator(`[data-option="${question.options.indexOf(question.correct)}"]`).click();
+  }
+  await expect(page.getByText('Ta séance est terminée.')).toBeVisible();
+  await expect(page.locator('.clock-results .result-stats')).toContainText('4 bonnes réponses');
+  await page.getByRole('button', { name: 'Retour aux ateliers' }).click();
+  await expect(page.getByRole('heading', { name: 'L’heure et les durées' })).toBeFocused();
+  await page.locator('#camp-home').click();
+  await page.locator('#open-adventure').click();
+  await expect(page.locator('[data-choice="lapin"] .choice-progress')).toHaveText('0 / 18 niveaux faits');
+});
 test('guided setup, exact tables, completion, materials, replay and independent adventure',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await load(page);await page.locator('#camp-quick-sessions summary').click();await page.locator('[data-preset="tables"]').click();

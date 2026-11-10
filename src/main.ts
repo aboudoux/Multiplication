@@ -1,5 +1,5 @@
 import { ant, campScene } from './ants';
-import { TrainingUI } from './training-ui';
+import { TrainingUI, type CampTab } from './training-ui';
 import { readTraining, saveTraining, awardMaterials, colonyStatus, trainingQuestions, trainingLabel, trainingRecordKey, inspectTraining, type TrainingData } from './training';
 import { ThemeSurprises } from "./surprises";
 import { themes } from "./themes";
@@ -225,9 +225,17 @@ const camp = new TrainingUI(trainingData,()=>{ const stored=persistTraining(); a
     const tableCount=Number(tables), lifeCount=Number(lives);
     return `<tr><th scope="row"><strong>${modes[mode as Mode]?.name??'Ancienne partie'}</strong><span>${Number(count)} calculs${tableCount?` · ${tableCount} table${tableCount===1?'':'s'}`:''}</span><span>Chrono ${Number(duration)} s · ${lifeCount} vie${lifeCount===1?'':'s'}</span></th><td>${formatTime(r.timeMs)}</td><td>${r.mistakes}</td></tr>`;
   }).join('')}</tbody></table>` : '<p>Aucun ancien record enregistré.</p>';
+}, game => {
+  campOpen = false;
+  clockArcade.openPractice(game);
+  applyTheme();
+  render(performance.now());
 });
 get('home').before(camp.root);
-const clockArcade = new ClockArcade(() => showAdventureChoice('open-clock-arcade'), milestone => audio.success(milestone), cue => {
+const clockArcade = new ClockArcade(() => {
+  if (clockArcade.isPractice) openCamp('time');
+  else showAdventureChoice('open-clock-arcade');
+}, milestone => audio.success(milestone), cue => {
   if (cue !== 'rabbit-late' || saved.voiceEnabled) audio.clockAnswer(cue);
 }, () => localStorage, tokens => {
   if (tokens && saved.voiceEnabled && !saved.muted) audio.speakClockQuestion(tokens);
@@ -241,7 +249,8 @@ get('victory-description').insertAdjacentHTML('afterend','<div id="camp-victory"
 get('pause-panel').insertAdjacentHTML('beforeend','<button id="camp-exit" class="secondary-button" type="button" hidden>Retour au camp · garder mes matériaux</button>');
 get('results').querySelector('.result-actions')!.insertAdjacentHTML('beforeend','<button id="camp-results-exit" class="secondary-button" type="button" hidden>Retour au camp</button>');
 get('camp-results-exit').insertAdjacentHTML('afterend','<button id="camp-colony-ready" class="play-button" type="button" hidden>Un chantier est prêt ! Aller construire →</button>');
-function openCamp(tab: 'workshop'|'colony' = 'workshop'): void {
+function openCamp(tab: CampTab = 'workshop'): void {
+  clockArcade.close();
   trainingActive=false; activeStage=null; mapOpen=false; chooserOpen=false; campOpen=true; previewVictory=false;
   audio.stopSpeech(); surprises.clear(); game=createGame(); previousPhase='finished';
   get('board').classList.remove('adventure-playing','untimed-playing');
@@ -503,7 +512,7 @@ function previewVictoryAnimation(): void {
   });
 }
 function goHome(): void {
-  if (!clockArcade.root.hidden) { showLanding('open-adventure'); return; }
+  if (!clockArcade.root.hidden) { showLanding(clockArcade.isPractice ? 'open-training' : 'open-adventure'); return; }
   if (activeFinale.active) activeFinale.close();
   if (previewVictory) return;
   // The brand is only a home link outside an active game; no accidental loss of progress.
@@ -997,7 +1006,7 @@ function frame(now: number): void {
   const inMenus=!activeFinale.active && !previewVictory && !trainingActive && !activeStage
     && game.phase==='welcome' && (campOpen || mapOpen || chooserOpen || !get('home').hidden || clockOpen);
   get('menu-audio-enable').hidden=!inMenus || (!saved.muted && audio.ready);
-  audio.homeMusic(!document.hidden && inMenus, clockOpen);
+  audio.homeMusic(!document.hidden && inMenus, clockOpen && !clockArcade.isPractice);
   if (!document.hidden) {
     clockArcade.tick(now);
     activeFinale.update(now);
