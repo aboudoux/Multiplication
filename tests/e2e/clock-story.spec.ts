@@ -76,7 +76,8 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   expect(artwork.every(portrait => portrait.width === 520 && portrait.src.startsWith('data:image/webp;'))).toBe(true);
   expect(new Set(artwork.map(portrait => portrait.src)).size).toBe(6);
   for (const { animal } of artwork) {
-    await expect(scene.locator(`[data-portrait="${animal}"]`)).toHaveCSS('clip-path', new RegExp(`#clock-finale-cut-${animal}`));
+    await expect(scene.locator(`[data-portrait="${animal}"]`)).toHaveCSS('clip-path', new RegExp(`#clock-animal-cut-${animal}`));
+    await expect(page.locator(`#clock-animal-cut-${animal}`)).toHaveCount(1);
   }
   await expect(scene).toHaveAttribute('data-step', '0');
   await page.clock.fastForward(clockFinaleOpeningMs + clockFinaleChapterStarts[1] + 100);
@@ -212,6 +213,9 @@ test('les portraits des cinq amis s’inclinent et avancent sous les réponses s
   await page.getByRole('button', { name: 'Lire l’histoire' }).click();
   const chapters = page.locator('.clock-chapter [data-portrait]');
   await expect(chapters).toHaveCount(5);
+  const clips = await chapters.evaluateAll(portraits => portraits.map(portrait =>
+    getComputedStyle(portrait).clipPath.includes(`#clock-animal-cut-${portrait.getAttribute('data-portrait')}`)));
+  expect(clips).toEqual([true, true, true, true, true]);
   const motions = await chapters.evaluateAll(portraits => portraits.map(portrait => getComputedStyle(portrait).animationName));
   expect(motions).toEqual(['clock-portrait-spring', 'clock-portrait-bob', 'clock-portrait-stretch', 'clock-portrait-hover', 'clock-portrait-bow']);
   await page.getByRole('button', { name: 'Tous les jeux' }).click();
@@ -222,6 +226,7 @@ test('les portraits des cinq amis s’inclinent et avancent sous les réponses s
   await expect(trail.locator('.clock-guest-spot')).toHaveCount(5);
   const figure = trail.locator('[data-clock-friend="squirrel"] .clock-guest-figure');
   const squirrel = figure.locator('.clock-friend-art');
+  await expect(squirrel).toHaveCSS('clip-path', /#clock-animal-cut-squirrel/);
   const movement = await figure.evaluate(figure => {
     const seek = (node: Element, name: string, fraction: number) => {
       const animation = node.getAnimations().find(animation => (animation as CSSAnimation).animationName === name)!;

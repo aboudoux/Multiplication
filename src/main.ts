@@ -28,6 +28,7 @@ import './training.css';
 import './landing.css';
 import { ClockArcade } from './clock-arcade';
 import { clockRabbitArt } from './clock-characters';
+import { clockAnimalOutlines } from './clock-animal-outlines';
 import './clock-arcade.css';
 import './colony.css';
 import { BirthdayParty } from './birthday-party';
@@ -63,6 +64,7 @@ const icons = {
   ),
 };
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
+  ${clockAnimalOutlines}
   <div class="page-wrap">
     <div class="outside-note"><span class="little-star">✦</span> APPRENDRE, C’EST AUSSI JOUER.</div>
     <main class="wood-frame" aria-label="Calcul’Party">

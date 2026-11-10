@@ -193,18 +193,36 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
   .clock-timeout-scene * { animation:none !important; }
 }
 /* Embedded images also work when the private preview blocks separate image requests. */
+.clock-animal-outlines { position:absolute; pointer-events:none; }
 .clock-character {
-  display:block; width:100%; aspect-ratio:1; border-radius:20%; background-position:center; background-size:cover;
-  box-shadow:inset 0 0 0 1px #a77d4e70; transform-origin:center 85%;
+  display:block; width:100%; aspect-ratio:1; background-position:center; background-size:cover;
+  clip-path:var(--outline); transform-origin:center 85%;
+  translate:var(--portrait-x,0%) var(--portrait-y,0%);
+  scale:var(--portrait-scale,1);
   --portrait-loop:var(--portrait-motion) var(--portrait-pace) ease-in-out var(--portrait-start,var(--portrait-offset)) infinite;
   animation:var(--portrait-loop);
 }
 .clock-character[data-portrait="rabbit"] { background-image:url('./clock-art/lapin.webp?inline'); --portrait-motion:clock-portrait-hop; --portrait-pace:4.8s; --portrait-offset:0s; }
-.clock-character[data-portrait="squirrel"] { background-image:url('./clock-art/ecureuil.webp?inline'); --portrait-motion:clock-portrait-spring; --portrait-pace:4.4s; --portrait-offset:-.6s; }
-.clock-character[data-portrait="hedgehog"] { background-image:url('./clock-art/herisson.webp?inline'); --portrait-motion:clock-portrait-bob; --portrait-pace:5.5s; --portrait-offset:-1.6s; }
-.clock-character[data-portrait="turtle"] { background-image:url('./clock-art/tortue.webp?inline'); --portrait-motion:clock-portrait-stretch; --portrait-pace:6.8s; --portrait-offset:-2.2s; }
-.clock-character[data-portrait="owl"] { background-image:url('./clock-art/hibou.webp?inline'); --portrait-motion:clock-portrait-hover; --portrait-pace:5.2s; --portrait-offset:-3.4s; }
-.clock-character[data-portrait="fox"] { background-image:url('./clock-art/renard.webp?inline'); --portrait-motion:clock-portrait-bow; --portrait-pace:6.1s; --portrait-offset:-4s; }
+.clock-character[data-portrait="squirrel"] {
+  background-image:url('./clock-art/ecureuil.webp?inline'); --portrait-motion:clock-portrait-spring; --portrait-pace:4.4s; --portrait-offset:-.6s;
+  --portrait-x:-5%; --portrait-y:-5%; --portrait-scale:1.12;
+}
+.clock-character[data-portrait="hedgehog"] {
+  background-image:url('./clock-art/herisson.webp?inline'); --portrait-motion:clock-portrait-bob; --portrait-pace:5.5s; --portrait-offset:-1.6s;
+  --portrait-scale:1.14;
+}
+.clock-character[data-portrait="turtle"] {
+  background-image:url('./clock-art/tortue.webp?inline'); --portrait-motion:clock-portrait-stretch; --portrait-pace:6.8s; --portrait-offset:-2.2s;
+  --portrait-x:7%; --portrait-y:-10%; --portrait-scale:1.1;
+}
+.clock-character[data-portrait="owl"] {
+  background-image:url('./clock-art/hibou.webp?inline'); --portrait-motion:clock-portrait-hover; --portrait-pace:5.2s; --portrait-offset:-3.4s;
+  --portrait-x:10%; --portrait-y:9%; --portrait-scale:1.25;
+}
+.clock-character[data-portrait="fox"] {
+  background-image:url('./clock-art/renard.webp?inline'); --portrait-motion:clock-portrait-bow; --portrait-pace:6.1s; --portrait-offset:-4s;
+  --portrait-x:10%;
+}
 .clock-timeout-rabbit .clock-character { --portrait-start:2.144s; }
 @keyframes clock-portrait-hop {
   0%,32%,100% { transform:none; }
@@ -324,12 +342,11 @@ html[data-theme="club"] .clock-entry:hover .play-button { background:#ffdc7b; }
 .clock-finale-fireflies i:nth-child(odd) { border-radius:0; clip-path:polygon(50% 0,63% 35%,100% 50%,63% 65%,50% 100%,37% 65%,0 50%,37% 35%); width:10px; height:10px; }
 .clock-finale-scene:is([data-step="3"],[data-step="4"]) .clock-finale-fireflies i { opacity:.55; animation:clock-finale-firefly 2.8s ease-in-out 2 both; }
 .clock-finale-scene:is([data-step="3"],[data-step="4"]) .clock-finale-fireflies i:nth-child(even) { animation-delay:.45s; }
-.clock-finale-outlines { position:absolute; pointer-events:none; }
 .clock-finale-cast { position:absolute; z-index:2; inset:0 0 18%; pointer-events:none; }
 .clock-finale-actor { position:absolute; bottom:0; left:var(--stage-x); width:23%; max-width:180px; translate:-50% 0; }
 .clock-finale-actor::before { content:""; position:absolute; width:55%; height:7%; left:23%; bottom:0; border-radius:50%; background:#52613833; filter:blur(2px); }
 .clock-finale-puppet { position:relative; display:block; transform-origin:center 90%; filter:drop-shadow(1px 3px 1px #53362150); }
-.clock-finale-puppet .clock-character { clip-path:var(--outline); border-radius:0; box-shadow:none; translate:var(--picture-x,0%) var(--picture-y,0%); animation:none; }
+.clock-finale-puppet .clock-character { translate:var(--picture-x,0%) var(--picture-y,0%); scale:none; animation:none; }
 .clock-finale-actor[data-animal="rabbit"] { --stage-x:13%; width:27%; max-width:205px; z-index:2; --party:clock-finale-hop; --party-delay:.15s; }
 .clock-finale-actor[data-animal="squirrel"] { --stage-x:29%; --picture-x:-2%; --picture-y:4%; --party:clock-finale-offer; --party-delay:.46s; }
 .clock-finale-actor[data-animal="hedgehog"] { --stage-x:43%; --picture-y:15%; --party:clock-finale-shuffle; --party-delay:.65s; }

@@ -21,6 +21,8 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator('.destination-card')).toHaveCount(3);
   const illustration = page.locator('.clock-entry [data-portrait="rabbit"]');
+  await expect(illustration).toHaveCSS('clip-path', /#clock-animal-cut-rabbit/);
+  await expect(page.locator('#clock-animal-cut-rabbit')).toHaveCount(1);
   await expect(illustration).toHaveCSS('animation-name', 'clock-portrait-hop');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(illustration).toHaveCSS('animation-name', 'none');
@@ -35,6 +37,7 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.getByRole('heading', { name: 'Les jeux du lapin chrono' })).toBeFocused();
   const introRabbit = page.locator('.clock-intro [data-portrait="rabbit"]');
+  await expect(introRabbit).toHaveCSS('clip-path', /#clock-animal-cut-rabbit/);
   await expect(introRabbit).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(introRabbit).toHaveCSS('animation-name', 'clock-portrait-hop');
@@ -253,6 +256,7 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
   await expect(timeoutScene.locator('.clock-timeout-dial')).toHaveCSS('animation-name', 'clock-timeout-ring');
   await expect(timeoutScene.locator('.clock-timeout-rabbit')).toHaveCSS('animation-name', 'clock-timeout-dance');
   await expect(timeoutScene.locator('[data-portrait="rabbit"]')).toHaveCSS('animation-name', 'clock-portrait-hop');
+  await expect(timeoutScene.locator('[data-portrait="rabbit"]')).toHaveCSS('clip-path', /#clock-animal-cut-rabbit/);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(timeoutScene.locator('.clock-timeout-rabbit')).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -265,6 +269,7 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
   }
   await expect(page.getByText('Niveau fait', { exact: false })).toBeVisible();
   await expect(page.locator('.clock-results > [data-portrait="rabbit"]')).toHaveCSS('animation-name', 'clock-portrait-hop');
+  await expect(page.locator('.clock-results > [data-portrait="rabbit"]')).toHaveCSS('clip-path', /#clock-animal-cut-rabbit/);
   const finishPass = page.locator('.clock-finish-pass');
   await expect(finishPass).toContainText('Oh là là, je suis en retard !');
   await expect(finishPass.locator('.clock-finish-runner')).toHaveCSS('animation-name', 'clock-rabbit');

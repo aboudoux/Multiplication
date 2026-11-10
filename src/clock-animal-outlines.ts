@@ -1,5 +1,3 @@
-import { clockFriendArt, clockRabbitArt } from './clock-characters';
-
 // The outlines follow the supplied square illustrations in their original pixel coordinates.
 const outlines = {
   rabbit: 'M487 362C393 308 291 204 307 133C319 38 418 27 480 89Q521 132 532 185C533 88 573 10 625 18C707 24 726 169 665 297Q751 300 781 390L800 438L845 424L807 452L830 483L840 530Q854 501 901 513Q954 525 926 566L907 583C956 609 969 669 945 714C964 750 947 792 906 824Q859 862 798 874L813 940L802 963Q837 1021 794 1097Q841 1093 866 1154C883 1210 743 1216 668 1191Q630 1180 634 1140Q597 1154 559 1151C557 1195 480 1217 414 1215C347 1215 341 1180 373 1127L398 1110L377 1076Q336 1078 305 1050Q269 1022 280 974L290 945Q289 915 323 899Q340 848 389 877L406 899L438 851Q401 810 452 736Q479 680 541 649C480 642 440 611 438 579L424 565Q422 467 487 362Z',
@@ -10,11 +8,5 @@ const outlines = {
   fox: 'M86 1009C90 879 203 811 342 829Q401 746 531 672L511 668Q500 661 533 638L565 609Q512 625 501 606L514 593Q460 600 443 571Q436 562 466 530Q431 539 437 514L467 478C407 442 371 346 379 257Q378 231 408 230C475 220 552 245 597 267Q582 232 610 238L632 244C655 171 720 75 772 72C804 65 868 206 849 318Q881 368 919 390Q934 398 912 428L925 437Q896 524 797 581L759 597Q813 631 823 668Q825 685 799 677Q824 726 811 757Q803 778 791 764Q784 812 760 855L750 979Q797 1003 803 1060Q801 1093 717 1091Q682 1130 624 1107Q590 1116 535 1101Q550 1145 525 1186Q521 1194 494 1180C320 1223 188 1192 114 1123Q79 1087 86 1009Z',
 };
 
-export function clockFinalePuppets(friends: readonly Exclude<keyof typeof outlines, 'rabbit'>[]): string {
-  const cast = ['rabbit', ...friends] as const;
-  // The clip is applied only in the film. The illustrated backgrounds remain on the game cards.
-  return `<svg class="clock-finale-outlines" width="0" height="0" aria-hidden="true"><defs>${cast.map(animal =>
-    `<clipPath id="clock-finale-cut-${animal}" clipPathUnits="objectBoundingBox"><path transform="scale(0.000797448)" d="${outlines[animal]}"/></clipPath>`).join('')}</defs></svg>
-    <div class="clock-finale-cast">${cast.map(animal =>
-      `<span class="clock-finale-actor" data-animal="${animal}"><span class="clock-finale-puppet" style="--outline:url(#clock-finale-cut-${animal})">${animal === 'rabbit' ? clockRabbitArt : clockFriendArt(animal)}</span></span>`).join('')}</div>`;
-}
+export const clockAnimalOutlines = `<svg class="clock-animal-outlines" width="0" height="0" aria-hidden="true"><defs>${Object.entries(outlines).map(([animal, path]) =>
+  `<clipPath id="clock-animal-cut-${animal}" clipPathUnits="objectBoundingBox"><path transform="scale(0.000797448)" d="${path}"/></clipPath>`).join('')}</defs></svg>`;

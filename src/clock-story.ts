@@ -1,4 +1,4 @@
-import { clockFinalePuppets } from './clock-finale-art';
+import { clockFriendArt, clockRabbitArt } from './clock-characters';
 import { finaleVoiceClips } from './clock-finale-voice-clips';
 
 export const clockStoryTitle = 'Le goûter du tic-tac';
@@ -72,10 +72,12 @@ const cake = `<svg class="clock-finale-cake" viewBox="0 0 120 88" data-finale-pr
 </svg>`;
 
 export function clockFinaleScene(): string {
+  const cast = ['rabbit', ...clockFriends.map(friend => friend.id)] as const;
   return `<div class="clock-finale-scene" data-step="0" aria-hidden="true">
     ${grove}<div class="clock-finale-late-light"></div>${lanterns}
     <div class="clock-finale-fireflies"><i></i><i></i><i></i><i></i><i></i></div>
-    ${clockFinalePuppets(clockFriends.map(friend => friend.id))}
+    <div class="clock-finale-cast">${cast.map(animal =>
+      `<span class="clock-finale-actor" data-animal="${animal}"><span class="clock-finale-puppet">${animal === 'rabbit' ? clockRabbitArt : clockFriendArt(animal)}</span></span>`).join('')}</div>
     <div class="clock-finale-workbench">${watch}<span class="clock-finale-gear" data-finale-prop="gear">⚙</span><span class="clock-finale-screw"></span><span class="clock-finale-glints">✧ ✦ ✧</span></div>
     ${bell}<div class="clock-finale-blanket"></div>${cake}
     <div class="clock-finale-confetti">${[6, 14, 22, 29, 37, 45, 53, 61, 68, 76, 84, 93].map((left, index) =>
