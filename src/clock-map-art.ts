@@ -1,5 +1,27 @@
 import type { ClockGame } from './clock-games';
 
+export const clockLevelLock = `<svg class="clock-level-lock" viewBox="0 0 72 38" aria-hidden="true" focusable="false">
+  <g class="clock-lock-left" fill="none" stroke="#465260" stroke-width="3.5">
+    <rect x="3" y="10" width="15" height="9" rx="4.5" transform="rotate(23 10 14)"/>
+    <rect x="13" y="14" width="15" height="9" rx="4.5" transform="rotate(23 20 18)"/>
+    <rect x="23" y="18" width="15" height="9" rx="4.5" transform="rotate(23 30 22)"/>
+  </g>
+  <g class="clock-lock-right" fill="none" stroke="#465260" stroke-width="3.5">
+    <rect x="34" y="18" width="15" height="9" rx="4.5" transform="rotate(-23 41 22)"/>
+    <rect x="44" y="14" width="15" height="9" rx="4.5" transform="rotate(-23 51 18)"/>
+    <rect x="54" y="10" width="15" height="9" rx="4.5" transform="rotate(-23 61 14)"/>
+  </g>
+  <g class="clock-lock-shackle">
+    <path d="M29 19v-5a7 7 0 0 1 14 0v5" fill="none" stroke="#553619" stroke-width="6" stroke-linecap="round"/>
+    <path d="M29 19v-5a7 7 0 0 1 14 0v5" fill="none" stroke="#ffe0a0" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g class="clock-lock-body">
+    <rect x="25" y="17" width="22" height="17" rx="4" fill="#efae48" stroke="#553619" stroke-width="2"/>
+    <path d="M29 21h5" stroke="#ffdda0" stroke-width="2" stroke-linecap="round"/>
+    <path d="M36 24v4" stroke="#553619" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>`;
+
 const landmarks: Record<ClockGame, string> = {
   read: `<path d="M45 60q8-15 8-31h7q0 20 9 31" fill="#a96542"/>
     <path d="m55 49-13-15m14 8 14-14" fill="none" stroke="#a96542" stroke-width="5"/>

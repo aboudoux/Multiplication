@@ -50,6 +50,8 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await expect(page.locator('.clock-map-level').first()).toHaveAccessibleName('Niveau 1, Découverte, À jouer');
   await expect(page.locator('.clock-map-level').last()).toHaveAccessibleName('Niveau 18, Défi, Verrouillé');
   await expect(page.locator('.clock-map-level').last().locator('.clock-map-marker')).toHaveCSS('background-color', 'rgb(222, 222, 222)');
+  await expect(page.locator('.clock-map-level:disabled .clock-level-lock')).toHaveCount(17);
+  await expect(page.locator('.clock-map-level:enabled .clock-level-lock')).toHaveCount(0);
   await expect(page.locator('.clock-map-level:enabled')).toHaveCount(1);
   await page.locator('.clock-map-level:enabled').click();
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
@@ -322,6 +324,7 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
   const nextLevel = page.getByRole('button', { name: 'Niveau 2, Exploration, À jouer' });
   await expect(nextLevel).toBeFocused();
   await expect(page.getByText('Niveau débloqué !')).toHaveCount(0);
+  await expect(nextLevel.locator('.clock-level-lock')).toHaveCount(0);
   await nextLevel.click();
   await expect(page.getByText('Lis l’horloge · Exploration')).toBeVisible();
   await finishRound();
@@ -372,6 +375,10 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await expect(nextLevel).toBeFocused();
   await expect(nextLevel).toHaveAccessibleDescription('Niveau débloqué !');
   await expect(nextLevel.locator('.clock-map-marker')).toHaveCSS('animation-name', 'clock-map-unlock');
+  const pieces = nextLevel.locator('.clock-level-lock > g');
+  await expect(pieces).toHaveCount(4);
+  for (const piece of await pieces.all()) await expect(piece).toHaveCSS('animation-name', 'clock-lock-break');
+  await expect(pieces.first()).toHaveCSS('opacity', '0');
   await expect(page.locator('.clock-burst > *, .clock-quick-layer > *')).toHaveCount(0);
   await expect(page.locator('.clock-options')).toHaveCount(0);
   await nextLevel.click();
@@ -383,6 +390,7 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await expect(nextRegion).toBeFocused();
   await expect(nextRegion).toHaveAccessibleDescription('Niveau débloqué !');
   await expect(nextRegion.locator('.clock-map-marker')).toHaveCSS('animation-name', 'none');
+  await expect(nextRegion.locator('.clock-level-lock')).toBeHidden();
   await nextRegion.click();
   await expect(page.getByText('Trouve le cadran · Découverte')).toBeVisible();
 });

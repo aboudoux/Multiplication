@@ -1,7 +1,7 @@
 import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, type ClockGame, type ClockQuestion } from './clock-games';
 import { clockRabbitArt, clockFriendArt } from './clock-characters';
 import { ant } from './ants';
-import { clockMapCompass, clockMapLandscape, clockMapTrail, clockMapTreasure } from './clock-map-art';
+import { clockLevelLock, clockMapCompass, clockMapLandscape, clockMapTrail, clockMapTreasure } from './clock-map-art';
 import { clockCorrectionMarkup } from './clock-correction';
 import { clockArrivalScene, clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend, type ClockStoryFilm } from './clock-story';
 import { arrivalVoiceClips } from './clock-arrival-voice-clips';
@@ -542,6 +542,7 @@ export class ClockArcade {
     const button = this.content.querySelector<HTMLButtonElement>('.clock-map-level[data-state="next"]')!;
     if (this.newlyUnlockedLevel === next.key) {
       button.classList.add('clock-map-unlocking');
+      button.querySelector('.clock-map-marker')!.insertAdjacentHTML('beforeend', clockLevelLock);
       button.insertAdjacentHTML('beforeend', '<span class="clock-map-unlock-note" id="clock-map-unlock-note">Niveau débloqué !</span>');
       button.setAttribute('aria-describedby', 'clock-map-unlock-note');
     }
@@ -570,9 +571,9 @@ export class ClockArcade {
           const number = index * clockLevels.length + n + 1;
           const state = this.completed.has(key) ? 'done' : next?.key === key ? 'next' : 'locked';
           const status = state === 'done' ? 'Fait' : state === 'next' ? 'À jouer' : 'Verrouillé';
-          const badge = state === 'done' ? '✓' : state === 'next' ? '▶' : '🔒';
+          const markerArt = state === 'locked' ? clockLevelLock : `<span class="clock-map-marker-state">${state === 'done' ? '✓' : '▶'}</span>`;
           return `<li><button type="button" class="clock-map-level" data-clock-action="map-level" data-map-game="${id}" data-map-level="${n}" data-state="${state}" aria-label="Niveau ${number}, ${level.name}, ${status}"${state === 'next' ? ' aria-current="step"' : ''}${state === 'locked' ? ' disabled' : ''}>
-            <span class="clock-map-marker" aria-hidden="true">${number}<span class="clock-map-marker-state">${badge}</span></span>
+            <span class="clock-map-marker" aria-hidden="true">${number}${markerArt}</span>
             <span class="clock-map-level-name">${level.name}</span></button></li>`;
         }).join('')}</ol></li>`;
     }).join('')}</ol>`;
@@ -633,7 +634,7 @@ export class ClockArcade {
             const key = levelKey(this.game, index);
             const done = this.completed.has(key);
             const unlocked = key === next?.key;
-            const status = done ? '<span class="clock-done">✓ Fait</span>' : unlocked ? '<span class="clock-next">À jouer</span>' : '<span class="clock-locked">🔒 Verrouillé</span>';
+            const status = done ? '<span class="clock-done">✓ Fait</span>' : unlocked ? '<span class="clock-next">À jouer</span>' : `<span class="clock-locked">${clockLevelLock} Verrouillé</span>`;
             return `<button type="button" data-clock-action="level" data-level="${index}"${done || unlocked ? '' : ' disabled'}><span class="camp-symbol clock-icon" aria-hidden="true">${level.icon}</span><strong>${level.name}</strong><span>${game.skills[index]}</span><small class="camp-preset-note">${level.seconds} secondes</small>${status}</button>`;
           }).join('')}</div>`;
       case 'correction':

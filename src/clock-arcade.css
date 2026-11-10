@@ -146,6 +146,7 @@
 .clock-done { background:#d5f2dc; color:#204e35; }
 .clock-next { background:#f7d87f; color:#46331c; }
 .clock-locked { background:#e2d8c0; color:#4b4638; }
+.clock-locked .clock-level-lock { width:44px; vertical-align:middle; }
 .clock-levels button:disabled { background:#dedede; color:#494949; border-color:#aaa; box-shadow:none; transform:none; }
 .clock-levels button:disabled .clock-icon { filter:grayscale(1); }
 .clock-map {
@@ -228,8 +229,13 @@
 .clock-map-level[data-state="next"] .clock-map-marker { color:#53330f; background:#ffda73; border-color:#976124; box-shadow:0 0 0 4px #fff2c7; }
 .clock-map-level[data-state="done"] .clock-map-marker { color:#21543b; background:#d8efda; border-color:#638e6a; }
 .clock-map-level:disabled { opacity:1; cursor:default; }
-.clock-map-level:disabled :is(.clock-map-marker,.clock-map-marker-state,.clock-map-level-name) {
-  background:#dedede; color:#454545; border-color:#888; filter:grayscale(1);
+.clock-map-level:disabled :is(.clock-map-marker,.clock-map-level-name) {
+  background:#dedede; color:#454545; border-color:#888;
+}
+.clock-map-level:disabled .clock-map-marker { padding-bottom:10px; }
+.clock-map-marker > .clock-level-lock {
+  position:absolute; z-index:1; top:39%; left:50%; width:60px; height:auto;
+  translate:-50% 0; overflow:visible; pointer-events:none;
 }
 .clock-map-unlocking { position:relative; z-index:1; }
 .clock-map-unlock-note {
@@ -238,6 +244,18 @@
   font-size:.75rem; pointer-events:none;
 }
 .clock-map-level.clock-map-unlocking .clock-map-marker { animation:clock-map-unlock .85s ease-out; }
+.clock-map-unlocking .clock-level-lock > g {
+  transform-box:fill-box; transform-origin:center; animation:clock-lock-break .85s ease-out both;
+}
+.clock-lock-left { --lock-x:-32px; --lock-y:-10px; --lock-turn:-48deg; }
+.clock-lock-right { --lock-x:32px; --lock-y:-10px; --lock-turn:48deg; }
+.clock-lock-shackle { --lock-x:9px; --lock-y:-34px; --lock-turn:75deg; }
+.clock-lock-body { --lock-x:-5px; --lock-y:26px; --lock-turn:-55deg; }
+@keyframes clock-lock-break {
+  0%, 20% { opacity:1; transform:translate(0,0) rotate(0); }
+  48% { opacity:1; }
+  100% { opacity:0; transform:translate(var(--lock-x),var(--lock-y)) rotate(var(--lock-turn)) scale(.55); }
+}
 .clock-map-unlocking .clock-map-marker::after {
   content:''; position:absolute; inset:-3px; border:3px solid #ffe28b; border-radius:50%;
   animation:clock-map-unlock-ring .85s ease-out both; pointer-events:none;
@@ -254,7 +272,7 @@
 }
 @media (prefers-reduced-motion:reduce) {
   .clock-map-level.clock-map-unlocking .clock-map-marker { animation:none; }
-  .clock-map-unlocking .clock-map-marker::after { display:none; }
+  .clock-map-unlocking .clock-level-lock,.clock-map-unlocking .clock-map-marker::after { display:none; }
 }
 .clock-map-level:enabled:hover .clock-map-marker { outline:2px solid #694875; outline-offset:2px; }
 .clock-map button:focus-visible { outline:3px solid #724486; outline-offset:3px; }
