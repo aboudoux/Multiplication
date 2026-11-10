@@ -30,6 +30,6 @@ export function clockCorrectionMarkup(question: ClockQuestion, selected: ClockQu
     ${correctionFigure(question)}</div>
     ${seconds === null
       ? '<button type="button" class="play-button" data-clock-action="practice-next">Continuer →</button>'
-      : '<p class="clock-lesson-footer">Lis la fiche. Le jeu reprend tout seul.</p>'}
+      : '<p class="clock-lesson-footer">Lis la fiche. Le jeu reprend tout seul.</p><button type="button" class="secondary-button" data-clock-action="skip-correction">Passer →</button>'}
   </article>`;
 }

@@ -52,6 +52,7 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await expect(page.locator('.clock-map-level').last().locator('.clock-map-marker')).toHaveCSS('background-color', 'rgb(222, 222, 222)');
   await expect(page.locator('.clock-map-level:disabled .clock-level-lock')).toHaveCount(17);
   await expect(page.locator('.clock-map-level:enabled .clock-level-lock')).toHaveCount(0);
+  await expect(page.locator('.clock-map-level[data-state="next"] .clock-map-rabbit')).toBeVisible();
   await expect(page.locator('.clock-map-level:enabled')).toHaveCount(1);
   await page.locator('.clock-map-level:enabled').click();
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
@@ -146,6 +147,13 @@ test('une réussite avance immédiatement et une fiche d’erreur se ferme seule
   await expect(page.locator('.clock-results .result-stats > div')).toHaveCount(3);
   await page.getByRole('button', { name: 'Rejouer' }).click();
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
+  await answerClock(page, false);
+  await page.getByRole('button', { name: 'Passer' }).click();
+  await expect(page.getByText('Question 2 sur 5')).toBeVisible();
+  await expect(timer).toHaveText('90 s');
+  await expect(page.locator('.clock-mistake-effect')).toHaveCount(0);
+  await page.clock.runFor(4600);
+  await expect(page.getByText('Question 2 sur 5')).toBeVisible();
 });
 
 test('chaque mini-jeu montre une fiche illustrée avec la bonne réponse', async ({ page }) => {
@@ -372,6 +380,8 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await page.getByRole('button', { name: 'Continuer', exact: true }).click();
   await page.getByRole('button', { name: 'Niveau suivant' }).click();
   const nextLevel = page.getByRole('button', { name: 'Niveau 3, Défi, À jouer' });
+  const rabbit = nextLevel.locator('.clock-map-rabbit');
+  expect(await rabbit.evaluate(element => element.getAnimations().length)).toBe(1);
   await expect(nextLevel).toBeFocused();
   await expect(nextLevel).toHaveAccessibleDescription('Niveau débloqué !');
   await expect(nextLevel.locator('.clock-map-marker')).toHaveCSS('animation-name', 'clock-map-unlock');
@@ -379,6 +389,8 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await expect(pieces).toHaveCount(4);
   for (const piece of await pieces.all()) await expect(piece).toHaveCSS('animation-name', 'clock-lock-break');
   await expect(pieces.first()).toHaveCSS('opacity', '0');
+  await expect(rabbit).toHaveCSS('transform', 'none');
+  await expect(rabbit).toBeVisible();
   await expect(page.locator('.clock-burst > *, .clock-quick-layer > *')).toHaveCount(0);
   await expect(page.locator('.clock-options')).toHaveCount(0);
   await nextLevel.click();
@@ -391,6 +403,9 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await expect(nextRegion).toHaveAccessibleDescription('Niveau débloqué !');
   await expect(nextRegion.locator('.clock-map-marker')).toHaveCSS('animation-name', 'none');
   await expect(nextRegion.locator('.clock-level-lock')).toBeHidden();
+  const nextRabbit = nextRegion.locator('.clock-map-rabbit');
+  await expect(nextRabbit).toBeVisible();
+  expect(await nextRabbit.evaluate(element => element.getAnimations().length)).toBe(0);
   await nextRegion.click();
   await expect(page.getByText('Trouve le cadran · Découverte')).toBeVisible();
 });

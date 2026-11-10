@@ -163,6 +163,7 @@ export class ClockArcade {
         case 'pause': this.pause(now); break;
         case 'resume': this.resume(now); break;
         case 'answer': this.answer(Number(button.dataset.option), now); break;
+        case 'skip-correction': this.continueAfterCorrection(now); break;
         case 'practice-next': if (this.practice) this.continueAfterCorrection(now); break;
         case 'replay': this.start(now); break;
       }
@@ -549,17 +550,37 @@ export class ClockArcade {
     this.newlyUnlockedLevel = undefined;
     button.focus({ preventScroll: true });
     button.scrollIntoView({ block: 'center', behavior: 'instant' });
+    if (button.classList.contains('clock-map-unlocking')) this.moveMapRabbit(button);
+  }
+
+  private moveMapRabbit(destination: HTMLButtonElement): void {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rabbit = destination.querySelector<HTMLElement>('.clock-map-rabbit');
+    const origin = this.content.querySelector<HTMLElement>(`[data-map-game="${this.game}"][data-map-level="${this.level}"]`);
+    if (!rabbit || !origin) return;
+    const from = origin.getBoundingClientRect();
+    const to = destination.getBoundingClientRect();
+    const x = from.left + from.width / 2 - to.left - to.width / 2;
+    const y = from.top - to.top;
+    rabbit.animate([
+      { transform: `translate(${x}px, ${y}px)` },
+      { transform: `translate(${x * .75}px, ${y * .75 - 18}px)` },
+      { transform: `translate(${x * .5}px, ${y * .5}px)` },
+      { transform: `translate(${x * .25}px, ${y * .25 - 16}px)` },
+      { transform: 'translate(0, 0)' },
+    ], { duration: 850, easing: 'ease-in-out' });
   }
 
   private routeMap(): string {
     const next = this.nextLevel;
+    const rabbitLevel = next?.key ?? orderedLevels.at(-1)?.key;
     return `<ol class="clock-route" role="list" aria-label="Carte des dix-huit niveaux">${clockGameIds.map((id, index) => {
       const item = clockGames[id];
       const done = clockLevels.filter((_, level) => this.completed.has(levelKey(id, level))).length;
       const friend = clockFriends[index];
       return `<li class="clock-map-stop" data-region="${id}">
         <div class="clock-map-landscape" aria-hidden="true">
-          ${clockMapLandscape(id)}${id === 'read' ? clockRabbitArt : ''}
+          ${clockMapLandscape(id)}
           ${friend && friend.at <= this.completed.size ? clockFriendArt(friend.id) : ''}
         </div>
         ${clockMapTrail}
@@ -574,6 +595,7 @@ export class ClockArcade {
           const markerArt = state === 'locked' ? clockLevelLock : `<span class="clock-map-marker-state">${state === 'done' ? '✓' : '▶'}</span>`;
           return `<li><button type="button" class="clock-map-level" data-clock-action="map-level" data-map-game="${id}" data-map-level="${n}" data-state="${state}" aria-label="Niveau ${number}, ${level.name}, ${status}"${state === 'next' ? ' aria-current="step"' : ''}${state === 'locked' ? ' disabled' : ''}>
             <span class="clock-map-marker" aria-hidden="true">${number}${markerArt}</span>
+            ${key === rabbitLevel ? `<span class="clock-map-rabbit" aria-hidden="true">${clockRabbitArt}</span>` : ''}
             <span class="clock-map-level-name">${level.name}</span></button></li>`;
         }).join('')}</ol></li>`;
     }).join('')}</ol>`;

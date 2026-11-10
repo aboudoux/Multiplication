@@ -187,7 +187,6 @@
 }
 .clock-map-stop:nth-child(even) .clock-map-landscape { left:1%; right:auto; }
 .clock-map-landmark { display:block; width:100%; }
-.clock-map-landscape .clock-rabbit-art { position:absolute; left:40%; bottom:12%; width:34%; }
 .clock-map-landscape .clock-friend-art { position:absolute; right:0; bottom:9%; width:25%; }
 .clock-map-trail { position:absolute; inset:0; width:100%; height:100%; fill:none; pointer-events:none; }
 .clock-map-stop:nth-child(even) .clock-map-trail { scale:-1 1; }
@@ -210,8 +209,12 @@
 .clock-map-stop:nth-child(even) .clock-map-steps > li:first-child { left:82%; }
 .clock-map-stop:nth-child(even) .clock-map-steps > li:nth-child(3) { left:18%; }
 .clock-map-level {
-  display:grid; justify-items:center; gap:3px; min-width:62px; min-height:44px; padding:0;
+  display:grid; position:relative; justify-items:center; gap:3px; min-width:62px; min-height:44px; padding:0;
   color:#573d46; background:transparent; border:0; border-radius:14px; font-weight:700; cursor:pointer; pointer-events:auto;
+}
+.clock-map-rabbit {
+  position:absolute; z-index:2; top:0; left:50%; width:38px;
+  translate:-50% -88%; pointer-events:none;
 }
 .clock-map-marker {
   display:grid; position:relative; place-items:center; width:44px; height:44px; border:2px solid #a7806d;
