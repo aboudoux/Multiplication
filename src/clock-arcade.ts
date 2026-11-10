@@ -1,7 +1,7 @@
 import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
 import { clockRabbitArt, clockFriendArt } from './clock-characters';
 import { clockCorrectionMarkup } from './clock-correction';
-import { clockFinaleChapterMs, clockFinaleChapters, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend } from './clock-story';
+import { clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend } from './clock-story';
 import { sprite } from './themes';
 import type { ClockCue } from './audio';
 import type { ClockVoiceToken } from './clock-voice';
@@ -86,6 +86,7 @@ export class ClockArcade {
     private readonly playCue: (cue: ClockCue) => void,
     private readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>,
     private readonly narrate: (tokens: readonly ClockVoiceToken[] | null) => void,
+    private readonly narrateFinale: (step: number, elapsedMs: number) => void,
   ) {
     this.root.className = 'clock-arcade';
     this.root.setAttribute('aria-labelledby', 'clock-heading');
@@ -145,8 +146,17 @@ export class ClockArcade {
   }
 
   get playing(): boolean { return !this.root.hidden && this.screen === 'playing'; }
-  readCurrentQuestion(): void {
-    if (this.playing && !document.hidden) this.narrate(this.questions[this.index].narration);
+  readCurrentNarration(): boolean {
+    if (this.root.hidden) return false;
+    if (this.playing) {
+      if (!document.hidden) this.narrate(this.questions[this.index].narration);
+      return true;
+    }
+    if (this.screen !== 'finale') return false;
+    if (!this.finalePaused && !document.hidden && this.finaleElapsed >= 0) {
+      this.narrateFinale(this.finaleStep, this.finaleElapsed - clockFinaleChapterStarts[this.finaleStep]);
+    }
+    return true;
   }
 
   private get storyComplete(): boolean { return this.completed.size === orderedLevels.length; }
@@ -311,7 +321,7 @@ export class ClockArcade {
     const finished = this.index === this.questions.length;
     const storyWasComplete = this.storyComplete;
     if (finished) this.completeLevel();
-    if (finished && !storyWasComplete && this.storyComplete) this.startFinale(now, 'results');
+    if (finished && !storyWasComplete && this.storyComplete) this.startFinale(now, 'results', clockFinaleOpeningMs);
     else this.show(finished ? 'results' : 'playing');
     if (finished) {
       this.reactCompanion('finish');
@@ -335,14 +345,15 @@ export class ClockArcade {
     this.finishLayer.replaceChildren();
   }
 
-  private startFinale(now: number, back: FinaleOrigin): void {
+  private startFinale(now: number, back: FinaleOrigin, openingMs = 0): void {
     if (!this.storyComplete) return;
     this.finaleReturn = back;
-    this.finaleElapsed = 0;
+    this.finaleElapsed = -openingMs;
     this.finaleFrameAt = now;
     this.finaleStep = 0;
     this.finalePaused = false;
     this.show('finale');
+    this.readCurrentNarration();
   }
 
   private toggleFinalePause(now: number, button: HTMLButtonElement): void {
@@ -350,15 +361,23 @@ export class ClockArcade {
     this.finaleFrameAt = this.finalePaused ? null : now;
     this.content.querySelector('.clock-finale-scene')!.toggleAttribute('data-paused', this.finalePaused);
     button.textContent = this.finalePaused ? 'Reprendre le film' : 'Pause du film';
+    if (this.finalePaused) this.narrate(null);
+    else this.readCurrentNarration();
   }
 
   private tickFinale(now: number): void {
     const last = clockFinaleChapters.length - 1;
-    if (this.finalePaused || this.finaleStep === last) return;
-    this.finaleElapsed += now - (this.finaleFrameAt ?? now);
+    if (this.finalePaused || document.hidden) return;
+    const resumed = this.finaleFrameAt === null;
+    const previous = this.finaleElapsed;
+    this.finaleElapsed = Math.min(clockFinaleChapterStarts[last + 1], previous + now - (this.finaleFrameAt ?? now));
     this.finaleFrameAt = now;
-    const step = Math.min(last, Math.floor(this.finaleElapsed / clockFinaleChapterMs));
-    if (step === this.finaleStep) return;
+    let step = this.finaleStep;
+    while (step < last && this.finaleElapsed >= clockFinaleChapterStarts[step + 1]) step++;
+    if (step === this.finaleStep) {
+      if (resumed || (previous < 0 && this.finaleElapsed >= 0)) this.readCurrentNarration();
+      return;
+    }
     this.finaleStep = step;
     this.content.querySelector<HTMLElement>('.clock-finale-scene')!.dataset.step = String(step);
     const chapter = clockFinaleChapters[step];
@@ -367,6 +386,7 @@ export class ClockArcade {
     this.content.querySelector<HTMLProgressElement>('.clock-finale-progress')!.value = step + 1;
     if (step === last) this.content.querySelector<HTMLButtonElement>('[data-clock-action="finale"]')!.hidden = false;
     if (step >= 2) this.playSuccess(step !== 2);
+    this.readCurrentNarration();
   }
 
   private show(screen: Screen): void {
@@ -382,7 +402,7 @@ export class ClockArcade {
     if (screen === 'playing') {
       this.displayedSeconds = -1;
       this.updateTimer();
-      this.readCurrentQuestion();
+      this.readCurrentNarration();
     }
     this.content.querySelector<HTMLElement>('#clock-heading')!.focus();
   }

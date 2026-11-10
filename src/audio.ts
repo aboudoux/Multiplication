@@ -72,6 +72,10 @@ export class GameAudio {
     if (!this.muted && this.ready) void this.voice?.clockQuestion(tokens);
   }
 
+  speakClockFinale(step: number, elapsedMs: number): void {
+    if (!this.muted && this.ready) void this.voice?.clockFinale(step, elapsedMs);
+  }
+
   disappointment(): void {
     if (!this.muted) void this.voice?.sigh();
   }

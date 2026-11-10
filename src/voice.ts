@@ -3,6 +3,8 @@ import type { Calculation } from "./calculations";
 import { voiceProfiles, voiceRates, type VoiceStyle } from "./voice-profiles";
 import rabbitLateClip from './rabbit-late.wav?inline';
 import clockVoiceClip from './clock-voice.mp3?inline';
+import clockFinaleVoiceClip from './clock-finale-voice.mp3?inline';
+import { finaleVoiceClips } from './clock-finale-voice-clips';
 import { composeClockVoice, type ClockVoiceToken } from './clock-voice';
 export { voiceRates, type VoiceStyle } from "./voice-profiles";
 export type VoiceStatus = "idle" | "loading" | "speaking" | "unavailable";
@@ -67,6 +69,20 @@ export class QuestionVoice {
     await this.play('clock-questions', 0, 1.5, 'classic', bank => composeClockVoice(this.context, bank, tokens));
   }
 
+  async clockFinale(step: number, elapsedMs: number): Promise<void> {
+    this.stop();
+    const [start, end] = finaleVoiceClips[step];
+    const offset = start + elapsedMs / 1000;
+    if (offset >= end) return;
+    await this.play('clock-finale', 0, 1.5, 'classic', bank => {
+      const rate = bank.sampleRate;
+      const samples = bank.getChannelData(0).subarray(Math.floor(offset * rate), Math.ceil(end * rate));
+      const clip = this.context.createBuffer(1, samples.length, rate);
+      clip.getChannelData(0).set(samples);
+      return clip;
+    });
+  }
+
   private load(url: string, retry = false): VoiceClip {
     const existing = this.cache.get(url);
     if (existing && !(retry && existing.state === "unavailable")) return existing;
@@ -79,7 +95,9 @@ export class QuestionVoice {
       }, VOICE_LOAD_TIMEOUT_MS);
     });
     const composed = url.match(/^\/voice\/fr\/composed\/(add|subtract|multiply)\/(\d+)-(\d+)$/);
-    const inlineClip = url === 'rabbit-late' ? rabbitLateClip : url === 'clock-questions' ? clockVoiceClip : null;
+    const inlineClip = url === 'rabbit-late' ? rabbitLateClip
+      : url === 'clock-questions' ? clockVoiceClip
+      : url === 'clock-finale' ? clockFinaleVoiceClip : null;
     const download = inlineClip
       ? this.context.decodeAudioData(Uint8Array.from(atob(inlineClip.slice(inlineClip.indexOf(',') + 1)), char => char.charCodeAt(0)).buffer)
       : composed ? this.compose(composed[1],composed[2],composed[3]) : fetch(url, { signal: controller.signal }).then(async response => {

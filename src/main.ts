@@ -231,6 +231,8 @@ const clockArcade = new ClockArcade(() => showLanding('open-clock-arcade'), mile
 }, () => localStorage, tokens => {
   if (tokens && saved.voiceEnabled && !saved.muted) audio.speakClockQuestion(tokens);
   else audio.stopSpeech();
+}, (step, elapsedMs) => {
+  if (saved.voiceEnabled && !saved.muted) audio.speakClockFinale(step, elapsedMs);
 });
 get('home').before(clockArcade.root);
 get('open-clock-arcade').addEventListener('click', () => {
@@ -523,10 +525,7 @@ get("sound").addEventListener("click", () => {
   renderPreferences();
 });
 function speakCurrentQuestion(retry = false): void {
-  if (clockArcade.playing) {
-    clockArcade.readCurrentQuestion();
-    return;
-  }
+  if (clockArcade.readCurrentNarration()) return;
   if (
     game.phase === "question" &&
     game.current &&

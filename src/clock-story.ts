@@ -1,4 +1,5 @@
 import { clockRabbitArt, clockFriendArt } from './clock-characters';
+import { finaleVoiceClips } from './clock-finale-voice-clips';
 
 export const clockStoryTitle = 'Le goûter du tic-tac';
 export const clockStoryIntro = 'Le lapin doit apporter le gâteau au goûter de quatre heures. Une averse le surprend et sa montre tombe dans une flaque. Elle s’arrête à trois heures ! Il croit avoir encore le temps. Quand il arrive en retard, la clairière est vide… Où sont passés ses amis ?';
@@ -20,7 +21,11 @@ export const clockFinaleChapters = [
   { title: 'Ding, ding !', caption: 'Le lapin sonne la cloche. Les lanternes s’allument une à une sous le grand chêne.' },
   { title: 'Le goûter des amis', caption: 'Le lapin partage enfin son gâteau. « Merci, les amis ! Grâce à vous, le goûter peut commencer. »' },
 ] as const;
-export const clockFinaleChapterMs = 5000;
+export const clockFinaleOpeningMs = 3300;
+export const clockFinaleChapterStarts = finaleVoiceClips.reduce((starts, [start, end]) => {
+  starts.push(starts[starts.length - 1] + Math.max(5000, Math.ceil((end - start) * 1000) + 400));
+  return starts;
+}, [0]);
 
 const grove = `<svg class="clock-finale-grove" viewBox="0 0 760 360" preserveAspectRatio="xMidYMid slice">
   <defs><linearGradient id="clock-grove-sky" x2="0" y2="1"><stop stop-color="#9bd2e9"/><stop offset="1" stop-color="#ffecb6"/></linearGradient></defs>

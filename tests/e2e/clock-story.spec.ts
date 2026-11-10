@@ -1,15 +1,16 @@
 import { test, expect, type Page } from '@playwright/test';
 import { CLOCK_PROGRESS_KEY, clockGameIds, clockLevels, roundLength } from '../../src/clock-games';
+import { clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs } from '../../src/clock-story';
 import { defaults, STORAGE_KEY } from '../../src/storage';
 import { answerFirstClockOption } from './clock-helpers';
 
 const levelKeys = clockGameIds.flatMap(game => clockLevels.map((_, level) => `${game}:${level}`));
 
-async function openStoryGame(page: Page, completed: number) {
+async function openStoryGame(page: Page, completed: number, muted = true) {
   await page.addInitScript(({ progressKey, progress, settingsKey, settings }) => {
     if (!localStorage.getItem(progressKey)) localStorage.setItem(progressKey, JSON.stringify(progress));
     if (!localStorage.getItem(settingsKey)) localStorage.setItem(settingsKey, JSON.stringify(settings));
-  }, { progressKey: CLOCK_PROGRESS_KEY, progress: levelKeys.slice(0, completed), settingsKey: STORAGE_KEY, settings: { ...defaults(), muted: true } });
+  }, { progressKey: CLOCK_PROGRESS_KEY, progress: levelKeys.slice(0, completed), settingsKey: STORAGE_KEY, settings: { ...defaults(), muted, voiceEnabled: true } });
   await page.clock.install({ time: new Date('2026-11-09T12:00:00Z') });
   await page.goto('/');
   await page.clock.pauseAt(new Date('2026-11-09T12:00:10Z'));
@@ -74,7 +75,7 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   expect(artwork.every(portrait => portrait.width === 520 && portrait.src.startsWith('data:image/webp;'))).toBe(true);
   expect(new Set(artwork.map(portrait => portrait.src)).size).toBe(6);
   await expect(scene).toHaveAttribute('data-step', '0');
-  await page.clock.fastForward(5100);
+  await page.clock.fastForward(clockFinaleOpeningMs + clockFinaleChapterStarts[1] + 100);
   await expect(caption).toContainText('Noisette et Pique');
   await expect(scene.locator('.clock-finale-gear')).toHaveCSS('animation-name', 'clock-finale-gear-fit');
   await expect(scene.locator('.clock-finale-actor[data-animal="squirrel"]')).toHaveCSS('animation-name', 'clock-finale-offer');
@@ -95,13 +96,13 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await page.clock.runFor(50);
-  await page.clock.fastForward(5100);
+  await page.clock.fastForward(clockFinaleChapterStarts[2] - clockFinaleChapterStarts[1]);
   await expect(caption).toContainText('quatre heures dix');
   await expect(scene.locator('.clock-finale-minute')).toHaveCSS('animation-name', 'clock-finale-minute-set');
-  await page.clock.fastForward(5100);
+  await page.clock.fastForward(clockFinaleChapterStarts[3] - clockFinaleChapterStarts[2]);
   await expect(caption).toContainText('Les lanternes s’allument');
   await expect(scene.locator('.clock-finale-bell')).toHaveCSS('animation-name', 'clock-finale-bell-swing');
-  await page.clock.fastForward(5100);
+  await page.clock.fastForward(clockFinaleChapterStarts[4] - clockFinaleChapterStarts[3]);
   await expect(caption).toContainText('partage enfin son gâteau');
   await expect(scene).toHaveAttribute('data-step', '4');
   await expect(page.getByRole('progressbar', { name: 'Tableau du film' })).toHaveAttribute('value', '5');
@@ -126,10 +127,68 @@ test('le dernier niveau lance le dénouement et permet de le revoir après recha
   await expect(replay).toBeVisible();
   await page.getByRole('button', { name: 'Lire l’histoire' }).click();
   await page.getByRole('button', { name: 'Voir la fin animée' }).click();
-  await page.clock.fastForward(21_000);
+  await page.clock.fastForward(clockFinaleChapterStarts[4] + 100);
   await expect(scene).toHaveAttribute('data-step', '4');
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('animation-name', 'none');
   await expect(scene.locator('.clock-finale-cake')).toHaveCSS('opacity', '1');
+});
+
+test('la voix lit les cinq tableaux, reprend au bon endroit et recommence au rejeu', async ({ page }) => {
+  await page.addInitScript(() => {
+    const readings: { caption: string; duration: number; stopped: boolean }[] = [];
+    Object.assign(window, { finaleReadings: readings });
+    const active = new WeakMap<AudioBufferSourceNode, typeof readings[number]>();
+    const start = AudioBufferSourceNode.prototype.start;
+    const stop = AudioBufferSourceNode.prototype.stop;
+    AudioBufferSourceNode.prototype.start = function (...args) {
+      const caption = document.querySelector('.clock-finale-caption')?.textContent;
+      if (caption && this.buffer && this.playbackRate.value === 1 &&
+        this.buffer.getChannelData(0).some(sample => Math.abs(sample) > .005)) {
+        const reading = { caption, duration: this.buffer.duration, stopped: false };
+        active.set(this, reading);
+        readings.push(reading);
+      }
+      return start.apply(this, args);
+    };
+    AudioBufferSourceNode.prototype.stop = function (...args) {
+      const reading = active.get(this);
+      if (reading) reading.stopped = true;
+      return stop.apply(this, args);
+    };
+  });
+  await openStoryGame(page, 17, false);
+  await finishLevel(page, 'next', 2);
+  const readings = () => page.evaluate(() => (window as unknown as {
+    finaleReadings: { caption: string; duration: number; stopped: boolean }[];
+  }).finaleReadings);
+  expect(await readings()).toHaveLength(0);
+  await page.clock.fastForward(clockFinaleOpeningMs + 50);
+  await expect.poll(async () => (await readings()).at(-1)?.caption).toBe(clockFinaleChapters[0].caption);
+  const first = (await readings())[0];
+  await page.clock.fastForward(1000);
+  await page.getByRole('button', { name: 'Pause du film' }).click();
+  expect((await readings())[0].stopped).toBe(true);
+  await page.clock.fastForward(10_000);
+  expect(await readings()).toHaveLength(1);
+  await page.getByRole('button', { name: 'Reprendre le film' }).click();
+  await expect.poll(async () => (await readings()).length).toBe(2);
+  expect((await readings())[1].duration).toBeLessThan(first.duration - .9);
+  await page.clock.fastForward(clockFinaleChapterStarts[1] - 1000);
+  await expect.poll(async () => (await readings()).at(-1)?.caption).toBe(clockFinaleChapters[1].caption);
+  for (let step = 2; step < clockFinaleChapters.length; step++) {
+    await page.clock.fastForward(clockFinaleChapterStarts[step] - clockFinaleChapterStarts[step - 1]);
+    await expect.poll(async () => (await readings()).at(-1)?.caption).toBe(clockFinaleChapters[step].caption);
+  }
+  await page.locator('#voice').click();
+  expect((await readings()).at(-1)?.stopped).toBe(true);
+  await page.getByRole('button', { name: 'Revoir l’animation' }).click();
+  await expect(page.locator('.clock-finale-caption')).toHaveText(clockFinaleChapters[0].caption);
+  expect(await readings()).toHaveLength(6);
+  await page.locator('#voice').click();
+  await expect.poll(async () => (await readings()).length).toBe(7);
+  expect((await readings()).at(-1)?.duration).toBeGreaterThan(first.duration - .1);
+  await page.getByRole('button', { name: 'Mon bilan' }).click();
+  expect((await readings()).at(-1)?.stopped).toBe(true);
 });
 
 test('les portraits des cinq amis s’inclinent et avancent sous les réponses sans bloquer le jeu', async ({ page }) => {
