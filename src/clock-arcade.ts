@@ -1,6 +1,6 @@
 import { CLOCK_PROGRESS_KEY, clockCorrectionMs, clockFace, clockGameIds, clockGames, clockLevels, clockRound, roundLength, type ClockGame, type ClockQuestion } from './clock-games';
 import { clockRabbitArt, clockFriendArt } from './clock-characters';
-import { clockMapCompass, clockMapLandmark, clockMapTreasure } from './clock-map-art';
+import { clockMapCompass, clockMapLandscape, clockMapTrail, clockMapTreasure } from './clock-map-art';
 import { clockCorrectionMarkup } from './clock-correction';
 import { clockArrivalScene, clockFinaleChapterStarts, clockFinaleChapters, clockFinaleOpeningMs, clockFinaleScene, clockFriends, clockStoryIntro, clockStoryTitle, type ClockFriend, type ClockStoryFilm } from './clock-story';
 import { arrivalVoiceClips } from './clock-arrival-voice-clips';
@@ -13,7 +13,7 @@ type FinaleOrigin = 'catalogue' | 'results' | 'story';
 type Gesture = 'cheer' | 'encourage' | 'finish';
 const rabbitEvery = 5;
 const clockMapPlaces: Record<ClockGame, string> = {
-  read: 'Le petit arbre', match: 'L’arche des horloges', order: 'La colline du soleil',
+  read: 'La prairie du lapin', match: 'L’arche des horloges', order: 'La colline du soleil',
   compare: 'Le pont du sablier', elapsed: 'Le ruisseau', next: 'Le portail du goûter',
 };
 const levelKey = (game: ClockGame, level: number) => `${game}:${level}`;
@@ -461,22 +461,26 @@ export class ClockArcade {
     return `<ol class="clock-route" role="list" aria-label="Carte des dix-huit niveaux">${clockGameIds.map((id, index) => {
       const item = clockGames[id];
       const done = clockLevels.filter((_, level) => this.completed.has(levelKey(id, level))).length;
-      const state = next?.game === id ? 'next' : done === clockLevels.length ? 'done' : done ? 'started' : 'locked';
       const friend = clockFriends[index];
-      return `<li class="clock-map-stop" data-map-state="${state}">
-        <span class="clock-map-pin" aria-hidden="true">${index + 1}</span>
-        <div class="clock-map-card"><button type="button" class="clock-map-heading" data-clock-action="game" data-game="${id}">
-          <span class="clock-map-landscape">${clockMapLandmark(id)}${id === 'read' ? clockRabbitArt : ''}</span>
-          <span><span class="clock-map-place">${clockMapPlaces[id]}</span><strong>${item.name}</strong><small>${done} / ${clockLevels.length} niveaux faits</small></span>
+      return `<li class="clock-map-stop" data-region="${id}">
+        <div class="clock-map-landscape" aria-hidden="true">
+          ${clockMapLandscape(id)}${id === 'read' ? clockRabbitArt : ''}
           ${friend && friend.at <= this.completed.size ? clockFriendArt(friend.id) : ''}
+        </div>
+        ${clockMapTrail}
+        <button type="button" class="clock-map-heading" data-clock-action="game" data-game="${id}">
+          <span class="clock-map-place">${clockMapPlaces[id]}</span><strong>${item.name}</strong><small>${done} / ${clockLevels.length} niveaux faits</small>
         </button>
-        <div class="clock-map-steps" role="group" aria-label="Niveaux de ${item.name}">${clockLevels.map((level, n) => {
+        <ol class="clock-map-steps" role="list" aria-label="Niveaux de ${item.name}">${clockLevels.map((level, n) => {
           const key = levelKey(id, n);
+          const number = index * clockLevels.length + n + 1;
           const state = this.completed.has(key) ? 'done' : next?.key === key ? 'next' : 'locked';
           const status = state === 'done' ? 'Fait' : state === 'next' ? 'À jouer' : 'Verrouillé';
           const badge = state === 'done' ? '✓' : state === 'next' ? '▶' : '🔒';
-          return `<button type="button" class="clock-map-level" data-clock-action="map-level" data-map-game="${id}" data-map-level="${n}" data-state="${state}" aria-label="${level.name} · ${status}"${state === 'locked' ? ' disabled' : ''}><span aria-hidden="true">${badge}</span>${level.name}</button>`;
-        }).join('')}</div></div></li>`;
+          return `<li><button type="button" class="clock-map-level" data-clock-action="map-level" data-map-game="${id}" data-map-level="${n}" data-state="${state}" aria-label="Niveau ${number}, ${level.name}, ${status}"${state === 'next' ? ' aria-current="step"' : ''}${state === 'locked' ? ' disabled' : ''}>
+            <span class="clock-map-marker" aria-hidden="true">${number}<span class="clock-map-marker-state">${badge}</span></span>
+            <span class="clock-map-level-name">${level.name}</span></button></li>`;
+        }).join('')}</ol></li>`;
     }).join('')}</ol>`;
   }
 
@@ -495,7 +499,7 @@ export class ClockArcade {
           <header class="camp-heading clock-intro"><div><span class="eyebrow">LE COIN DES 5–8 ANS</span>${title('Les jeux du lapin chrono')}<p>Lis l’heure et compare les durées. Termine chaque niveau pour débloquer le suivant.</p></div>${clockRabbitArt}</header>
           <div class="clock-story-teaser"><div><span class="clock-kicker">L’HISTOIRE DU LAPIN</span><h3>${clockStoryTitle}</h3><p>Sa montre s’est arrêtée et il a raté le goûter. Retrouve ses amis en suivant la carte !</p></div><div class="clock-story-actions">${story}${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Revoir l’animation</button>' : ''}</div></div>
           <section class="clock-map" aria-labelledby="clock-map-title">
-            <header>${clockMapCompass}<span class="clock-map-kicker">CARTE AU TRÉSOR</span><h3 id="clock-map-title">Le chemin du goûter</h3><p>Pars du petit arbre et suis les pointillés jusqu’au coffre.</p></header>
+            <header>${clockMapCompass}<span class="clock-map-kicker">CARTE AU TRÉSOR</span><h3 id="clock-map-title">Le chemin du goûter</h3><p>Pars de la prairie du lapin et suis les niveaux jusqu’au coffre.</p></header>
             ${this.routeMap()}
             <div class="clock-map-end">${clockMapTreasure}<span>Le goûter sous le grand chêne</span>
               ${this.storyComplete ? '<button type="button" class="play-button" data-clock-action="finale">Voir le goûter</button>' : '<small>Au bout des 18 niveaux</small>'}

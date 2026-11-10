@@ -28,12 +28,26 @@ const landmarks: Record<ClockGame, string> = {
     <path d="m53 17-3-7m3 7 5-7" stroke="#729454" stroke-width="3" stroke-linecap="round"/>`,
 };
 
-export function clockMapLandmark(game: ClockGame): string {
-  return `<svg class="clock-map-landmark" viewBox="0 0 104 68" aria-hidden="true">
-    <path d="M9 58q11-10 43-10t43 10q-7 7-43 7T9 58Z" fill="#dbe4aa"/>
-    ${landmarks[game]}
+const rabbitBurrow = `<path d="M91 58q4-23 22-23t24 23Z" fill="#8da65b" stroke="#667e4c" stroke-width="2"/>
+  <path d="M105 58v-5a8 8 0 0 1 16 0v5Z" fill="#79503f"/>
+  <path d="M111 58q2 7 10 10h-13q-5-4-3-10Z" fill="#dcba8a"/>
+  <path d="M134 54v-7m-4 4h8M15 56v-7m-4 4h8" stroke="#ae7544" stroke-width="2" stroke-linecap="round"/>`;
+
+export function clockMapLandscape(game: ClockGame): string {
+  return `<svg class="clock-map-landmark" viewBox="0 0 148 76" aria-hidden="true">
+    <path d="M12 53Q35 30 61 45q18 11 34-4 17-14 39 3l8 15H7Z" fill="currentColor" opacity=".42"/>
+    <path d="M4 61q17-16 63-11t76 11q-10 11-67 11T4 61Z" fill="currentColor" opacity=".68"/>
+    <g transform="translate(${game === 'read' ? -4 : 23} 2)">${landmarks[game]}</g>
+    ${game === 'read' ? rabbitBurrow : ''}
+    <path d="m13 63 2-3m-2 3-3-2m123 5 2-4m-2 4-3-2" stroke="#60774b" stroke-width="1.5" fill="none" stroke-linecap="round"/>
   </svg>`;
 }
+
+const trail = 'M50 0C50 22 18 22 18 54C18 71 35 73 50 66C65 59 73 49 82 54C99 64 50 81 50 100';
+export const clockMapTrail = `<svg class="clock-map-trail" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+  <path class="clock-map-trail-bed" d="${trail}" vector-effect="non-scaling-stroke"/>
+  <path class="clock-map-trail-dots" d="${trail}" vector-effect="non-scaling-stroke"/>
+</svg>`;
 
 export const clockMapCompass = `<svg class="clock-map-compass" viewBox="0 0 80 80" aria-hidden="true">
   <circle cx="40" cy="40" r="23" fill="none" stroke="currentColor" stroke-width="1.2"/>

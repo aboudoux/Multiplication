@@ -44,6 +44,9 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'ant');
   await expect(page.locator('.clock-map-stop')).toHaveCount(6);
   await expect(page.locator('.clock-map-level')).toHaveCount(18);
+  await expect(page.getByRole('button', { name: /La prairie du lapin/ })).toBeVisible();
+  await expect(page.locator('.clock-map-level').first()).toHaveAccessibleName('Niveau 1, Découverte, À jouer');
+  await expect(page.locator('.clock-map-level').last()).toHaveAccessibleName('Niveau 18, Défi, Verrouillé');
   await expect(page.locator('.clock-map-level:enabled')).toHaveCount(1);
   await page.locator('.clock-map-level:enabled').click();
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
