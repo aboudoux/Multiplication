@@ -67,6 +67,7 @@ export class ClockArcade {
   private readonly progressLabel = document.createElement('span');
   private readonly companionFriends = document.createElement('div');
   private completed = new Set<string>();
+  private newlyUnlockedLevel: string | undefined;
   private practice: ClockPracticeSettings | null = null;
   private practiceElapsed = 0;
   private practiceQuestionStarted = 0;
@@ -157,11 +158,7 @@ export class ClockArcade {
         case 'game': this.game = button.dataset.game as ClockGame; this.show('levels'); break;
         case 'level': this.start(now, this.game, Number(button.dataset.level) as Level); break;
         case 'map-level': this.start(now, button.dataset.mapGame as ClockGame, Number(button.dataset.mapLevel) as Level); break;
-        case 'next-level': {
-          const next = this.nextLevel;
-          if (this.screen === 'results' && next) this.start(now, next.game, next.level);
-          break;
-        }
+        case 'next-level': this.showNextOnMap(); break;
         case 'pause': this.pause(now); break;
         case 'resume': this.resume(now); break;
         case 'answer': this.answer(Number(button.dataset.option), now); break;
@@ -197,6 +194,7 @@ export class ClockArcade {
 
   loadProgress(): void {
     this.completed = this.readProgress();
+    this.newlyUnlockedLevel = undefined;
     this.totalCorrect = 0;
     delete this.companion.dataset.gesture;
     delete this.guestTrail.dataset.gesture;
@@ -226,7 +224,9 @@ export class ClockArcade {
     if (this.completed.has(key)) return;
     for (const saved of this.readProgress()) this.completed.add(saved);
     const before = this.completed.size;
+    const previousNext = this.nextLevel?.key;
     this.completed.add(key);
+    if (previousNext !== this.nextLevel?.key) this.newlyUnlockedLevel = this.nextLevel?.key;
     this.arrival = clockFriends.find(friend => friend.at > before && friend.at <= this.completed.size);
     try { this.storage().setItem(CLOCK_PROGRESS_KEY, JSON.stringify([...this.completed])); }
     catch { /* Keep the progress for the current visit when storage is blocked. */ }
@@ -308,6 +308,7 @@ export class ClockArcade {
   private start(now: number, game = this.game, level = this.level): void {
     const key = levelKey(game, level);
     if (!this.practice && !this.completed.has(key) && key !== this.nextLevel?.key) return;
+    this.newlyUnlockedLevel = undefined;
     this.game = game;
     this.level = level;
     this.clearCelebrations();
@@ -519,6 +520,21 @@ export class ClockArcade {
     track.querySelector('span')!.style.transform = `scaleX(${seconds / this.timerSeconds!})`;
   }
 
+  private showNextOnMap(): void {
+    const next = this.nextLevel;
+    if (this.screen !== 'results' || this.practice || !next) return;
+    this.open();
+    const button = this.content.querySelector<HTMLButtonElement>('.clock-map-level[data-state="next"]')!;
+    if (this.newlyUnlockedLevel === next.key) {
+      button.classList.add('clock-map-unlocking');
+      button.insertAdjacentHTML('beforeend', '<span class="clock-map-unlock-note" id="clock-map-unlock-note">Niveau débloqué !</span>');
+      button.setAttribute('aria-describedby', 'clock-map-unlock-note');
+    }
+    this.newlyUnlockedLevel = undefined;
+    button.focus({ preventScroll: true });
+    button.scrollIntoView({ block: 'center', behavior: 'instant' });
+  }
+
   private routeMap(): string {
     const next = this.nextLevel;
     return `<ol class="clock-route" role="list" aria-label="Carte des dix-huit niveaux">${clockGameIds.map((id, index) => {
@@ -617,7 +633,7 @@ export class ClockArcade {
           <div class="result-stats"><div><strong>${this.score}</strong> <span>${this.score === 1 ? 'bonne réponse' : 'bonnes réponses'}</span></div><div><strong>${this.index} / ${this.questions.length}</strong><span>questions jouées</span></div><div><strong>${errors}</strong><span>${errors === 1 ? 'erreur' : 'erreurs'}</span></div>${this.practice ? `<div><strong>${this.score}</strong><span>${this.score === 1 ? 'matériau gagné' : 'matériaux gagnés'}</span></div>` : ''}</div>
           ${this.practiceRecord === undefined ? '' : `<p>Ton meilleur temps pour ces réglages : ${formatTime(this.practiceRecord)}.</p>`}
           ${this.arrival ? `<div class="clock-arrival" role="status">${clockFriendArt(this.arrival.id)}<div><strong>${this.arrival.name} te rejoint !</strong><p>${this.arrival.story}</p></div></div>` : ''}
-          <div class="result-actions">${canContinue ? '<button type="button" class="play-button" data-clock-action="next-level">Continuer le parcours →</button>' : ''}
+          <div class="result-actions">${canContinue ? '<button type="button" class="play-button" data-clock-action="next-level">Niveau suivant →</button>' : ''}
           ${this.practice ? catalogue : `<button type="button" class="${canContinue ? 'secondary-button' : 'play-button'}" data-clock-action="levels">Retour aux niveaux</button>`}
           <button type="button" class="${this.practice ? 'play-button' : 'secondary-button'}" data-clock-action="replay">Rejouer</button>${this.practice ? '' : `${this.arrival ? story : ''}${this.storyComplete ? finale : ''}`}</div></div>`;
       }

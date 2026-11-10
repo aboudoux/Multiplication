@@ -145,7 +145,8 @@
 .clock-done { background:#d5f2dc; color:#204e35; }
 .clock-next { background:#f7d87f; color:#46331c; }
 .clock-locked { background:#e2d8c0; color:#4b4638; }
-.clock-levels button:disabled { background:#e8e2cf; border-color:transparent; box-shadow:none; transform:none; }
+.clock-levels button:disabled { background:#dedede; color:#494949; border-color:#aaa; box-shadow:none; transform:none; }
+.clock-levels button:disabled .clock-icon { filter:grayscale(1); }
 .clock-map {
   position:relative; isolation:isolate; padding:clamp(16px,4vw,30px); margin:0 auto; max-width:860px;
   color:#593a36; border:2px solid #b18861; border-radius:24px 28px 24px 32px;
@@ -226,6 +227,34 @@
 .clock-map-level[data-state="next"] .clock-map-marker { color:#53330f; background:#ffda73; border-color:#976124; box-shadow:0 0 0 4px #fff2c7; }
 .clock-map-level[data-state="done"] .clock-map-marker { color:#21543b; background:#d8efda; border-color:#638e6a; }
 .clock-map-level:disabled { opacity:1; cursor:default; }
+.clock-map-level:disabled :is(.clock-map-marker,.clock-map-marker-state,.clock-map-level-name) {
+  background:#dedede; color:#454545; border-color:#888; filter:grayscale(1);
+}
+.clock-map-unlocking { position:relative; z-index:1; }
+.clock-map-unlock-note {
+  position:absolute; top:calc(100% + 4px); left:50%; translate:-50% 0; width:max-content;
+  padding:3px 7px; border:1px solid #976124; border-radius:9px; background:#fff2c7; color:#53330f;
+  font-size:.75rem; pointer-events:none;
+}
+.clock-map-level.clock-map-unlocking .clock-map-marker { animation:clock-map-unlock .85s ease-out; }
+.clock-map-unlocking .clock-map-marker::after {
+  content:''; position:absolute; inset:-3px; border:3px solid #ffe28b; border-radius:50%;
+  animation:clock-map-unlock-ring .85s ease-out both; pointer-events:none;
+}
+@keyframes clock-map-unlock {
+  0% { background:#dedede; border-color:#888; box-shadow:none; transform:scale(.88); }
+  55% { transform:scale(1.19); }
+  100% { transform:scale(1); }
+}
+@keyframes clock-map-unlock-ring {
+  0% { opacity:0; transform:scale(.9); }
+  40% { opacity:1; }
+  100% { opacity:0; transform:scale(1.65); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .clock-map-level.clock-map-unlocking .clock-map-marker { animation:none; }
+  .clock-map-unlocking .clock-map-marker::after { display:none; }
+}
 .clock-map-level:enabled:hover .clock-map-marker { outline:2px solid #694875; outline-offset:2px; }
 .clock-map button:focus-visible { outline:3px solid #724486; outline-offset:3px; }
 .clock-map-end {

@@ -49,6 +49,7 @@ test('la vignette ouvre les six jeux et chacun propose trois niveaux', async ({ 
   await expect(page.getByRole('button', { name: /La prairie du lapin/ })).toBeVisible();
   await expect(page.locator('.clock-map-level').first()).toHaveAccessibleName('Niveau 1, Découverte, À jouer');
   await expect(page.locator('.clock-map-level').last()).toHaveAccessibleName('Niveau 18, Défi, Verrouillé');
+  await expect(page.locator('.clock-map-level').last().locator('.clock-map-marker')).toHaveCSS('background-color', 'rgb(222, 222, 222)');
   await expect(page.locator('.clock-map-level:enabled')).toHaveCount(1);
   await page.locator('.clock-map-level:enabled').click();
   await expect(page.getByText('Question 1 sur 5')).toBeVisible();
@@ -265,7 +266,7 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
   await page.clock.fastForward(100_000);
   await expect(page.getByRole('heading', { name: 'Le chrono a sonné !' })).toBeVisible();
   await expect(companion).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Continuer le parcours' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Niveau suivant' })).toHaveCount(0);
   const timeoutScene = page.locator('.clock-timeout-scene');
   await expect(timeoutScene.locator('.clock-timeout-dial')).toHaveCSS('animation-name', 'clock-timeout-ring');
   await expect(timeoutScene.locator('.clock-timeout-rabbit')).toHaveCSS('animation-name', 'clock-timeout-dance');
@@ -317,7 +318,11 @@ test('les niveaux faits débloquent un compagnon qui reste dans le Lapin chrono'
   for (let index = 0; index < 3; index++) await answerClock(page);
   await expect(companion).toContainText('1 / 18 niveaux faits');
 
-  await page.getByRole('button', { name: 'Continuer le parcours' }).click();
+  await page.getByRole('button', { name: 'Niveau suivant' }).click();
+  const nextLevel = page.getByRole('button', { name: 'Niveau 2, Exploration, À jouer' });
+  await expect(nextLevel).toBeFocused();
+  await expect(page.getByText('Niveau débloqué !')).toHaveCount(0);
+  await nextLevel.click();
   await expect(page.getByText('Lis l’horloge · Exploration')).toBeVisible();
   await finishRound();
   await expect(companion).toContainText('2 / 18 niveaux faits');
@@ -362,9 +367,22 @@ test('une ancienne sauvegarde conserve ses niveaux et reprend au premier niveau 
   await page.locator('[data-level="0"]').click();
   for (let index = 0; index < 5; index++) await answerFirstClockOption(page);
   await page.getByRole('button', { name: 'Continuer', exact: true }).click();
-  await page.getByRole('button', { name: 'Continuer le parcours' }).click();
+  await page.getByRole('button', { name: 'Niveau suivant' }).click();
+  const nextLevel = page.getByRole('button', { name: 'Niveau 3, Défi, À jouer' });
+  await expect(nextLevel).toBeFocused();
+  await expect(nextLevel).toHaveAccessibleDescription('Niveau débloqué !');
+  await expect(nextLevel.locator('.clock-map-marker')).toHaveCSS('animation-name', 'clock-map-unlock');
+  await expect(page.locator('.clock-burst > *, .clock-quick-layer > *')).toHaveCount(0);
+  await expect(page.locator('.clock-options')).toHaveCount(0);
+  await nextLevel.click();
   await expect(page.getByText('Lis l’horloge · Défi')).toBeVisible();
   for (let index = 0; index < 5; index++) await answerFirstClockOption(page);
-  await page.getByRole('button', { name: 'Continuer le parcours' }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: 'Niveau suivant' }).click();
+  const nextRegion = page.getByRole('button', { name: 'Niveau 4, Découverte, À jouer' });
+  await expect(nextRegion).toBeFocused();
+  await expect(nextRegion).toHaveAccessibleDescription('Niveau débloqué !');
+  await expect(nextRegion.locator('.clock-map-marker')).toHaveCSS('animation-name', 'none');
+  await nextRegion.click();
   await expect(page.getByText('Trouve le cadran · Découverte')).toBeVisible();
 });
